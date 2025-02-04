@@ -4,8 +4,24 @@ const resultadoDiv = document.getElementById("resultado");
 
 // Variáveis globais
 let veiculoAtual = null;
+let tipoVeiculoAtual = "carro"; // Tipo de veículo selecionado
 const ctx = document.getElementById("fuelChart").getContext("2d");
 let fuelChart = null;
+
+// Função para selecionar o tipo de veículo
+function selecionarTipoVeiculo(tipo) {
+  tipoVeiculoAtual = tipo;
+  document.getElementById("vehicleType").value = tipo;
+  carregarVeiculos();
+  atualizarEstatisticas();
+  atualizarHistorico();
+
+  // Atualiza a classe 'selected' nos botões
+  document.querySelectorAll('.vehicle-type-buttons .uber-button').forEach(button => {
+    button.classList.remove('selected');
+  });
+  document.querySelector(`.vehicle-type-buttons .uber-button[data-tipo="${tipo}"]`).classList.add('selected');
+}
 
 // Função para mostrar o formulário de adicionar veículo
 function mostrarFormVeiculo() {
@@ -17,6 +33,7 @@ function salvarVeiculo() {
   const vehicle = {
     nome: document.getElementById("vehicleName").value,
     eficiencia: parseFloat(document.getElementById("vehicleEfficiency").value),
+    tipo: document.getElementById("vehicleType").value,
     id: Date.now(),
   };
 
@@ -35,8 +52,13 @@ function carregarVeiculos() {
   const veiculos = JSON.parse(localStorage.getItem("veiculos")) || [];
   const container = document.getElementById("vehicleList");
 
+  // Filtra os veículos pelo tipo selecionado
+  const veiculosFiltrados = veiculos.filter(
+    (veiculo) => veiculo.tipo === tipoVeiculoAtual
+  );
+
   // Gera o HTML para cada veículo e adiciona ao container
-  container.innerHTML = veiculos
+  container.innerHTML = veiculosFiltrados
     .map(
       (veiculo) => `
         <div class="vehicle-card ${
@@ -76,11 +98,16 @@ function atualizarEstatisticas() {
   const historico =
     JSON.parse(localStorage.getItem("historicoCombustivel")) || [];
 
-  const totalKm = historico.reduce(
+  // Filtra o histórico pelo tipo de veículo
+  const historicoFiltrado = historico.filter(
+    (item) => item.tipo === tipoVeiculoAtual
+  );
+
+  const totalKm = historicoFiltrado.reduce(
     (acc, item) => acc + parseFloat(item.distancia),
     0
   );
-  const totalGasto = historico.reduce(
+  const totalGasto = historicoFiltrado.reduce(
     (acc, item) => acc + parseFloat(item.custo),
     0
   );
@@ -90,7 +117,7 @@ function atualizarEstatisticas() {
     2
   )}`;
 
-  atualizarGrafico(historico);
+  atualizarGrafico(historicoFiltrado);
 }
 
 // Função para atualizar o gráfico
@@ -122,9 +149,7 @@ function atualizarGrafico(historico) {
 
 // Configuração inicial ao carregar a página
 document.addEventListener("DOMContentLoaded", () => {
-  atualizarHistorico();
-  carregarVeiculos();
-  atualizarEstatisticas();
+  selecionarTipoVeiculo("carro"); // Seleciona carro por padrão
 });
 
 // Cálculo principal ao submeter o formulário
@@ -176,6 +201,7 @@ function salvarHistorico(preco, kmInicial, kmFinal, kmPorLitro) {
     kmInicial: kmInicial,
     kmFinal: kmFinal,
     kmPorLitro: kmPorLitro,
+    tipo: tipoVeiculoAtual,
     data: new Date().toLocaleString("pt-BR"),
     distancia: (kmFinal - kmInicial).toFixed(1),
     litros: ((kmFinal - kmInicial) / kmPorLitro).toFixed(1),
@@ -193,8 +219,14 @@ function salvarHistorico(preco, kmInicial, kmFinal, kmPorLitro) {
 function atualizarHistorico() {
   const historico =
     JSON.parse(localStorage.getItem("historicoCombustivel")) || [];
+
+  // Filtra o histórico pelo tipo de veículo
+  const historicoFiltrado = historico.filter(
+    (item) => item.tipo === tipoVeiculoAtual
+  );
+
   const lista = document.getElementById("historicoPrecos");
-  lista.innerHTML = historico
+  lista.innerHTML = historicoFiltrado
     .map(
       (item, index) => `
       <li data-index="${index}" onclick="mostrarDetalhes(${index})">
