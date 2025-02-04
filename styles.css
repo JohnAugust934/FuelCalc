@@ -1,0 +1,436 @@
+/* Variáveis de cores */
+:root {
+  --uber-black: #000000;
+  --uber-green: #00c165;
+  --uber-gray: #222222;
+  --uber-light-gray: #444444;
+  --uber-text: #ffffff;
+}
+
+/* Reset de margens e padding */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Estilo do corpo da página */
+body {
+  font-family: "Ubuntu", "Segoe UI", sans-serif;
+  background-color: var(--uber-black);
+  color: var(--uber-text);
+  line-height: 1.6;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+/* Container principal */
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  background: var(--uber-gray);
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 193, 101, 0.1);
+}
+
+/* Cabeçalho da aplicação */
+.app-header {
+  padding: 1.5rem;
+  background: var(--uber-black);
+  text-align: center;
+  border-bottom: 2px solid var(--uber-green);
+}
+
+/* Logo da aplicação */
+.logo {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+  color: var(--uber-green);
+}
+
+.calculator-form {
+  padding: 1.5rem;
+}
+
+.input-group {
+  margin-bottom: 1.2rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #cccccc;
+}
+
+input {
+  width: 100%;
+  padding: 0.8rem;
+  background: var(--uber-light-gray);
+  border: 1px solid #333333;
+  border-radius: 8px;
+  color: var(--uber-text);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--uber-green);
+  box-shadow: 0 0 0 2px rgba(0, 193, 101, 0.2);
+}
+
+.uber-button {
+  background: var(--uber-green);
+  color: var(--uber-black);
+  border: none;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  width: 100%;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.uber-button:hover {
+  transform: translateY(-2px);
+}
+
+.uber-button.secondary,
+.uber-button.clear-history {
+  background: transparent;
+  color: var(--uber-green);
+  border: 2px solid var(--uber-green);
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.result-card {
+  background: var(--uber-light-gray);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin: 1.5rem;
+  display: none;
+}
+
+.result-card h3 {
+  color: var(--uber-green);
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #333333;
+}
+
+.result-item.total {
+  border-bottom: none;
+  padding-top: 1rem;
+  font-size: 1.1rem;
+}
+
+/* Modal de detalhes */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--uber-gray);
+  padding: 2rem;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 500px;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: var(--uber-text);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.price-list li {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.price-list li:hover {
+  transform: translateX(5px);
+}
+
+.modal-details {
+  display: grid;
+  gap: 1rem;
+}
+
+.modal-detail-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #333;
+}
+
+.modal-detail-item:last-child {
+  border-bottom: none;
+}
+
+.history-section {
+  padding: 0 1.5rem 1.5rem;
+}
+
+.price-list {
+  list-style: none;
+  margin: 1rem 0;
+}
+
+.price-list li {
+  padding: 0.8rem;
+  background: var(--uber-light-gray);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-footer {
+  text-align: center;
+  padding: 1rem;
+  color: var(--uber-green);
+}
+
+/* Novos estilos */
+.vehicle-selector {
+  margin-bottom: 1.5rem;
+}
+
+.stats-section {
+  padding: 1.5rem;
+  background: var(--uber-light-gray);
+  border-radius: 10px;
+  margin: 1.5rem;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+
+.chart-container {
+  margin-top: 1rem;
+  height: 200px;
+}
+
+.fuel-price-api {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.fuel-price-api button {
+  flex-shrink: 0;
+}
+
+.loading {
+  display: none;
+  text-align: center;
+  padding: 1rem;
+  color: var(--uber-green);
+}
+
+.vehicle-form {
+  display: none;
+  margin-top: 1rem;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.vehicle-card {
+  background: var(--uber-light-gray);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 550px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.vehicle-card.active {
+  border: 2px solid var(--uber-green);
+}
+
+.vehicle-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Estilo para o botão de excluir veículo */
+.vehicle-card button {
+  background-color: var(--uber-red);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.vehicle-card button:hover {
+  background-color: darkred;
+}
+
+.delete-button {
+  background-color: var(--uber-red);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-left: 1rem;
+}
+
+.delete-button:hover {
+  background-color: darkred;
+}
+
+.delete-button {
+  background-color: var(--uber-red);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-left: 1rem;
+}
+
+.delete-button:hover {
+  background-color: darkred;
+}
+
+.uber-button.secondary,
+.uber-button.clear-history {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  display: block;
+  width: 100%;
+  max-width: 550px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Estilos para a tela de carregamento */
+.splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--uber-black);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.splash-logo {
+  width: 100px;
+  height: 100px;
+}
+
+.splash-title {
+  color: var(--uber-green);
+  font-size: 1.5rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 660px) {
+  .vehicle-card {
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .vehicle-form {
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .uber-button.secondary,
+  .uber-button.clear-history {
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    border-radius: 0;
+  }
+
+  body {
+    padding: 0;
+  }
+
+  .vehicle-card {
+    max-width: calc(100% - 2rem);
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+
+  .vehicle-form {
+    max-width: calc(100% - 2rem);
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+
+  .uber-button.secondary,
+  .uber-button.clear-history {
+    max-width: calc(100% - 2rem);
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+}

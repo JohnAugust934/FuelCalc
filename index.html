@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uber Fuel Calculator</title>
+    <meta name="description" content="Calculadora de gastos com combustível para motoristas de Uber">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="icons/icon-256x256.png">
+</head>
+
+<body>
+    <!-- Tela de carregamento -->
+    <div id="splash-screen" class="splash-screen">
+        <img src="icons/icon-256x256.png" alt="Uber Fuel Logo" class="splash-logo">
+        <h1 class="splash-title">Fuel Calculator Uber</h1>
+    </div>
+
+    <div class="container">
+        <!-- Cabeçalho da aplicação -->
+        <header class="app-header">
+            <img src="icons/icon-256x256.png" alt="Uber Fuel Logo" class="logo">
+            <h1>Fuel Calculator Uber</h1>
+        </header>
+
+        <!-- Seção de seleção de veículos -->
+        <section class="vehicle-selector">
+            <div class="vehicle-cards" id="vehicleList"></div>
+            <button onclick="mostrarFormVeiculo()" class="uber-button secondary">
+                + Adicionar Veículo
+            </button>
+            <div class="vehicle-form" id="vehicleForm">
+                <div class="input-group">
+                    <label>Nome do Veículo</label>
+                    <input type="text" id="vehicleName">
+                </div>
+                <div class="input-group">
+                    <label>Eficiência (km/L)</label>
+                    <input type="number" id="vehicleEfficiency" step="0.1">
+                </div>
+                <button onclick="salvarVeiculo()" class="uber-button">
+                    Salvar Veículo
+                </button>
+            </div>
+        </section>
+
+        <!-- Formulário principal para calcular gastos de combustível -->
+        <main>
+            <form id="fuelForm" class="calculator-form">
+                <div class="input-group">
+                    <label for="kmInicial">KM Inicial</label>
+                    <input type="number" id="kmInicial" step="0.1" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="kmFinal">KM Final</label>
+                    <input type="number" id="kmFinal" step="0.1" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="kmPorLitro">Eficiência (km/L)</label>
+                    <input type="number" id="kmPorLitro" step="0.1" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="precoCombustivel">Preço por Litro (R$)</label>
+                    <input type="number" id="precoCombustivel" step="0.01" required>
+                </div>
+
+                <button type="submit" class="uber-button">
+                    Calcular Gastos
+                </button>
+            </form>
+
+            <!-- Div para exibir o resultado do cálculo -->
+            <div class="result-card" id="resultado">
+                <h3>Resultado da Corrida</h3>
+                <div class="result-item">
+                    <span>Distância</span>
+                    <strong id="distancia">0 km</strong>
+                </div>
+                <div class="result-item">
+                    <span>Combustível</span>
+                    <strong id="litros">0 L</strong>
+                </div>
+                <div class="result-item total">
+                    <span>Custo Total</span>
+                    <strong id="custo">R$ 0,00</strong>
+                </div>
+            </div>
+
+            <!-- Seção de histórico de preços -->
+            <div class="history-section">
+                <h3>Histórico de Preços</h3>
+                <ul id="historicoPrecos" class="price-list"></ul>
+                <button onclick="limparDados()" class="uber-button secondary">
+                    Limpar Histórico
+                </button>
+            </div>
+        </main>
+
+        <!-- Modal para exibir detalhes do registro -->
+        <div class="modal-overlay" id="modalOverlay">
+            <div class="modal-content">
+                <button class="modal-close" onclick="fecharModal()">&times;</button>
+                <h3>Detalhes do Registro</h3>
+                <div class="modal-details" id="modalDetails">
+                    <!-- Conteúdo dinâmico -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção de estatísticas do mês -->
+        <div class="stats-section">
+            <h3>Estatísticas do Mês</h3>
+            <div class="stat-item">
+                <span>Total Km Rodados:</span>
+                <strong id="totalKm">0 km</strong>
+            </div>
+            <div class="stat-item">
+                <span>Total Gastos:</span>
+                <strong id="totalGasto">R$ 0,00</strong>
+            </div>
+            <div class="chart-container">
+                <canvas id="fuelChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Mensagem de carregamento -->
+        <div class="loading" id="loading">
+            Carregando...
+        </div>
+
+        <!-- Rodapé da aplicação -->
+        <footer class="app-footer">
+            <p>© 2025 Uber Fuel Calculator - PWA</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+
+</html>
