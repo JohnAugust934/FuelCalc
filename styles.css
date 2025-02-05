@@ -97,6 +97,13 @@ input:focus {
   width: 100%;
   cursor: pointer;
   transition: transform 0.2s ease;
+  display: block;
+  max-width: 200px;
+  margin: 0.5rem auto;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  text-align: center;
 }
 
 .uber-button:hover {
@@ -359,6 +366,11 @@ input:focus {
   margin-right: auto;
 }
 
+.vehicle-section .uber-button.add-vehicle,
+.uber-button.clear-history {
+  max-width: 200px;
+}
+
 /* Estilos para a tela de carregamento */
 .splash-screen {
   position: fixed;
@@ -389,16 +401,34 @@ input:focus {
   display: flex;
   justify-content: center;
   margin-bottom: 1rem;
+  margin-top: 1rem;
 }
 
 .vehicle-type-buttons .uber-button {
   margin: 0 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  text-align: center;
+  min-width: 100px;
 }
 
 .vehicle-type-buttons .uber-button.selected {
   background-color: #00C165;
   color: white;
   border: 2px solid #00C165;
+}
+
+.uber-button.secondary,
+.uber-button.clear-history {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  margin: 0.5rem auto;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  text-align: center;
 }
 
 @media (max-width: 660px) {
@@ -414,8 +444,7 @@ input:focus {
     margin-right: auto;
   }
 
-  .uber-button.secondary,
-  .uber-button.clear-history {
+  .uber-button {
     max-width: 90%;
     margin-left: auto;
     margin-right: auto;
@@ -444,9 +473,14 @@ input:focus {
   }
 
   .uber-button.secondary,
-  .uber-button.clear-history {
+  .uber-button.clear-history,
+  .uber-button.calculate-expenses {
     max-width: calc(100% - 2rem);
     margin-left: 1rem;
     margin-right: 1rem;
+  }
+
+  .uber-button {
+    max-width: 100%;
   }
 }
