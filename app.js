@@ -4,6 +4,7 @@ const modalOverlay = document.getElementById("modalOverlay");
 const calcularGastosBtn = document.getElementById("calcularGastosBtn");
 const limparHistoricoBtn = document.getElementById("limparHistoricoBtn");
 const fecharModalBtn = document.getElementById("fecharModalBtn");
+const vehicleTypeButtons = document.querySelectorAll('.vehicle-type-buttons .uber-button');
 
 let veiculoAtual = null;
 let tipoVeiculoAtual = "carro"; // Tipo de veículo selecionado
@@ -19,11 +20,19 @@ function selecionarTipoVeiculo(tipo) {
   atualizarHistorico();
 
   // Atualiza a classe 'selected' nos botões
-  document.querySelectorAll('.vehicle-type-buttons .uber-button').forEach(button => {
+  vehicleTypeButtons.forEach(button => {
     button.classList.remove('selected');
   });
   document.querySelector(`.vehicle-type-buttons .uber-button[data-tipo="${tipo}"]`).classList.add('selected');
 }
+
+// Adiciona event listeners para os botões de seleção de veículo
+vehicleTypeButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    const tipo = button.getAttribute('data-tipo');
+    selecionarTipoVeiculo(tipo);
+  });
+});
 
 // Função para mostrar o formulário de adicionar veículo
 function mostrarFormVeiculo() {
