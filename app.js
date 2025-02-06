@@ -1,8 +1,10 @@
-// Seleciona o formulário de combustível e o div de resultado
 const form = document.getElementById("fuelForm");
 const resultadoDiv = document.getElementById("resultado");
+const modalOverlay = document.getElementById("modalOverlay");
+const calcularGastosBtn = document.getElementById("calcularGastosBtn");
+const limparHistoricoBtn = document.getElementById("limparHistoricoBtn");
+const fecharModalBtn = document.getElementById("fecharModalBtn");
 
-// Variáveis globais
 let veiculoAtual = null;
 let tipoVeiculoAtual = "carro"; // Tipo de veículo selecionado
 const ctx = document.getElementById("fuelChart").getContext("2d");
@@ -147,36 +149,6 @@ function atualizarGrafico(historico) {
   });
 }
 
-// Configuração inicial ao carregar a página
-document.addEventListener("DOMContentLoaded", () => {
-  selecionarTipoVeiculo("carro"); // Seleciona carro por padrão
-});
-
-// Cálculo principal ao submeter o formulário
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  const kmInicial = parseFloat(document.getElementById("kmInicial").value);
-  const kmFinal = parseFloat(document.getElementById("kmFinal").value);
-  const kmPorLitro = parseFloat(document.getElementById("kmPorLitro").value);
-  const precoCombustivel = parseFloat(
-    document.getElementById("precoCombustivel").value
-  );
-
-  if (kmFinal <= kmInicial) {
-    mostrarErro("KM Final deve ser maior que KM Inicial!");
-    return;
-  }
-
-  const distancia = kmFinal - kmInicial;
-  const litros = distancia / kmPorLitro;
-  const custo = litros * precoCombustivel;
-
-  exibirResultado(distancia, litros, custo);
-  salvarHistorico(precoCombustivel, kmInicial, kmFinal, kmPorLitro);
-  atualizarEstatisticas();
-});
-
 // Função para exibir o resultado do cálculo
 function exibirResultado(distancia, litros, custo) {
   document.getElementById("distancia").textContent = `${distancia.toFixed(
@@ -278,12 +250,12 @@ function mostrarDetalhes(index) {
       </div>
   `;
 
-  document.getElementById("modalOverlay").style.display = "flex";
+  modalOverlay.style.display = "flex";
 }
 
 // Função para fechar o modal
 function fecharModal() {
-  document.getElementById("modalOverlay").style.display = "none";
+  modalOverlay.style.display = "none";
 }
 
 // Função para ocultar a tela de carregamento
@@ -295,22 +267,31 @@ function hideSplashScreen() {
   }, 1000);
 }
 
-// Ocultar a tela de carregamento após 1 segundo
-window.addEventListener("load", () => {
-  setTimeout(hideSplashScreen, 1000);
-});
-
-// Fechar modal ao clicar fora
-document.getElementById("modalOverlay").addEventListener("click", (e) => {
-  if (e.target === document.getElementById("modalOverlay")) {
-    fecharModal();
-  }
-});
-
 // Função para limpar os dados do histórico
 function limparDados() {
   localStorage.removeItem("historicoCombustivel");
   atualizarHistorico();
+}
+
+// Função para calcular os gastos
+function calcularGastos() {
+  const kmInicial = parseFloat(document.getElementById("kmInicial").value);
+  const kmFinal = parseFloat(document.getElementById("kmFinal").value);
+  const kmPorLitro = parseFloat(document.getElementById("kmPorLitro").value);
+  const precoCombustivel = parseFloat(document.getElementById("precoCombustivel").value);
+
+  if (kmFinal <= kmInicial) {
+    mostrarErro("KM Final deve ser maior que KM Inicial!");
+    return;
+  }
+
+  const distancia = kmFinal - kmInicial;
+  const litros = distancia / kmPorLitro;
+  const custo = litros * precoCombustivel;
+
+  exibirResultado(distancia, litros, custo);
+  salvarHistorico(precoCombustivel, kmInicial, kmFinal, kmPorLitro);
+  atualizarEstatisticas();
 }
 
 // Registro do Service Worker para PWA
@@ -318,9 +299,37 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("sw.js")
-      .then((registration) =>
-        console.log("Service Worker registrado com sucesso")
-      )
-      .catch((err) => console.error("Falha no registro:", err));
+      .then((registration) => {
+        console.log("Service Worker registrado com sucesso");
+      })
+      .catch((err) => {
+        console.error("Falha no registro:", err);
+        alert("Falha ao registrar o Service Worker. Por favor, tente novamente.");
+      });
   });
 }
+
+// Event listeners
+document.addEventListener("DOMContentLoaded", () => {
+  selecionarTipoVeiculo("carro"); // Seleciona carro por padrão
+  setTimeout(hideSplashScreen, 1000); // Ocultar a tela de carregamento após 1 segundo
+});
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  calcularGastos();
+});
+
+calcularGastosBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  calcularGastos();
+});
+
+limparHistoricoBtn.addEventListener("click", limparDados);
+fecharModalBtn.addEventListener("click", fecharModal);
+
+modalOverlay.addEventListener("click", (e) => {
+  if (e.target === modalOverlay) {
+    fecharModal();
+  }
+});

@@ -5,6 +5,7 @@
   --uber-gray: #222222;
   --uber-light-gray: #444444;
   --uber-text: #ffffff;
+  --uber-red: #ff0000;
 }
 
 /* Reset de margens e padding */
@@ -90,19 +91,16 @@ input:focus {
   background: var(--uber-green);
   color: var(--uber-black);
   border: none;
-  padding: 1rem;
-  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
   font-size: 1rem;
   font-weight: bold;
   width: 100%;
+  max-width: 200px;
   cursor: pointer;
   transition: transform 0.2s ease;
   display: block;
-  max-width: 200px;
   margin: 0.5rem auto;
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  border-radius: 4px;
   text-align: center;
 }
 
@@ -115,13 +113,10 @@ input:focus {
   background: transparent;
   color: var(--uber-green);
   border: 2px solid var(--uber-green);
-  margin-top: 1rem;
-  margin-bottom: 1rem;
+  margin: 1rem auto;
   display: block;
   width: 100%;
   max-width: 200px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .result-card {
@@ -186,7 +181,19 @@ input:focus {
   cursor: pointer;
 }
 
+.price-list {
+  list-style: none;
+  margin: 1rem 0;
+}
+
 .price-list li {
+  padding: 0.8rem;
+  background: var(--uber-light-gray);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   cursor: pointer;
   transition: transform 0.2s ease;
 }
@@ -213,21 +220,6 @@ input:focus {
 
 .history-section {
   padding: 0 1.5rem 1.5rem;
-}
-
-.price-list {
-  list-style: none;
-  margin: 1rem 0;
-}
-
-.price-list li {
-  padding: 0.8rem;
-  background: var(--uber-light-gray);
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .app-footer {
@@ -289,16 +281,13 @@ input:focus {
   background: var(--uber-light-gray);
   padding: 1rem;
   border-radius: 8px;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
+  margin: 1rem auto;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   justify-content: space-between;
   align-items: center;
   max-width: 550px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .vehicle-card.active {
@@ -309,21 +298,7 @@ input:focus {
   transform: translateY(-2px);
 }
 
-/* Estilo para o botão de excluir veículo */
-.vehicle-card button {
-  background-color: var(--uber-red);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.vehicle-card button:hover {
-  background-color: darkred;
-}
-
+.vehicle-card button,
 .delete-button {
   background-color: var(--uber-red);
   color: white;
@@ -335,39 +310,21 @@ input:focus {
   margin-left: 1rem;
 }
 
-.delete-button:hover {
-  background-color: darkred;
-}
-
-.delete-button {
-  background-color: var(--uber-red);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  margin-left: 1rem;
-}
-
+.vehicle-card button:hover,
 .delete-button:hover {
   background-color: darkred;
 }
 
 .uber-button.secondary,
 .uber-button.clear-history {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
   display: block;
   width: 100%;
-  max-width: 550px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.vehicle-section .uber-button.add-vehicle,
-.uber-button.clear-history {
   max-width: 200px;
+  margin: 0.5rem auto;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  text-align: center;
 }
 
 /* Estilos para a tela de carregamento */
@@ -399,8 +356,7 @@ input:focus {
 .vehicle-type-buttons {
   display: flex;
   justify-content: center;
-  margin-bottom: 1rem;
-  margin-top: 1rem;
+  margin: 1rem 0;
 }
 
 .vehicle-type-buttons .uber-button {
@@ -413,36 +369,14 @@ input:focus {
 }
 
 .vehicle-type-buttons .uber-button.selected {
-  background-color: #00C165;
+  background-color: var(--uber-green);
   color: white;
-  border: 2px solid #00C165;
-}
-
-.uber-button.secondary,
-.uber-button.clear-history {
-  display: block;
-  width: 100%;
-  max-width: 200px;
-  margin: 0.5rem auto;
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  border-radius: 4px;
-  text-align: center;
+  border: 2px solid var(--uber-green);
 }
 
 @media (max-width: 660px) {
-  .vehicle-card {
-    max-width: 90%;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .vehicle-form {
-    max-width: 90%;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
+  .vehicle-card,
+  .vehicle-form,
   .uber-button {
     max-width: 90%;
     margin-left: auto;
@@ -459,24 +393,13 @@ input:focus {
     padding: 0;
   }
 
-  .vehicle-card {
-    max-width: calc(100% - 2rem);
-    margin-left: 1rem;
-    margin-right: 1rem;
-  }
-
-  .vehicle-form {
-    max-width: calc(100% - 2rem);
-    margin-left: 1rem;
-    margin-right: 1rem;
-  }
-
+  .vehicle-card,
+  .vehicle-form,
   .uber-button.secondary,
   .uber-button.clear-history,
   .uber-button.calculate-expenses {
     max-width: calc(100% - 2rem);
-    margin-left: 1rem;
-    margin-right: 1rem;
+    margin: 1rem;
   }
 
   .uber-button {

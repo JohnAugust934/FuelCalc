@@ -28,26 +28,22 @@
         <!-- Seção de seleção de veículos -->
         <section class="vehicle-selector">
             <div class="vehicle-type-buttons">
-                <button onclick="selecionarTipoVeiculo('carro')" class="uber-button" data-tipo="carro">Carro</button>
-                <button onclick="selecionarTipoVeiculo('moto')" class="uber-button" data-tipo="moto">Moto</button>
+                <button class="uber-button" data-tipo="carro" aria-label="Selecionar Carro">Carro</button>
+                <button class="uber-button" data-tipo="moto" aria-label="Selecionar Moto">Moto</button>
             </div>
             <div class="vehicle-cards" id="vehicleList"></div>
-            <button onclick="mostrarFormVeiculo()" class="uber-button secondary">
-                + Adicionar Veículo
-            </button>
+            <button class="uber-button secondary" aria-label="Adicionar Veículo">+ Adicionar Veículo</button>
             <div class="vehicle-form" id="vehicleForm">
                 <div class="input-group">
-                    <label>Nome do Veículo</label>
+                    <label for="vehicleName">Nome do Veículo</label>
                     <input type="text" id="vehicleName">
                 </div>
                 <div class="input-group">
-                    <label>Eficiência (km/L)</label>
+                    <label for="vehicleEfficiency">Eficiência (km/L)</label>
                     <input type="number" id="vehicleEfficiency" step="0.1">
                 </div>
                 <input type="hidden" id="vehicleType">
-                <button onclick="salvarVeiculo()" class="uber-button">
-                    Salvar Veículo
-                </button>
+                <button class="uber-button" aria-label="Salvar Veículo">Salvar Veículo</button>
             </div>
         </section>
 
@@ -74,7 +70,7 @@
                     <input type="number" id="precoCombustivel" step="0.01" required>
                 </div>
 
-                <button type="submit" class="uber-button">
+                <button type="submit" class="uber-button" id="calcularGastosBtn" aria-label="Calcular Gastos">
                     Calcular Gastos
                 </button>
             </form>
@@ -101,7 +97,7 @@
                 <h3>Histórico de Preços</h3>
                 <ul id="historicoPrecos" class="price-list"></ul>
             </div>
-            <button onclick="limparDados()" class="uber-button secondary">
+            <button id="limparHistoricoBtn" class="uber-button secondary" aria-label="Limpar Histórico">
                 Limpar Histórico
             </button>
         </main>
@@ -109,7 +105,7 @@
         <!-- Modal para exibir detalhes do registro -->
         <div class="modal-overlay" id="modalOverlay">
             <div class="modal-content">
-                <button class="modal-close" onclick="fecharModal()">&times;</button>
+                <button class="modal-close" id="fecharModalBtn" aria-label="Fechar Modal">&times;</button>
                 <h3>Detalhes do Registro</h3>
                 <div class="modal-details" id="modalDetails">
                     <!-- Conteúdo dinâmico -->
