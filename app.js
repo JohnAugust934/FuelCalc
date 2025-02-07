@@ -4,6 +4,8 @@ const modalOverlay = document.getElementById("modalOverlay");
 const calcularGastosBtn = document.getElementById("calcularGastosBtn");
 const limparHistoricoBtn = document.getElementById("limparHistoricoBtn");
 const fecharModalBtn = document.getElementById("fecharModalBtn");
+const adicionarVeiculoBtn = document.getElementById("adicionarVeiculoBtn");
+const salvarVeiculoBtn = document.getElementById("salvarVeiculoBtn");
 const vehicleTypeButtons = document.querySelectorAll('.vehicle-type-buttons .uber-button');
 
 let veiculoAtual = null;
@@ -289,6 +291,12 @@ function calcularGastos() {
   const kmPorLitro = parseFloat(document.getElementById("kmPorLitro").value);
   const precoCombustivel = parseFloat(document.getElementById("precoCombustivel").value);
 
+  // Validação dos campos
+  if (isNaN(kmInicial) || isNaN(kmFinal) || isNaN(kmPorLitro) || isNaN(precoCombustivel)) {
+    mostrarErro("Todos os campos devem ser preenchidos corretamente!");
+    return;
+  }
+
   if (kmFinal <= kmInicial) {
     mostrarErro("KM Final deve ser maior que KM Inicial!");
     return;
@@ -342,3 +350,9 @@ modalOverlay.addEventListener("click", (e) => {
     fecharModal();
   }
 });
+
+// Event listener para o botão de adicionar veículo
+adicionarVeiculoBtn.addEventListener("click", mostrarFormVeiculo);
+
+// Event listener para o botão de salvar veículo
+salvarVeiculoBtn.addEventListener("click", salvarVeiculo);
