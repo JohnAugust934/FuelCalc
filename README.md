@@ -44,10 +44,10 @@ Aplicativo PWA para cálculo de gastos com combustível para motoristas de Uber/
 
 ```bash
 # Clone o repositório
-git clone https://github.com/seu-usuario/uber-fuel-calculator.git
+git clone https://github.com/JohnAugust934/FuelCalc.git
 
 # Entre no diretório
-cd uber-fuel-calculator
+cd FuelCalc
 
 # Instale as dependências (opcional)
 npm install
