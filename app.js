@@ -6,7 +6,9 @@ const limparHistoricoBtn = document.getElementById("limparHistoricoBtn");
 const fecharModalBtn = document.getElementById("fecharModalBtn");
 const adicionarVeiculoBtn = document.getElementById("adicionarVeiculoBtn");
 const salvarVeiculoBtn = document.getElementById("salvarVeiculoBtn");
-const vehicleTypeButtons = document.querySelectorAll('.vehicle-type-buttons .uber-button');
+const vehicleTypeButtons = document.querySelectorAll(
+  ".vehicle-type-buttons .uber-button"
+);
 
 let veiculoAtual = null;
 let tipoVeiculoAtual = "carro"; // Tipo de veículo selecionado
@@ -22,16 +24,18 @@ function selecionarTipoVeiculo(tipo) {
   atualizarHistorico();
 
   // Atualiza a classe 'selected' nos botões
-  vehicleTypeButtons.forEach(button => {
-    button.classList.remove('selected');
+  vehicleTypeButtons.forEach((button) => {
+    button.classList.remove("selected");
   });
-  document.querySelector(`.vehicle-type-buttons .uber-button[data-tipo="${tipo}"]`).classList.add('selected');
+  document
+    .querySelector(`.vehicle-type-buttons .uber-button[data-tipo="${tipo}"]`)
+    .classList.add("selected");
 }
 
 // Adiciona event listeners para os botões de seleção de veículo
-vehicleTypeButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    const tipo = button.getAttribute('data-tipo');
+vehicleTypeButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const tipo = button.getAttribute("data-tipo");
     selecionarTipoVeiculo(tipo);
   });
 });
@@ -39,6 +43,13 @@ vehicleTypeButtons.forEach(button => {
 // Função para mostrar o formulário de adicionar veículo
 function mostrarFormVeiculo() {
   document.getElementById("vehicleForm").style.display = "block";
+}
+
+// Função para limpar o formulário de adicionar veículo
+function limparFormularioVeiculo() {
+  document.getElementById("vehicleName").value = "";
+  document.getElementById("vehicleEfficiency").value = "";
+  document.getElementById("vehicleType").value = "carro"; // ou o valor padrão desejado
 }
 
 // Função para salvar um novo veículo
@@ -58,6 +69,9 @@ function salvarVeiculo() {
   // Atualiza a lista de veículos e esconde o formulário
   carregarVeiculos();
   document.getElementById("vehicleForm").style.display = "none";
+
+  // Limpa o formulário de adicionar veículo
+  limparFormularioVeiculo();
 }
 
 // Função para carregar e exibir os veículos salvos
@@ -80,7 +94,9 @@ function carregarVeiculos() {
              onclick="selecionarVeiculo(${veiculo.id})">
             <h4>${veiculo.nome}</h4>
             <span>${veiculo.eficiencia} km/L</span>
-            <button class="delete-button" onclick="excluirVeiculo(event, ${veiculo.id})">Excluir</button>
+            <button class="delete-button" onclick="excluirVeiculo(event, ${
+              veiculo.id
+            })">Excluir</button>
         </div>
     `
     )
@@ -161,13 +177,14 @@ function atualizarGrafico(historico) {
 }
 
 // Função para exibir o resultado do cálculo
-function exibirResultado(distancia, litros, custo) {
+function exibirResultado(distancia, litros, custo, ganho) {
   document.getElementById("distancia").textContent = `${distancia.toFixed(
     1
   )} km`;
   document.getElementById("litros").textContent = `${litros.toFixed(1)} L`;
   document.getElementById("custo").textContent = `R$ ${custo.toFixed(2)}`;
-  resultadoDiv.style.display = "block";
+  document.getElementById("ganho").textContent = `R$ ${ganho.toFixed(2)}`;
+  document.getElementById("resultado").style.display = "block"; // Mostra o card de resultado
 }
 
 // Função para mostrar uma mensagem de erro
@@ -176,7 +193,7 @@ function mostrarErro(mensagem) {
 }
 
 // Função para salvar o histórico de preços
-function salvarHistorico(preco, kmInicial, kmFinal, kmPorLitro) {
+function salvarHistorico(preco, kmInicial, kmFinal, kmPorLitro, ganho) {
   const historico =
     JSON.parse(localStorage.getItem("historicoCombustivel")) || [];
   const registro = {
@@ -189,6 +206,7 @@ function salvarHistorico(preco, kmInicial, kmFinal, kmPorLitro) {
     distancia: (kmFinal - kmInicial).toFixed(1),
     litros: ((kmFinal - kmInicial) / kmPorLitro).toFixed(1),
     custo: (((kmFinal - kmInicial) / kmPorLitro) * preco).toFixed(2),
+    ganho: ganho.toFixed(2),
   };
 
   historico.unshift(registro);
@@ -255,9 +273,13 @@ function mostrarDetalhes(index) {
           <span>Combustível:</span>
           <strong>${registro.litros} L</strong>
       </div>
-      <div class="modal-detail-item total">
+      <div class="modal-detail-item">
           <span>Custo Total:</span>
           <strong>R$ ${registro.custo}</strong>
+      </div>
+      <div class="modal-detail-item total">
+          <span>Ganho na Uber:</span>
+          <strong>R$ ${registro.ganho}</strong>
       </div>
   `;
 
@@ -284,31 +306,68 @@ function limparDados() {
   atualizarHistorico();
 }
 
+// Função para limpar o formulário
+function limparFormulario() {
+  form.reset();
+}
+
+// Função para validar os campos
+function validarCampos(
+  kmInicial,
+  kmFinal,
+  kmPorLitro,
+  precoCombustivel,
+  ganhoUber
+) {
+  if (isNaN(kmInicial) || kmInicial <= 0) {
+    mostrarErro("KM Inicial deve ser um número maior que zero!");
+    return false;
+  }
+  if (isNaN(kmFinal) || kmFinal <= kmInicial) {
+    mostrarErro("KM Final deve ser um número maior que KM Inicial!");
+    return false;
+  }
+  if (isNaN(kmPorLitro) || kmPorLitro <= 0) {
+    mostrarErro("KM por Litro deve ser um número maior que zero!");
+    return false;
+  }
+  if (isNaN(precoCombustivel) || precoCombustivel <= 0) {
+    mostrarErro("Preço do Combustível deve ser um número maior que zero!");
+    return false;
+  }
+  if (isNaN(ganhoUber) || ganhoUber < 0) {
+    mostrarErro("Ganho na Uber deve ser um número maior ou igual a zero!");
+    return false;
+  }
+  return true;
+}
+
 // Função para calcular os gastos
 function calcularGastos() {
   const kmInicial = parseFloat(document.getElementById("kmInicial").value);
   const kmFinal = parseFloat(document.getElementById("kmFinal").value);
   const kmPorLitro = parseFloat(document.getElementById("kmPorLitro").value);
-  const precoCombustivel = parseFloat(document.getElementById("precoCombustivel").value);
+  const precoCombustivel = parseFloat(
+    document.getElementById("precoCombustivel").value
+  );
+  const ganhoUber = parseFloat(document.getElementById("ganhoUber").value);
 
   // Validação dos campos
-  if (isNaN(kmInicial) || isNaN(kmFinal) || isNaN(kmPorLitro) || isNaN(precoCombustivel)) {
-    mostrarErro("Todos os campos devem ser preenchidos corretamente!");
-    return;
-  }
-
-  if (kmFinal <= kmInicial) {
-    mostrarErro("KM Final deve ser maior que KM Inicial!");
+  if (
+    !validarCampos(kmInicial, kmFinal, kmPorLitro, precoCombustivel, ganhoUber)
+  ) {
     return;
   }
 
   const distancia = kmFinal - kmInicial;
   const litros = distancia / kmPorLitro;
   const custo = litros * precoCombustivel;
+  const ganho = ganhoUber - custo;
 
-  exibirResultado(distancia, litros, custo);
-  salvarHistorico(precoCombustivel, kmInicial, kmFinal, kmPorLitro);
+  exibirResultado(distancia, litros, custo, ganho);
+  salvarHistorico(precoCombustivel, kmInicial, kmFinal, kmPorLitro, ganho);
   atualizarEstatisticas();
+  limparFormulario();
 }
 
 // Registro do Service Worker para PWA
@@ -321,7 +380,9 @@ if ("serviceWorker" in navigator) {
       })
       .catch((err) => {
         console.error("Falha no registro:", err);
-        alert("Falha ao registrar o Service Worker. Por favor, tente novamente.");
+        alert(
+          "Falha ao registrar o Service Worker. Por favor, tente novamente."
+        );
       });
   });
 }

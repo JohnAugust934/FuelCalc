@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uber Fuel Calculator</title>
+    <title>FuelCalc</title>
     <meta name="description" content="Calculadora de gastos com combustível para motoristas de Uber">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
@@ -14,8 +14,7 @@
 <body>
     <!-- Tela de carregamento -->
     <div id="splash-screen" class="splash-screen">
-        <img src="icons/icon-256x256.png" alt="Uber Fuel Logo" class="splash-logo">
-        <h1 class="splash-title">Fuel Calculator Uber</h1>
+        Carregando...
     </div>
 
     <div class="container">
@@ -33,14 +32,14 @@
             </div>
             <div class="vehicle-cards" id="vehicleList"></div>
             <button class="uber-button secondary" id="adicionarVeiculoBtn" aria-label="Adicionar Veículo">+ Adicionar Veículo</button>
-            <div class="vehicle-form" id="vehicleForm">
+            <div class="vehicle-form" id="vehicleForm" style="display:none;">
                 <div class="input-group">
                     <label for="vehicleName">Nome do Veículo</label>
-                    <input type="text" id="vehicleName">
+                    <input type="text" id="vehicleName" placeholder="Nome do Veículo">
                 </div>
                 <div class="input-group">
                     <label for="vehicleEfficiency">Eficiência (km/L)</label>
-                    <input type="number" id="vehicleEfficiency" step="0.1">
+                    <input type="number" id="vehicleEfficiency" step="0.1" placeholder="Eficiência (km/L)">
                 </div>
                 <input type="hidden" id="vehicleType">
                 <button class="uber-button" id="salvarVeiculoBtn" aria-label="Salvar Veículo">Salvar Veículo</button>
@@ -52,43 +51,55 @@
             <form id="fuelForm" class="calculator-form">
                 <div class="input-group">
                     <label for="kmInicial">KM Inicial</label>
-                    <input type="number" id="kmInicial" step="0.1" required>
+                    <input type="number" id="kmInicial" step="0.1" placeholder="KM Inicial" required>
                 </div>
 
                 <div class="input-group">
                     <label for="kmFinal">KM Final</label>
-                    <input type="number" id="kmFinal" step="0.1" required>
+                    <input type="number" id="kmFinal" step="0.1" placeholder="KM Final" required>
                 </div>
 
                 <div class="input-group">
                     <label for="kmPorLitro">Eficiência (km/L)</label>
-                    <input type="number" id="kmPorLitro" step="0.1" required>
+                    <input type="number" id="kmPorLitro" step="0.1" placeholder="KM por Litro" required>
                 </div>
 
                 <div class="input-group">
                     <label for="precoCombustivel">Preço por Litro (R$)</label>
-                    <input type="number" id="precoCombustivel" step="0.01" required>
+                    <input type="number" id="precoCombustivel" step="0.01" placeholder="Preço do Combustível" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="ganhoUber">Ganho na Uber (R$)</label>
+                    <input type="number" id="ganhoUber" step="0.01" placeholder="Ganho na Uber" required>
                 </div>
 
                 <button type="submit" class="uber-button" id="calcularGastosBtn" aria-label="Calcular Gastos">
                     Calcular Gastos
                 </button>
+                <button id="limparHistoricoBtn" class="uber-button secondary" type="button" aria-label="Limpar Histórico">
+                    Limpar Histórico
+                </button>
             </form>
 
             <!-- Div para exibir o resultado do cálculo -->
-            <div class="result-card" id="resultado">
-                <h3>Resultado da Corrida</h3>
+            <div id="resultado" class="result-card">
+                <h3>Resultado do Cálculo</h3>
                 <div class="result-item">
-                    <span>Distância</span>
-                    <strong id="distancia">0 km</strong>
+                    <span>Distância:</span>
+                    <strong id="distancia"></strong>
                 </div>
                 <div class="result-item">
-                    <span>Combustível</span>
-                    <strong id="litros">0 L</strong>
+                    <span>Litros:</span>
+                    <strong id="litros"></strong>
+                </div>
+                <div class="result-item">
+                    <span>Custo:</span>
+                    <strong id="custo"></strong>
                 </div>
                 <div class="result-item total">
-                    <span>Custo Total</span>
-                    <strong id="custo">R$ 0,00</strong>
+                    <span>Ganho na Uber:</span>
+                    <strong id="ganho"></strong>
                 </div>
             </div>
 
@@ -97,13 +108,10 @@
                 <h3>Histórico de Preços</h3>
                 <ul id="historicoPrecos" class="price-list"></ul>
             </div>
-            <button id="limparHistoricoBtn" class="uber-button secondary" aria-label="Limpar Histórico">
-                Limpar Histórico
-            </button>
         </main>
 
         <!-- Modal para exibir detalhes do registro -->
-        <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-overlay" id="modalOverlay" style="display:none;">
             <div class="modal-content">
                 <button class="modal-close" id="fecharModalBtn" aria-label="Fechar Modal">&times;</button>
                 <h3>Detalhes do Registro</h3>

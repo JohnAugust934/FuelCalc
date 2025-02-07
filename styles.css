@@ -17,7 +17,7 @@
 
 /* Estilo do corpo da página */
 body {
-  font-family: "Ubuntu", "Segoe UI", sans-serif;
+  font-family: Arial, sans-serif;
   background-color: var(--uber-black);
   color: var(--uber-text);
   line-height: 1.6;
@@ -119,12 +119,13 @@ input:focus {
   max-width: 200px;
 }
 
+/* Estilo para o card de resultado */
 .result-card {
   background: var(--uber-light-gray);
   border-radius: 10px;
   padding: 1.5rem;
   margin: 1.5rem;
-  display: none;
+  display: none; /* Inicialmente escondido */
 }
 
 .result-card h3 {
@@ -139,6 +140,15 @@ input:focus {
   margin-bottom: 0.8rem;
   padding: 0.5rem 0;
   border-bottom: 1px solid #333333;
+}
+
+.result-item span {
+  font-weight: bold;
+}
+
+.result-item strong {
+  display: block;
+  margin-top: 5px;
 }
 
 .result-item.total {
@@ -288,10 +298,13 @@ input:focus {
   justify-content: space-between;
   align-items: center;
   max-width: 550px;
+  border: 1px solid #ccc;
+  padding: 10px;
 }
 
 .vehicle-card.active {
   border: 2px solid var(--uber-green);
+  border-color: #00C165;
 }
 
 .vehicle-card:hover {
@@ -313,6 +326,14 @@ input:focus {
 .vehicle-card button:hover,
 .delete-button:hover {
   background-color: darkred;
+}
+
+.delete-button {
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
 }
 
 .uber-button.secondary,
@@ -369,9 +390,43 @@ input:focus {
 }
 
 .vehicle-type-buttons .uber-button.selected {
-  background-color: var(--uber-green);
-  color: white;
+  background-color: #00C165;
+  color: #fff;
   border: 2px solid var(--uber-green);
+}
+
+#splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+#resultado {
+  margin-top: 20px;
+}
+
+#modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#modalDetails {
+  padding: 20px;
+  border-radius: 5px;
 }
 
 @media (max-width: 660px) {
