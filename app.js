@@ -54,10 +54,28 @@ function limparFormularioVeiculo() {
 
 // Função para salvar um novo veículo
 function salvarVeiculo() {
+  const nome = document.getElementById("vehicleName").value;
+  const eficiencia = parseFloat(document.getElementById("vehicleEfficiency").value);
+  const tipo = document.getElementById("vehicleType").value;
+
+  // Validação dos campos
+  if (!nome) {
+    mostrarErro("O nome do veículo não pode estar vazio!");
+    return;
+  }
+  if (isNaN(eficiencia) || eficiencia <= 0) {
+    mostrarErro("A eficiência do veículo deve ser um número maior que zero!");
+    return;
+  }
+  if (!tipo) {
+    mostrarErro("O tipo do veículo não pode estar vazio!");
+    return;
+  }
+
   const vehicle = {
-    nome: document.getElementById("vehicleName").value,
-    eficiencia: parseFloat(document.getElementById("vehicleEfficiency").value),
-    tipo: document.getElementById("vehicleType").value,
+    nome: nome,
+    eficiencia: eficiencia,
+    tipo: tipo,
     id: Date.now(),
   };
 
