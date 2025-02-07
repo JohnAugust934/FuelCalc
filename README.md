@@ -6,7 +6,8 @@
 
 Aplicativo PWA para cálculo de gastos com combustível para motoristas de Uber/99 com estatísticas detalhadas e gerenciamento de veículos.
 
-![image](https://github.com/user-attachments/assets/0eb691c3-efa2-4617-99c2-6a634194578c)
+<img width="1491" alt="image" src="https://github.com/user-attachments/assets/388bd94b-91bf-469e-a376-2ef8c0e4d431" />
+
 
 
 ## ✨ Funcionalidades Principais
