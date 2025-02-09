@@ -525,44 +525,30 @@ input:focus {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: var(--uber-black);
+  background: linear-gradient(135deg, var(--uber-green), var(--uber-black));
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  color: var(--uber-text);
+  text-align: center;
 }
 
-.splash-logo {
+.splash-screen .logo {
   width: 100px;
   height: 100px;
-}
-
-.splash-title {
-  color: var(--uber-green);
-  font-size: 2rem;
-  margin-top: 1rem;
-}
-
-.vehicle-type-buttons {
-  display: flex;
-  justify-content: center;
-  margin: 1rem 0;
-}
-
-.vehicle-type-buttons .uber-button {
-  margin: 0 0.5rem;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  border-radius: 8px;
-  text-align: center;
-  min-width: 120px;
-}
-
-.vehicle-type-buttons .uber-button.selected {
-  background-color: #00c165;
-  color: #fff;
+  margin-bottom: 1rem;
+  border-radius: 50%;
   border: 2px solid var(--uber-green);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.splash-screen h1 {
+  font-size: 2.5rem;
+  color: var(--uber-text);
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 #splash-screen {
