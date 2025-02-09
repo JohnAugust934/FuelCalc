@@ -117,6 +117,13 @@ input:focus {
   display: block;
   width: 100%;
   max-width: 200px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  text-align: center;
+}
+
+.uber-button.secondary:hover {
+  transform: translateY(-2px);
 }
 
 /* Estilo para o card de resultado */

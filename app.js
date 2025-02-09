@@ -45,6 +45,12 @@ function mostrarFormVeiculo() {
   document.getElementById("vehicleForm").style.display = "block";
 }
 
+// Função para esconder o formulário de adicionar veículo
+function esconderFormVeiculo() {
+  document.getElementById("vehicleForm").style.display = "none";
+  limparFormularioVeiculo();
+}
+
 // Função para limpar o formulário de adicionar veículo
 function limparFormularioVeiculo() {
   document.getElementById("vehicleName").value = "";
@@ -86,10 +92,7 @@ function salvarVeiculo() {
 
   // Atualiza a lista de veículos e esconde o formulário
   carregarVeiculos();
-  document.getElementById("vehicleForm").style.display = "none";
-
-  // Limpa o formulário de adicionar veículo
-  limparFormularioVeiculo();
+  esconderFormVeiculo();
 }
 
 // Função para carregar e exibir os veículos salvos
@@ -201,8 +204,12 @@ function exibirResultado(distancia, litros, custo, ganho) {
   )} km`;
   document.getElementById("litros").textContent = `${litros.toFixed(1)} L`;
   document.getElementById("custo").textContent = `R$ ${custo.toFixed(2)}`;
-  document.getElementById("ganho").textContent = `R$ ${ganho.toFixed(2)}`;
-  document.getElementById("resultado").style.display = "block"; // Mostra o card de resultado
+  if (ganho !== null) {
+    document.getElementById("ganho").textContent = `R$ ${ganho.toFixed(2)}`;
+  } else {
+    document.getElementById("ganho").textContent = "N/A";
+  }
+  resultadoDiv.style.display = "block"; // Mostra o card de resultado
 }
 
 // Função para mostrar uma mensagem de erro
@@ -212,8 +219,7 @@ function mostrarErro(mensagem) {
 
 // Função para salvar o histórico de preços
 function salvarHistorico(preco, kmInicial, kmFinal, kmPorLitro, ganho) {
-  const historico =
-    JSON.parse(localStorage.getItem("historicoCombustivel")) || [];
+  const historico = JSON.parse(localStorage.getItem("historicoCombustivel")) || [];
   const registro = {
     preco: preco,
     kmInicial: kmInicial,
@@ -224,8 +230,11 @@ function salvarHistorico(preco, kmInicial, kmFinal, kmPorLitro, ganho) {
     distancia: (kmFinal - kmInicial).toFixed(1),
     litros: ((kmFinal - kmInicial) / kmPorLitro).toFixed(1),
     custo: (((kmFinal - kmInicial) / kmPorLitro) * preco).toFixed(2),
-    ganho: ganho.toFixed(2),
   };
+
+  if (ganho !== null) {
+    registro.ganho = ganho.toFixed(2);
+  }
 
   historico.unshift(registro);
   if (historico.length > 5) historico.pop();
@@ -353,7 +362,7 @@ function validarCampos(
     mostrarErro("Preço do Combustível deve ser um número maior que zero!");
     return false;
   }
-  if (isNaN(ganhoUber) || ganhoUber < 0) {
+  if (ganhoUber !== "" && (isNaN(ganhoUber) || ganhoUber < 0)) {
     mostrarErro("Ganho na Uber deve ser um número maior ou igual a zero!");
     return false;
   }
@@ -365,22 +374,18 @@ function calcularGastos() {
   const kmInicial = parseFloat(document.getElementById("kmInicial").value);
   const kmFinal = parseFloat(document.getElementById("kmFinal").value);
   const kmPorLitro = parseFloat(document.getElementById("kmPorLitro").value);
-  const precoCombustivel = parseFloat(
-    document.getElementById("precoCombustivel").value
-  );
-  const ganhoUber = parseFloat(document.getElementById("ganhoUber").value);
+  const precoCombustivel = parseFloat(document.getElementById("precoCombustivel").value);
+  const ganhoUber = document.getElementById("ganhoUber").value ? parseFloat(document.getElementById("ganhoUber").value) : null;
 
   // Validação dos campos
-  if (
-    !validarCampos(kmInicial, kmFinal, kmPorLitro, precoCombustivel, ganhoUber)
-  ) {
+  if (!validarCampos(kmInicial, kmFinal, kmPorLitro, precoCombustivel, ganhoUber)) {
     return;
   }
 
   const distancia = kmFinal - kmInicial;
   const litros = distancia / kmPorLitro;
   const custo = litros * precoCombustivel;
-  const ganho = ganhoUber - custo;
+  const ganho = ganhoUber !== null ? ganhoUber - custo : null;
 
   exibirResultado(distancia, litros, custo, ganho);
   salvarHistorico(precoCombustivel, kmInicial, kmFinal, kmPorLitro, ganho);
@@ -435,3 +440,6 @@ adicionarVeiculoBtn.addEventListener("click", mostrarFormVeiculo);
 
 // Event listener para o botão de salvar veículo
 salvarVeiculoBtn.addEventListener("click", salvarVeiculo);
+
+// Event listener para o botão de cancelar veículo
+document.getElementById("cancelarVeiculoBtn").addEventListener("click", esconderFormVeiculo);
