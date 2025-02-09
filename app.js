@@ -245,50 +245,70 @@ function salvarHistorico(preco, kmInicial, kmFinal, kmPorLitro, ganho) {
 
 // Função para atualizar o histórico de preços
 function atualizarHistorico() {
-  const historico = JSON.parse(localStorage.getItem("historicoCombustivel")) || [];
+    const historico = JSON.parse(localStorage.getItem("historicoCombustivel")) || [];
 
-  // Filtra o histórico pelo tipo de veículo
-  const historicoFiltrado = historico.filter(
-    (item) => item.tipo === tipoVeiculoAtual
-  );
+    // Filtra o histórico pelo tipo de veículo
+    const historicoFiltrado = historico.filter(
+        (item) => item.tipo === tipoVeiculoAtual
+    );
 
-  const lista = document.getElementById("historicoPrecos");
-  const verMaisBtn = document.getElementById("verMaisBtn");
+    const lista = document.getElementById("historicoPrecos");
+    const verMaisBtn = document.getElementById("verMaisBtn");
+    const minimizarBtn = document.getElementById("minimizarBtn");
 
-  // Exibe apenas os 3 últimos registros
-  const historicoExibido = historicoFiltrado.slice(0, 3);
-  lista.innerHTML = historicoExibido
-    .map(
-      (item, index) => `
-      <li data-index="${index}" onclick="mostrarDetalhes(${index})">
-          <span>${item.data}</span>
-          <strong>R$ ${item.preco.toFixed(2)}</strong>
-      </li>
-  `
-    )
-    .join("");
+    // Exibe apenas os 3 últimos registros
+    const historicoExibido = historicoFiltrado.slice(0, 3);
+    lista.innerHTML = historicoExibido
+        .map(
+            (item, index) => `
+            <li data-index="${index}" onclick="mostrarDetalhes(${index})">
+                <span>${item.data}</span>
+                <strong>R$ ${item.preco.toFixed(2)}</strong>
+            </li>
+        `
+        )
+        .join("");
 
-  // Mostra o botão "Ver Mais" se houver mais de 3 registros
-  if (historicoFiltrado.length > 3) {
-    verMaisBtn.style.display = "block";
-  } else {
-    verMaisBtn.style.display = "none";
-  }
+    // Mostra o botão "Ver Mais" se houver 4 ou mais registros
+    if (historicoFiltrado.length > 3) {
+        verMaisBtn.style.display = "block";
+        minimizarBtn.style.display = "none";
+    } else {
+        verMaisBtn.style.display = "none";
+        minimizarBtn.style.display = "none";
+    }
 
-  // Adiciona um event listener ao botão "Ver Mais"
-  verMaisBtn.addEventListener("click", () => {
-    lista.innerHTML = historicoFiltrado
-      .map(
-        (item, index) => `
-        <li data-index="${index}" onclick="mostrarDetalhes(${index})">
-            <span>${item.data}</span>
-            <strong>R$ ${item.preco.toFixed(2)}</strong>
-        </li>
-    `
-      )
-      .join("");
-    verMaisBtn.style.display = "none"; // Esconde o botão após clicar
-  });
+    // Adiciona um event listener ao botão "Ver Mais"
+    verMaisBtn.onclick = () => {
+        lista.innerHTML = historicoFiltrado
+            .map(
+                (item, index) => `
+                <li data-index="${index}" onclick="mostrarDetalhes(${index})">
+                    <span>${item.data}</span>
+                    <strong>R$ ${item.preco.toFixed(2)}</strong>
+                </li>
+            `
+            )
+            .join("");
+        verMaisBtn.style.display = "none"; // Esconde o botão após clicar
+        minimizarBtn.style.display = "block"; // Mostra o botão "Minimizar"
+    };
+
+    // Adiciona um event listener ao botão "Minimizar"
+    minimizarBtn.onclick = () => {
+        lista.innerHTML = historicoExibido
+            .map(
+                (item, index) => `
+                <li data-index="${index}" onclick="mostrarDetalhes(${index})">
+                    <span>${item.data}</span>
+                    <strong>R$ ${item.preco.toFixed(2)}</strong>
+                </li>
+            `
+            )
+            .join("");
+        verMaisBtn.style.display = "block"; // Mostra o botão "Ver Mais"
+        minimizarBtn.style.display = "none"; // Esconde o botão "Minimizar"
+    };
 }
 
 // Função para mostrar os detalhes de um registro do histórico
@@ -354,7 +374,9 @@ function hideSplashScreen() {
 
 // Função para limpar os dados do histórico
 function limparDados() {
-  localStorage.removeItem("historicoCombustivel");
+  const historico = JSON.parse(localStorage.getItem("historicoCombustivel")) || [];
+  const historicoFiltrado = historico.filter(item => item.tipo !== tipoVeiculoAtual);
+  localStorage.setItem("historicoCombustivel", JSON.stringify(historicoFiltrado));
   atualizarHistorico();
 }
 
@@ -468,3 +490,33 @@ salvarVeiculoBtn.addEventListener("click", salvarVeiculo);
 
 // Event listener para o botão de cancelar veículo
 document.getElementById("cancelarVeiculoBtn").addEventListener("click", esconderFormVeiculo);
+
+document.addEventListener('DOMContentLoaded', function() {
+    const historicoPrecos = document.getElementById('historicoPrecos');
+    const verMaisBtn = document.getElementById('verMaisBtn');
+    const minimizarBtn = document.getElementById('minimizarBtn');
+
+    function mostrarHistoricoCompleto() {
+        // Lógica para exibir todos os itens do histórico
+        const items = historicoPrecos.querySelectorAll('li');
+        items.forEach(item => item.style.display = 'list-item');
+        verMaisBtn.style.display = 'none';
+        minimizarBtn.style.display = 'inline-block';
+    }
+
+    function minimizarHistorico() {
+        // Lógica para exibir apenas os 3 primeiros itens do histórico
+        const items = historicoPrecos.querySelectorAll('li');
+        items.forEach((item, index) => {
+            item.style.display = index < 3 ? 'list-item' : 'none';
+        });
+        verMaisBtn.style.display = 'inline-block';
+        minimizarBtn.style.display = 'none';
+    }
+
+    verMaisBtn.addEventListener('click', mostrarHistoricoCompleto);
+    minimizarBtn.addEventListener('click', minimizarHistorico);
+
+    // Inicialmente, exibir apenas os 3 primeiros itens
+    minimizarHistorico();
+});
