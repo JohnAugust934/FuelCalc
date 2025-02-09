@@ -23,10 +23,12 @@
         <header class="app-header">
             <img src="icons/icon-256x256.png" alt="Uber Fuel Logo" class="logo">
             <h1>Fuel Calculator</h1>
+            <p>Calculadora de gastos com combustível para motoristas de Uber</p>
         </header>
 
         <!-- Seção de seleção de veículos -->
         <section class="vehicle-selector">
+            <h2>Selecione o Veículo</h2>
             <div class="vehicle-type-buttons">
                 <button class="uber-button" data-tipo="carro" aria-label="Selecionar Carro">Carro</button>
                 <button class="uber-button" data-tipo="moto" aria-label="Selecionar Moto">Moto</button>
@@ -79,9 +81,6 @@
                 <button type="submit" class="uber-button" id="calcularGastosBtn" aria-label="Calcular Gastos">
                     Calcular Gastos
                 </button>
-                <button id="limparHistoricoBtn" class="uber-button secondary" type="button" aria-label="Limpar Histórico">
-                    Limpar Histórico
-                </button>
             </form>
 
             <!-- Div para exibir o resultado do cálculo -->
@@ -106,11 +105,12 @@
             </div>
 
             <!-- Seção de histórico de preços -->
-            <div class="history-section">
+            <div class="history-section" id="historySection" style="display: none;">
                 <h3>Histórico de Preços</h3>
                 <ul id="historicoPrecos" class="price-list"></ul>
                 <button id="verMaisBtn" class="uber-button secondary" style="display:none;" aria-label="Ver Mais">Ver Mais</button>
                 <button id="minimizarBtn" class="uber-button secondary" style="display:none;" aria-label="Minimizar">Minimizar</button>
+                <button id="limparHistoricoBtn" class="uber-button secondary" type="button" aria-label="Limpar Histórico">Limpar Histórico</button>
             </div>
         </main>
 
@@ -126,7 +126,7 @@
         </div>
 
         <!-- Seção de estatísticas do mês -->
-        <div class="stats-section">
+        <div class="stats-section" id="statsSection" style="display: none;">
             <h3>Estatísticas do Mês</h3>
             <div class="stat-item">
                 <span>Total Km Rodados:</span>

@@ -145,56 +145,62 @@ function excluirVeiculo(event, id) {
 
 // Função para atualizar as estatísticas
 function atualizarEstatisticas() {
-  const historico =
-    JSON.parse(localStorage.getItem("historicoCombustivel")) || [];
+    const historico = JSON.parse(localStorage.getItem("historicoCombustivel")) || [];
 
-  // Filtra o histórico pelo tipo de veículo
-  const historicoFiltrado = historico.filter(
-    (item) => item.tipo === tipoVeiculoAtual
-  );
+    // Filtra o histórico pelo tipo de veículo
+    const historicoFiltrado = historico.filter(
+        (item) => item.tipo === tipoVeiculoAtual
+    );
 
-  const totalKm = historicoFiltrado.reduce(
-    (acc, item) => acc + parseFloat(item.distancia),
-    0
-  );
-  const totalGasto = historicoFiltrado.reduce(
-    (acc, item) => acc + parseFloat(item.custo),
-    0
-  );
+    const totalKm = historicoFiltrado.reduce(
+        (acc, item) => acc + parseFloat(item.distancia),
+        0
+    );
+    const totalGasto = historicoFiltrado.reduce(
+        (acc, item) => acc + parseFloat(item.custo),
+        0
+    );
 
-  document.getElementById("totalKm").textContent = `${totalKm.toFixed(1)} km`;
-  document.getElementById("totalGasto").textContent = `R$ ${totalGasto.toFixed(
-    2
-  )}`;
+    document.getElementById("totalKm").textContent = `${totalKm.toFixed(1)} km`;
+    document.getElementById("totalGasto").textContent = `R$ ${totalGasto.toFixed(2)}`;
 
-  atualizarGrafico(historicoFiltrado);
+    const statsSection = document.getElementById("statsSection");
+
+    // Mostra ou oculta a seção de estatísticas com base na presença de registros
+    if (historicoFiltrado.length > 0) {
+        statsSection.style.display = "block";
+    } else {
+        statsSection.style.display = "none";
+    }
+
+    atualizarGrafico(historicoFiltrado);
 }
 
 // Função para atualizar o gráfico
 function atualizarGrafico(historico) {
-  if (fuelChart) fuelChart.destroy();
+    if (fuelChart) fuelChart.destroy();
 
-  const datas = historico.map((item) => item.data.split(",")[0]);
-  const custos = historico.map((item) => item.custo);
+    const datas = historico.map((item) => item.data.split(",")[0]);
+    const custos = historico.map((item) => item.custo);
 
-  fuelChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: datas,
-      datasets: [
-        {
-          label: "Gasto Diário (R$)",
-          data: custos,
-          borderColor: "#00C165",
-          tension: 0.1,
+    fuelChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: datas,
+            datasets: [
+                {
+                    label: "Gasto Diário (R$)",
+                    data: custos,
+                    borderColor: "#00C165",
+                    tension: 0.1,
+                },
+            ],
         },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-    },
-  });
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+        },
+    });
 }
 
 // Função para exibir o resultado do cálculo
@@ -255,6 +261,7 @@ function atualizarHistorico() {
     const lista = document.getElementById("historicoPrecos");
     const verMaisBtn = document.getElementById("verMaisBtn");
     const minimizarBtn = document.getElementById("minimizarBtn");
+    const historySection = document.getElementById("historySection");
 
     // Exibe apenas os 3 últimos registros
     const historicoExibido = historicoFiltrado.slice(0, 3);
@@ -268,6 +275,13 @@ function atualizarHistorico() {
         `
         )
         .join("");
+
+    // Mostra ou oculta a seção de histórico com base na presença de registros
+    if (historicoFiltrado.length > 0) {
+        historySection.style.display = "block";
+    } else {
+        historySection.style.display = "none";
+    }
 
     // Mostra o botão "Ver Mais" se houver 4 ou mais registros
     if (historicoFiltrado.length > 3) {
@@ -378,6 +392,7 @@ function limparDados() {
   const historicoFiltrado = historico.filter(item => item.tipo !== tipoVeiculoAtual);
   localStorage.setItem("historicoCombustivel", JSON.stringify(historicoFiltrado));
   atualizarHistorico();
+  atualizarEstatisticas(); // Atualiza as estatísticas após limpar o histórico
 }
 
 // Função para limpar o formulário
@@ -461,6 +476,8 @@ if ("serviceWorker" in navigator) {
 document.addEventListener("DOMContentLoaded", () => {
   selecionarTipoVeiculo("carro"); // Seleciona carro por padrão
   setTimeout(hideSplashScreen, 1000); // Ocultar a tela de carregamento após 1 segundo
+  atualizarHistorico(); // Atualiza o histórico ao carregar a página
+  atualizarEstatisticas(); // Atualiza as estatísticas ao carregar a página
 });
 
 form.addEventListener("submit", (e) => {
