@@ -237,7 +237,7 @@ function salvarHistorico(preco, kmInicial, kmFinal, kmPorLitro, ganho) {
   }
 
   historico.unshift(registro);
-  if (historico.length > 5) historico.pop();
+  if (historico.length > 25) historico.pop();
 
   localStorage.setItem("historicoCombustivel", JSON.stringify(historico));
   atualizarHistorico();
@@ -245,8 +245,7 @@ function salvarHistorico(preco, kmInicial, kmFinal, kmPorLitro, ganho) {
 
 // Função para atualizar o histórico de preços
 function atualizarHistorico() {
-  const historico =
-    JSON.parse(localStorage.getItem("historicoCombustivel")) || [];
+  const historico = JSON.parse(localStorage.getItem("historicoCombustivel")) || [];
 
   // Filtra o histórico pelo tipo de veículo
   const historicoFiltrado = historico.filter(
@@ -254,7 +253,11 @@ function atualizarHistorico() {
   );
 
   const lista = document.getElementById("historicoPrecos");
-  lista.innerHTML = historicoFiltrado
+  const verMaisBtn = document.getElementById("verMaisBtn");
+
+  // Exibe apenas os 3 últimos registros
+  const historicoExibido = historicoFiltrado.slice(0, 3);
+  lista.innerHTML = historicoExibido
     .map(
       (item, index) => `
       <li data-index="${index}" onclick="mostrarDetalhes(${index})">
@@ -264,6 +267,28 @@ function atualizarHistorico() {
   `
     )
     .join("");
+
+  // Mostra o botão "Ver Mais" se houver mais de 3 registros
+  if (historicoFiltrado.length > 3) {
+    verMaisBtn.style.display = "block";
+  } else {
+    verMaisBtn.style.display = "none";
+  }
+
+  // Adiciona um event listener ao botão "Ver Mais"
+  verMaisBtn.addEventListener("click", () => {
+    lista.innerHTML = historicoFiltrado
+      .map(
+        (item, index) => `
+        <li data-index="${index}" onclick="mostrarDetalhes(${index})">
+            <span>${item.data}</span>
+            <strong>R$ ${item.preco.toFixed(2)}</strong>
+        </li>
+    `
+      )
+      .join("");
+    verMaisBtn.style.display = "none"; // Esconde o botão após clicar
+  });
 }
 
 // Função para mostrar os detalhes de um registro do histórico

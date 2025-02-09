@@ -108,8 +108,7 @@ input:focus {
   transform: translateY(-2px);
 }
 
-.uber-button.secondary,
-.uber-button.clear-history {
+.uber-button.secondary {
   background: transparent;
   color: var(--uber-green);
   border: 2px solid var(--uber-green);
@@ -124,6 +123,19 @@ input:focus {
 
 .uber-button.secondary:hover {
   transform: translateY(-2px);
+}
+
+.uber-button.clear-history {
+  background: transparent;
+  color: var(--uber-green);
+  border: 2px solid var(--uber-green);
+  margin: 1rem auto;
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  text-align: center;
 }
 
 /* Estilo para o card de resultado */
