@@ -42,7 +42,7 @@
                 </div>
                 <div class="input-group">
                     <label for="vehicleEfficiency">Eficiência (km/L)</label>
-                    <input type="number" id="vehicleEfficiency" step="0.1" placeholder="Eficiência (km/L)">
+                    <input type="number" id="vehicleEfficiency" step="0.1" placeholder="Eficiência (km/L)" inputmode="decimal">
                 </div>
                 <input type="hidden" id="vehicleType">
                 <button class="uber-button" id="salvarVeiculoBtn" aria-label="Salvar Veículo">Salvar Veículo</button>
@@ -55,64 +55,64 @@
             <form id="fuelForm" class="calculator-form">
                 <div class="input-group">
                     <label for="kmInicial">KM Inicial</label>
-                    <input type="number" id="kmInicial" step="0.1" placeholder="KM Inicial" required>
+                    <input type="number" id="kmInicial" step="0.1" placeholder="KM Inicial" required inputmode="decimal">
                 </div>
 
                 <div class="input-group">
                     <label for="kmFinal">KM Final</label>
-                    <input type="number" id="kmFinal" step="0.1" placeholder="KM Final" required>
+                    <input type="number" id="kmFinal" step="0.1" placeholder="KM Final" required inputmode="decimal">
                 </div>
 
                 <div class="input-group">
                     <label for="kmPorLitro">Eficiência (km/L)</label>
-                    <input type="number" id="kmPorLitro" step="0.1" placeholder="KM por Litro" required>
+                    <input type="number" id="kmPorLitro" step="0.1" placeholder="KM por Litro" required inputmode="decimal">
                 </div>
 
                 <div class="input-group">
                     <label for="precoCombustivel">Preço por Litro (R$)</label>
-                    <input type="number" id="precoCombustivel" step="0.01" placeholder="Preço do Combustível" required>
+                    <input type="number" id="precoCombustivel" step="0.01" placeholder="Preço do Combustível" required inputmode="decimal">
                 </div>
 
                 <div class="input-group">
                     <label for="ganhoUber">Ganho na Uber (R$)</label>
-                    <input type="number" id="ganhoUber" step="0.01" placeholder="Ganho na Uber" required>
+                    <input type="number" id="ganhoUber" step="0.01" placeholder="Ganho na Uber" required inputmode="decimal">
                 </div>
 
                 <button type="submit" class="uber-button" id="calcularGastosBtn" aria-label="Calcular Gastos">
                     Calcular Gastos
                 </button>
             </form>
-
-            <!-- Div para exibir o resultado do cálculo -->
-            <div id="resultado" class="result-card">
-                <h3>Resultado do Cálculo</h3>
-                <div class="result-item">
-                    <span>Distância:</span>
-                    <strong id="distancia"></strong>
-                </div>
-                <div class="result-item">
-                    <span>Litros:</span>
-                    <strong id="litros"></strong>
-                </div>
-                <div class="result-item">
-                    <span>Custo:</span>
-                    <strong id="custo"></strong>
-                </div>
-                <div class="result-item total">
-                    <span>Ganho na Uber:</span>
-                    <strong id="ganho"></strong>
-                </div>
-            </div>
-
-            <!-- Seção de histórico de preços -->
-            <div class="history-section" id="historySection" style="display: none;">
-                <h3>Histórico de Preços</h3>
-                <ul id="historicoPrecos" class="price-list"></ul>
-                <button id="verMaisBtn" class="uber-button secondary" style="display:none;" aria-label="Ver Mais">Ver Mais</button>
-                <button id="minimizarBtn" class="uber-button secondary" style="display:none;" aria-label="Minimizar">Minimizar</button>
-                <button id="limparHistoricoBtn" class="uber-button secondary" type="button" aria-label="Limpar Histórico">Limpar Histórico</button>
-            </div>
         </main>
+
+        <!-- Div para exibir o resultado do cálculo -->
+        <div id="resultado" class="result-card">
+            <h3>Resultado do Cálculo</h3>
+            <div class="result-item">
+                <span>Distância:</span>
+                <strong id="distancia"></strong>
+            </div>
+            <div class="result-item">
+                <span>Litros:</span>
+                <strong id="litros"></strong>
+            </div>
+            <div class="result-item">
+                <span>Custo:</span>
+                <strong id="custo"></strong>
+            </div>
+            <div class="result-item total">
+                <span>Ganho na Uber:</span>
+                <strong id="ganho"></strong>
+            </div>
+        </div>
+
+        <!-- Seção de histórico de preços -->
+        <div class="history-section" id="historySection" style="display: none;">
+            <h3>Histórico de Preços</h3>
+            <ul id="historicoPrecos" class="price-list"></ul>
+            <button id="verMaisBtn" class="uber-button secondary" style="display:none;" aria-label="Ver Mais">Ver Mais</button>
+            <button id="minimizarBtn" class="uber-button secondary" style="display:none;" aria-label="Minimizar">Minimizar</button>
+            <button id="limparHistoricoBtn" class="uber-button secondary" type="button" aria-label="Limpar Histórico">Limpar Histórico</button>
+        </div>
 
         <!-- Modal para exibir detalhes do registro -->
         <div class="modal-overlay" id="modalOverlay" style="display:none;">
