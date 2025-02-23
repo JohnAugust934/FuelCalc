@@ -400,6 +400,11 @@ function limparFormulario() {
   form.reset();
 }
 
+// Função para converter vírgulas em pontos
+function converterVirgulaParaPonto(valor) {
+  return valor.replace(/,/g, '.');
+}
+
 // Função para validar os campos
 function validarCampos(
   kmInicial,
@@ -433,11 +438,11 @@ function validarCampos(
 
 // Função para calcular os gastos
 function calcularGastos() {
-  const kmInicial = parseFloat(document.getElementById("kmInicial").value);
-  const kmFinal = parseFloat(document.getElementById("kmFinal").value);
-  const kmPorLitro = parseFloat(document.getElementById("kmPorLitro").value);
-  const precoCombustivel = parseFloat(document.getElementById("precoCombustivel").value);
-  const ganhoUber = document.getElementById("ganhoUber").value ? parseFloat(document.getElementById("ganhoUber").value) : null;
+  const kmInicial = parseFloat(converterVirgulaParaPonto(document.getElementById("kmInicial").value));
+  const kmFinal = parseFloat(converterVirgulaParaPonto(document.getElementById("kmFinal").value));
+  const kmPorLitro = parseFloat(converterVirgulaParaPonto(document.getElementById("kmPorLitro").value));
+  const precoCombustivel = parseFloat(converterVirgulaParaPonto(document.getElementById("precoCombustivel").value));
+  const ganhoUber = document.getElementById("ganhoUber").value ? parseFloat(converterVirgulaParaPonto(document.getElementById("ganhoUber").value)) : null;
 
   // Validação dos campos
   if (!validarCampos(kmInicial, kmFinal, kmPorLitro, precoCombustivel, ganhoUber)) {
