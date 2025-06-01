@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 ![PWA Ready](https://img.shields.io/badge/PWA-Ready-blue.svg)
 ![Version](https://img.shields.io/badge/Version-2.0.0-orange)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/JohnAugust934/FuelCalc)
 
 Aplicativo PWA para cálculo de gastos com combustível para motoristas de Uber/99 com estatísticas detalhadas e gerenciamento de veículos.
 
