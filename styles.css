@@ -65,8 +65,8 @@ body {
   background: linear-gradient(135deg, var(--uber-green), var(--uber-black));
   text-align: center;
   border-bottom: 3px solid var(--uber-green);
-  /* border-radius: var(--border-radius-large) var(--border-radius-large) 0 0; */ /* Removido pois o container já tem */
   color: #ffffff; /* Texto branco para contraste no gradiente */
+  position: relative; /* Para o language-switcher */
 }
 
 .app-header .logo {
@@ -92,6 +92,41 @@ body {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
 }
 
+/* Language Switcher */
+.language-switcher {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+}
+
+.lang-button {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: var(--transition-fast);
+}
+
+.lang-button:hover,
+.lang-button:focus {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  outline: none;
+}
+
+.lang-button[aria-pressed="true"] {
+  background-color: var(--uber-green);
+  color: var(--uber-black);
+  border-color: var(--uber-green);
+  box-shadow: 0 0 5px rgba(0, 193, 101, 0.5);
+}
+
 /* Rodapé da aplicação */
 .app-footer {
   text-align: center;
@@ -100,6 +135,10 @@ body {
   font-size: 0.85rem;
   margin-top: auto; /* Empurra o footer para o final se o conteúdo for pouco */
   width: 100%;
+}
+.app-footer #appVersion {
+  font-weight: bold;
+  color: var(--uber-text-primary);
 }
 
 /* ===== COMPONENTES GERAIS (Inputs, Botões) ===== */
@@ -788,6 +827,14 @@ body {
   .modal-content h3 {
     font-size: 1.3rem;
   }
+  .language-switcher {
+    top: 5px;
+    right: 5px;
+  }
+  .lang-button {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.7rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -836,4 +883,3 @@ body {
 *:focus:not(:focus-visible) {
   outline: none;
 }
-/* ===== FIM DO ARQUIVO ===== */
