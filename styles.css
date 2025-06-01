@@ -1,524 +1,687 @@
-/* Variáveis de cores */
+/* styles.css - FuelCalc */
+
+/* ===== VARIÁVEIS GLOBAIS E RESET ===== */
 :root {
-  --uber-black: #000000;
+  --uber-black: #0c0c0c; /* Um preto um pouco mais suave */
   --uber-green: #00c165;
-  --uber-gray: #222222;
-  --uber-light-gray: #444444;
-  --uber-text: #ffffff;
-  --uber-red: #ff0000;
-  --uber-background: #1a1a1a;
-  --uber-border: #333333;
+  --uber-green-dark: #00a756; /* Para hover/active em botões verdes */
+  --uber-gray-dark: #1a1a1a; /* Background principal */
+  --uber-gray-medium: #2c2c2c; /* Cards, inputs */
+  --uber-gray-light: #444444; /* Bordas, divisores */
+  --uber-text-primary: #e0e0e0; /* Texto principal mais claro */
+  --uber-text-secondary: #b0b0b0; /* Texto secundário, labels */
+  --uber-red: #e74c3c; /* Vermelho para erros/deleção */
+  --uber-red-dark: #c0392b; /* Hover/active para botões vermelhos */
+  --uber-blue: #3498db; /* Para informações ou ações secundárias */
+
+  --font-primary: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --border-radius-small: 4px;
+  --border-radius-medium: 8px;
+  --border-radius-large: 15px;
+  --box-shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --box-shadow-strong: 0 4px 15px rgba(0, 0, 0, 0.3);
+  --transition-fast: all 0.2s ease-in-out;
+  --transition-medium: all 0.3s ease-in-out;
 }
 
-/* Reset de margens e padding */
-* {
+/* Reset básico e box-sizing */
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* Estilo do corpo da página */
+/* Estilo base do corpo da página */
 body {
-  font-family: "Roboto", sans-serif;
-  background-color: var(--uber-background);
-  color: var(--uber-text);
+  font-family: var(--font-primary);
+  background-color: var(--uber-gray-dark);
+  color: var(--uber-text-primary);
   line-height: 1.6;
   min-height: 100vh;
   padding: 1rem;
+  display: flex; /* Para centralizar o container se necessário */
+  flex-direction: column; /* Para o footer ficar no final */
+  align-items: center; /* Centraliza o container */
 }
 
-/* Container principal */
+/* ===== LAYOUT PRINCIPAL ===== */
 .container {
-  max-width: 800px;
-  margin: 0 auto;
-  background: var(--uber-gray);
-  border-radius: 15px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 193, 101, 0.1);
-  padding: 2rem;
+  width: 100%;
+  max-width: 700px; /* Um pouco mais estreito para melhor leitura */
+  margin: 1rem auto; /* Margem vertical e centralização horizontal */
+  background: var(--uber-gray-medium);
+  border-radius: var(--border-radius-large);
+  overflow: hidden; /* Para que o border-radius funcione com filhos */
+  box-shadow: var(--box-shadow-strong);
+  padding: 0; /* Padding será aplicado nas seções internas */
 }
 
 /* Cabeçalho da aplicação */
 .app-header {
-  padding: 2rem;
+  padding: 1.5rem; /* Padding interno */
   background: linear-gradient(135deg, var(--uber-green), var(--uber-black));
   text-align: center;
-  border-bottom: 2px solid var(--uber-green);
-  border-radius: 15px 15px 0 0;
-  margin-bottom: 2rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  color: var(--uber-text);
-  position: relative;
+  border-bottom: 3px solid var(--uber-green);
+  /* border-radius: var(--border-radius-large) var(--border-radius-large) 0 0; */ /* Removido pois o container já tem */
+  color: #ffffff; /* Texto branco para contraste no gradiente */
 }
 
 .app-header .logo {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 1rem;
+  width: 70px; /* Um pouco menor */
+  height: 70px;
+  margin-bottom: 0.75rem;
   border-radius: 50%;
   border: 2px solid var(--uber-green);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  object-fit: cover; /* Garante que a imagem do logo cubra o espaço */
 }
 
 .app-header h1 {
-  font-size: 2.5rem;
-  color: var(--uber-text);
-  margin-bottom: 0.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-size: 2.2rem; /* Ajuste de tamanho */
+  margin-bottom: 0.25rem;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .app-header p {
-  font-size: 1.2rem;
-  color: var(--uber-text);
+  font-size: 1rem;
+  color: var(--uber-text-secondary); /* Cor mais suave para subtítulo */
   margin-top: 0;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
 }
 
-/* Logo da aplicação */
-.logo {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 1rem;
+/* Rodapé da aplicação */
+.app-footer {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: var(--uber-text-secondary);
+  font-size: 0.85rem;
+  margin-top: auto; /* Empurra o footer para o final se o conteúdo for pouco */
+  width: 100%;
 }
 
-h1 {
-  font-size: 2rem;
-  color: var(--uber-green);
-  margin-bottom: 1rem;
-}
-
-/* Formulário do calculador */
-.calculator-form {
-  padding: 2rem;
-  background: var(--uber-gray);
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0, 193, 101, 0.1);
-  margin-bottom: 2rem;
-}
-
+/* ===== COMPONENTES GERAIS (Inputs, Botões) ===== */
 .input-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
-label {
+.input-group label {
   display: block;
   margin-bottom: 0.5rem;
-  font-size: 1rem;
-  color: #cccccc;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--uber-text-secondary);
 }
 
-input {
+.input-group input[type="text"],
+.input-group input[type="number"],
+.input-group input[type="password"], /* Exemplo para futuros inputs */
+.input-group select {
+  /* Estilo para selects também */
   width: 100%;
-  padding: 1rem;
-  background: var(--uber-light-gray);
-  border: 1px solid var(--uber-border);
-  border-radius: 8px;
-  color: var(--uber-text);
+  padding: 0.85rem 1rem;
+  background: var(--uber-gray-dark); /* Fundo mais escuro para contraste */
+  border: 1px solid var(--uber-gray-light);
+  border-radius: var(--border-radius-medium);
+  color: var(--uber-text-primary);
   font-size: 1rem;
-  transition: all 0.3s ease;
+  font-family: var(--font-primary);
+  transition: var(--transition-fast);
 }
 
-input:focus {
+.input-group input:focus,
+.input-group select:focus {
   outline: none;
   border-color: var(--uber-green);
-  box-shadow: 0 0 0 2px rgba(0, 193, 101, 0.2);
+  box-shadow: 0 0 0 3px rgba(0, 193, 101, 0.25); /* Sombra de foco mais proeminente */
+}
+
+/* Placeholder customizado */
+.input-group input::placeholder {
+  color: var(--uber-text-secondary);
+  opacity: 0.7;
 }
 
 /* Botões */
 .uber-button {
+  display: inline-block; /* Para que margin auto funcione se for block */
   background: var(--uber-green);
-  color: var(--uber-black);
+  color: var(--uber-black); /* Texto preto para contraste no verde */
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  padding: 0.85rem 1.75rem;
+  border-radius: var(--border-radius-medium);
   font-size: 1rem;
   font-weight: bold;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  display: block;
-  margin: 1rem auto;
   text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  box-shadow: var(--box-shadow-soft);
+  margin: 0.5rem 0; /* Margem padrão */
 }
 
-.uber-button:hover {
+.uber-button:hover,
+.uber-button:focus {
+  background-color: var(--uber-green-dark);
   transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 193, 101, 0.3);
+  outline: none;
 }
 
+.uber-button:active {
+  transform: translateY(0px);
+  box-shadow: var(--box-shadow-soft);
+}
+
+/* Botão secundário (contorno) */
 .uber-button.secondary {
   background: transparent;
   color: var(--uber-green);
   border: 2px solid var(--uber-green);
-  margin: 1rem auto;
-  display: inline-block;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  text-align: center;
 }
 
-.uber-button.secondary:hover {
-  transform: translateY(-2px);
+.uber-button.secondary:hover,
+.uber-button.secondary:focus {
+  background: rgba(0, 193, 101, 0.1); /* Fundo leve no hover */
+  color: var(--uber-green-dark);
+  border-color: var(--uber-green-dark);
 }
 
-.uber-button.clear-history {
-  background: transparent;
-  color: var(--uber-green);
-  border: 2px solid var(--uber-green);
-  margin: 1rem auto;
+/* Botão de perigo/deleção */
+.uber-button.danger {
+  background: var(--uber-red);
+  color: #ffffff;
+}
+.uber-button.danger:hover,
+.uber-button.danger:focus {
+  background: var(--uber-red-dark);
+  box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+}
+
+/* Botão de largura total */
+.uber-button.full-width {
   display: block;
-  cursor: pointer;
-  transition: transform 0.2s ease;
+  width: 100%;
+}
+
+/* Grupo de botões */
+.button-group {
+  display: flex;
+  gap: 0.75rem; /* Espaço entre botões */
+  flex-wrap: wrap; /* Quebra linha em telas pequenas */
+  justify-content: center; /* Centraliza botões no grupo */
+  margin-top: 1rem;
+}
+.button-group .uber-button {
+  margin: 0; /* Remove margem individual se estiver no grupo */
+  flex-grow: 1; /* Permite que os botões cresçam para preencher o espaço */
+}
+
+/* ===== SEÇÕES ESPECÍFICAS ===== */
+/* Estilo comum para seções dentro do container */
+.content-section {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--uber-gray-light); /* Divisor sutil */
+}
+.content-section:last-child {
+  border-bottom: none; /* Remove borda do último item */
+}
+
+.content-section h2,
+.content-section h3 {
+  color: var(--uber-green);
+  margin-bottom: 1.25rem;
+  font-size: 1.5rem; /* Tamanho padrão para títulos de seção */
   text-align: center;
 }
-
-/* Estilo para o card de resultado */
-.result-card {
-  background: var(--uber-light-gray);
-  border-radius: 15px;
-  padding: 2rem;
-  margin: 2rem 0;
-  display: none; /* Inicialmente escondido */
-  box-shadow: 0 4px 15px rgba(0, 193, 101, 0.1);
+.content-section h3 {
+  font-size: 1.3rem; /* Tamanho um pouco menor para h3 */
 }
 
-.result-card h3 {
-  color: var(--uber-green);
+/* Seletor de Veículos */
+.vehicle-selector {
+  /* Herda de .content-section */
+}
+
+.vehicle-type-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
   margin-bottom: 1.5rem;
-  font-size: 1.5rem;
+}
+
+.vehicle-type-buttons .uber-button {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  background-color: var(--uber-gray-light); /* Cor base para não selecionado */
+  color: var(--uber-text-secondary);
+  border: 2px solid transparent; /* Para manter o tamanho no hover/selected */
+}
+
+.vehicle-type-buttons .uber-button.selected {
+  background-color: var(--uber-green);
+  color: var(--uber-black);
+  border-color: var(--uber-green);
+  box-shadow: 0 2px 8px rgba(0, 193, 101, 0.2);
+}
+.vehicle-type-buttons .uber-button:not(.selected):hover {
+  background-color: var(--uber-gray-medium);
+  color: var(--uber-text-primary);
+}
+
+.vehicle-cards {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(250px, 1fr)
+  ); /* Layout responsivo em grade */
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.vehicle-card {
+  background: var(--uber-gray-dark); /* Fundo mais escuro para cards */
+  padding: 1rem;
+  border-radius: var(--border-radius-medium);
+  border: 1px solid var(--uber-gray-light);
+  cursor: pointer;
+  transition: var(--transition-medium);
+  display: flex;
+  flex-direction: column; /* Empilha conteúdo verticalmente */
+  justify-content: space-between;
+  align-items: flex-start; /* Alinha itens à esquerda */
+  position: relative; /* Para posicionar o botão de excluir */
+}
+
+.vehicle-card:hover,
+.vehicle-card:focus-within {
+  /* Adiciona foco ao card */
+  transform: translateY(-3px);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.25);
+  border-color: var(--uber-green);
+}
+
+.vehicle-card.active {
+  border-color: var(--uber-green);
+  box-shadow: 0 0 0 3px rgba(0, 193, 101, 0.3), var(--box-shadow-soft); /* Destaque mais forte */
+}
+
+.vehicle-card h4 {
+  font-size: 1.1rem;
+  color: var(--uber-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.vehicle-card span {
+  font-size: 0.9rem;
+  color: var(--uber-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.vehicle-card .delete-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: transparent;
+  color: var(--uber-text-secondary);
+  border: none;
+  padding: 0.3rem;
+  border-radius: 50%;
+  font-size: 1.2rem; /* Tamanho do ícone de 'x' */
+  line-height: 1;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
+}
+
+.vehicle-card .delete-button:hover,
+.vehicle-card .delete-button:focus {
+  color: var(--uber-red);
+  background-color: rgba(231, 76, 60, 0.1);
+  outline: none;
+}
+
+.vehicle-form {
+  background-color: var(--uber-gray-dark); /* Fundo sutilmente diferente */
+  padding: 1.5rem;
+  border-radius: var(--border-radius-medium);
+  margin-top: 1.5rem;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2); /* Sombra interna */
+}
+
+/* Formulário de Cálculo */
+.calculator-form {
+  /* Herda de .content-section */
+}
+
+/* Card de Resultado */
+.result-card {
+  background: var(--uber-gray-dark);
+  border-radius: var(--border-radius-medium);
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  box-shadow: var(--box-shadow-soft);
+  /* display: none;  Controlado por JS */
 }
 
 .result-item {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--uber-border);
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--uber-gray-light);
+  font-size: 1rem;
+}
+
+.result-item:last-child {
+  border-bottom: none;
 }
 
 .result-item span {
-  font-weight: bold;
+  /* Label */
+  color: var(--uber-text-secondary);
 }
 
 .result-item strong {
-  display: block;
-  margin-top: 5px;
+  /* Valor */
+  color: var(--uber-text-primary);
+  font-weight: 500;
 }
 
-.result-item.total {
-  border-bottom: none;
-  padding-top: 1rem;
+.result-item.total strong {
+  /* Destaque para o total/lucro */
+  color: var(--uber-green);
   font-size: 1.2rem;
+  font-weight: bold;
 }
 
-/* Modal de detalhes */
+/* Seção de Histórico */
+.history-section {
+  /* Herda de .content-section */
+}
+
+.price-list {
+  /* Renomeado para history-list */
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0; /* Espaço abaixo da lista */
+}
+
+.price-list li {
+  background: var(--uber-gray-dark);
+  border-radius: var(--border-radius-medium);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  border: 1px solid var(--uber-gray-light);
+}
+
+.price-list li:hover,
+.price-list li:focus-within {
+  background-color: var(--uber-gray-medium); /* Um pouco mais claro no hover */
+  border-color: var(--uber-green);
+  transform: translateX(3px);
+  outline: none;
+}
+
+.price-list li span {
+  /* Data */
+  font-size: 0.9rem;
+  color: var(--uber-text-secondary);
+}
+.price-list li strong {
+  /* Custo */
+  font-size: 1rem;
+  color: var(--uber-text-primary);
+}
+
+/* Seção de Estatísticas */
+.stats-section {
+  /* Herda de .content-section */
+}
+.stat-item {
+  /* Reutiliza .result-item */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--uber-gray-light);
+  font-size: 1rem;
+}
+.stat-item:last-of-type {
+  /* Para o último stat-item antes do gráfico */
+  border-bottom: none;
+  margin-bottom: 1.5rem; /* Espaço antes do gráfico */
+}
+.stat-item span {
+  color: var(--uber-text-secondary);
+}
+.stat-item strong {
+  color: var(--uber-text-primary);
+  font-weight: 500;
+}
+
+.chart-container {
+  margin-top: 1rem;
+  height: 250px; /* Altura aumentada para o gráfico */
+  background-color: var(--uber-gray-dark);
+  padding: 0.5rem;
+  border-radius: var(--border-radius-medium);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Seção de Backup */
+.backup-section {
+  /* Herda de .content-section */
+}
+
+.backup-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap; /* Para quebrar em telas menores */
+}
+
+.backup-buttons .uber-button {
+  /* Botões de backup */
+  flex: 1 1 150px; /* Flex-grow, flex-shrink, flex-basis */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem; /* Espaço entre ícone e texto */
+  padding: 0.75rem 1rem; /* Padding ajustado */
+}
+
+.backup-info {
+  color: var(--uber-text-secondary);
+  font-size: 0.85rem;
+  margin: 0;
+  text-align: center;
+}
+
+/* ===== MODAIS (Notificações, Confirmação, Detalhes) ===== */
+/* Overlay comum para todos os modais */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: none;
+  background: rgba(0, 0, 0, 0.7); /* Fundo mais escuro */
+  display: flex; /* Alterado para flex para centralizar */
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  opacity: 0; /* Inicialmente invisível */
+  visibility: hidden; /* Inicialmente escondido */
+  transition: opacity var(--transition-medium),
+    visibility 0s var(--transition-medium); /* Transição suave */
+}
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s; /* Remove delay ao ativar */
 }
 
+/* Conteúdo base do modal */
 .modal-content {
-  background: var(--uber-gray);
+  background: var(--uber-gray-medium);
   padding: 2rem;
-  border-radius: 15px;
+  border-radius: var(--border-radius-large);
   width: 90%;
   max-width: 500px;
   position: relative;
-  box-shadow: 0 4px 15px rgba(0, 193, 101, 0.1);
+  box-shadow: var(--box-shadow-strong);
+  transform: scale(0.95); /* Efeito de entrada */
+  transition: transform var(--transition-medium);
+}
+.modal-overlay.active .modal-content {
+  transform: scale(1);
 }
 
-.modal-close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  color: var(--uber-text);
+.modal-content h3 {
+  color: var(--uber-green);
+  margin-top: 0;
+  margin-bottom: 1.5rem;
   font-size: 1.5rem;
+  text-align: center;
+}
+
+.modal-close-button {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--uber-text-secondary);
+  font-size: 1.8rem; /* 'x' maior */
+  font-weight: bold;
   cursor: pointer;
+  padding: 0.5rem;
+  line-height: 1;
+  transition: var(--transition-fast);
+}
+.modal-close-button:hover,
+.modal-close-button:focus {
+  color: var(--uber-text-primary);
+  transform: rotate(90deg);
+  outline: none;
 }
 
-.price-list {
-  list-style: none;
-  margin: 1rem 0;
-  padding: 0;
-  margin: 0 auto;
-  max-width: 300px;
-}
-
-.price-list li {
-  background: var(--uber-light-gray);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  padding: 10px;
-  margin-bottom: 5px;
-}
-
-.price-list li:hover {
-  transform: translateX(5px);
-}
-
+/* Modal de Detalhes (Histórico) */
 .modal-details {
-  display: grid;
-  gap: 1rem;
+  display: grid; /* Usar grid para alinhar labels e valores */
+  gap: 0.75rem 1rem; /* Espaçamento entre linhas e colunas */
+  grid-template-columns: auto 1fr; /* Label auto, valor ocupa o resto */
 }
 
 .modal-detail-item {
+  /* Cada par label/valor */
+  /* Não precisa mais de flex, pois o grid cuida disso */
+}
+.modal-detail-item span {
+  /* Label */
+  color: var(--uber-text-secondary);
+  font-weight: 500;
+}
+.modal-detail-item strong {
+  /* Valor */
+  color: var(--uber-text-primary);
+  text-align: right; /* Alinha valores à direita */
+}
+
+/* Modal de Confirmação */
+.confirm-modal-actions {
   display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--uber-border);
+  justify-content: flex-end; /* Alinha botões à direita */
+  gap: 0.75rem;
+  margin-top: 1.5rem;
 }
 
-.modal-detail-item:last-child {
-  border-bottom: none;
-}
-
-.history-section {
-  padding: 2rem;
-  background: var(--uber-gray);
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0, 193, 101, 0.1);
-  margin-top: 2rem;
-  text-align: center;
-}
-
-.history-section h3 {
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
-}
-
-.app-footer {
-  text-align: center;
-  padding: 1rem;
-  color: var(--uber-green);
-  margin-top: 2rem;
-}
-
-/* Novos estilos */
-.vehicle-selector {
-  padding: 1.5rem;
-  background: var(--uber-gray);
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 193, 101, 0.1);
-  margin-bottom: 1.5rem;
-  text-align: center;
-}
-
-.vehicle-selector h2 {
-  font-size: 1.5rem;
-  color: var(--uber-green);
-  margin-bottom: 1rem;
-}
-
-.vehicle-type-buttons {
+/* Notificações (Toast) */
+.notification-area {
+  /* Container para notificações */
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2000; /* Acima dos modais */
   display: flex;
-  justify-content: center;
-  margin-bottom: 1rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 350px;
 }
 
-.vehicle-type-buttons .uber-button {
-  margin: 0 0.5rem;
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  border-radius: 8px;
-  text-align: center;
-  min-width: 100px;
-  height: 40px; /* Altura padronizada */
-}
-
-.vehicle-type-buttons .uber-button.selected {
-  background-color: #00c165;
-  color: #fff;
-  border: 2px solid var(--uber-green);
-}
-
-.vehicle-cards {
+.notification {
+  background-color: var(--uber-gray-medium);
+  color: var(--uber-text-primary);
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--border-radius-medium);
+  border-left: 4px solid var(--uber-green);
+  box-shadow: var(--box-shadow-strong);
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.vehicle-card {
-  background: var(--uber-light-gray);
-  padding: 0.75rem;
-  border-radius: 8px;
-  margin: 0.5rem auto;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  max-width: 500px;
-  border: 1px solid var(--uber-border);
-  width: 100%; /* Largura padronizada */
-  height: 80px; /* Altura padronizada */
-}
-
-.vehicle-card.active {
-  border: 2px solid var(--uber-green);
-}
-
-.vehicle-card:hover {
-  transform: translateY(-2px);
-}
-
-.vehicle-form {
-  display: none;
-  margin-top: 1rem;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.vehicle-form .input-group {
-  margin-bottom: 1rem;
-}
-
-.vehicle-form label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
-  color: #cccccc;
-}
-
-.vehicle-form input {
-  width: 100%;
-  padding: 0.75rem;
-  background: var(--uber-light-gray);
-  border: 1px solid var(--uber-border);
-  border-radius: 8px;
-  color: var(--uber-text);
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-
-.vehicle-form input:focus {
-  outline: none;
-  border-color: var(--uber-green);
-  box-shadow: 0 0 0 2px rgba(0, 193, 101, 0.2);
-}
-
-.vehicle-form .uber-button {
-  width: 100%;
-  max-width: 150px;
-  margin: 0.5rem auto;
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.stats-section {
-  padding: 2rem;
-  background: var(--uber-light-gray);
-  border-radius: 15px;
-  margin: 2rem 0;
-  box-shadow: 0 4px 15px rgba(0, 193, 101, 0.1);
-}
-
-.stat-item {
-  display: flex;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  opacity: 0;
+  transform: translateX(100%);
+  animation: slideInNotification 0.3s ease-out forwards,
+    fadeOutNotification 0.3s ease-in 4.7s forwards;
+  /* slideIn (0.3s) -> fica visível -> fadeOut (0.3s) após 4.7s = total 5s */
 }
 
-.chart-container {
-  margin-top: 1rem;
-  height: 200px;
+.notification.error {
+  border-left-color: var(--uber-red);
+}
+.notification.success {
+  border-left-color: var(--uber-green);
+}
+.notification.info {
+  border-left-color: var(--uber-blue);
 }
 
-.fuel-price-api {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 1rem;
+.notification-message {
+  flex-grow: 1;
+  font-size: 0.9rem;
 }
 
-.fuel-price-api button {
-  flex-shrink: 0;
-}
-
-.loading {
-  display: none;
-  text-align: center;
-  padding: 1rem;
-  color: var(--uber-green);
-}
-
-.vehicle-form {
-  display: none;
-  margin-top: 1rem;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.vehicle-card {
-  background: var(--uber-light-gray);
-  padding: 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 550px;
-  border: 1px solid var(--uber-border);
-}
-
-.vehicle-card.active {
-  border: 2px solid var(--uber-green);
-}
-
-.vehicle-card:hover {
-  transform: translateY(-2px);
-}
-
-.vehicle-card button,
-.delete-button {
-  background-color: var(--uber-red);
-  color: white;
+.notification-close {
+  /* Botão de fechar notificação */
+  background: transparent;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  color: var(--uber-text-secondary);
+  font-size: 1.2rem;
+  font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  margin-left: 1rem;
+  margin-left: 0.75rem;
+  padding: 0.2rem;
+  line-height: 1;
+}
+.notification-close:hover {
+  color: var(--uber-text-primary);
 }
 
-.vehicle-card button:hover,
-.delete-button:hover {
-  background-color: darkred;
+@keyframes slideInNotification {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes fadeOutNotification {
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
 }
 
-.delete-button {
-  background-color: red;
-  color: white;
-  border: none;
-  padding: 5px;
-  cursor: pointer;
-}
-
-.uber-button.secondary,
-.uber-button.clear-history {
-  display: block;
-  width: 80%;
-  margin: 0.5rem auto;
-  font-size: 1rem;
-  border-radius: 8px;
-  text-align: center;
-}
-
-/* Estilos para a tela de carregamento */
+/* ===== TELA DE CARREGAMENTO (SPLASH SCREEN) ===== */
 .splash-screen {
   position: fixed;
   top: 0;
@@ -530,207 +693,147 @@ input:focus {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
-  color: var(--uber-text);
+  z-index: 9999; /* Acima de tudo */
+  color: #ffffff;
   text-align: center;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.5s ease-out 0.5s, visibility 0s 1s; /* Delay para fade-out, depois esconde */
+}
+.splash-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .splash-screen .logo {
-  width: 100px;
-  height: 100px;
+  width: 90px;
+  height: 90px;
   margin-bottom: 1rem;
   border-radius: 50%;
-  border: 2px solid var(--uber-green);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  border: 3px solid var(--uber-green);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
 }
 
 .splash-screen h1 {
   font-size: 2.5rem;
-  color: var(--uber-text);
   margin-bottom: 0.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
 }
-
-#splash-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-#resultado {
-  margin-top: 20px;
-}
-
-#modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-#modalDetails {
-  padding: 20px;
-  border-radius: 5px;
-}
-
-/* Seção de Backup */
-.backup-section {
-  background: var(--uber-gray);
-  border-radius: 15px;
-  padding: 2rem;
-  margin-top: 2rem;
-  box-shadow: 0 4px 15px rgba(0, 193, 101, 0.1);
-}
-
-.backup-section h3 {
-  color: var(--uber-green);
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
-}
-
-.backup-buttons {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-
-.backup-btn {
-  flex: 1;
-  min-width: 150px;
-  padding: 1rem;
+.splash-screen p {
+  /* Adicionado para mensagem de carregamento */
   font-size: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  color: var(--uber-text-secondary);
 }
 
-.backup-info {
-  color: var(--uber-light-gray);
-  font-size: 0.9rem;
-  margin: 0;
+/* Mensagem de "vazio" para listas */
+.empty-message {
   text-align: center;
+  color: var(--uber-text-secondary);
+  padding: 2rem 1rem;
+  font-style: italic;
+  font-size: 0.95rem;
+  border: 1px dashed var(--uber-gray-light);
+  border-radius: var(--border-radius-medium);
+  margin-top: 1rem;
+}
+.price-list .empty-message-list {
+  /* Para quando a lista de histórico está vazia */
+  color: var(--uber-text-secondary);
+  padding: 1rem;
+  text-align: center;
+  font-style: italic;
+  list-style-type: none;
 }
 
-@media (max-width: 480px) {
-  .backup-buttons {
-    flex-direction: column;
+/* ===== MEDIA QUERIES (Responsividade) ===== */
+@media (max-width: 768px) {
+  body {
+    padding: 0.5rem; /* Menor padding em telas pequenas */
   }
-
-  .backup-btn {
-    width: 100%;
-  }
-}
-
-@media (max-width: 660px) {
   .container {
+    margin: 0.5rem auto;
+    border-radius: var(--border-radius-medium); /* Menor radius */
+  }
+  .content-section {
     padding: 1rem;
   }
-
   .app-header {
     padding: 1rem;
   }
-
   .app-header .logo {
     width: 60px;
     height: 60px;
   }
-
-  .app-header h1 {
-    font-size: 2rem;
-  }
-
-  .app-header p {
-    font-size: 1rem;
-  }
-
-  .calculator-form {
-    padding: 1rem;
-  }
-
-  .vehicle-card,
-  .vehicle-form,
-  .uber-button {
-    max-width: 90%;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .result-card {
-    padding: 1rem;
-  }
-
-  .history-section {
-    padding: 1rem;
-  }
-
-  .stats-section {
-    padding: 1rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    border-radius: 0;
-    padding: 0.5rem;
-  }
-
-  body {
-    padding: 0;
-  }
-
-  .app-header {
-    padding: 1rem;
-  }
-
-  .app-header .logo {
-    width: 50px;
-    height: 50px;
-  }
-
   .app-header h1 {
     font-size: 1.8rem;
   }
-
   .app-header p {
     font-size: 0.9rem;
   }
 
-  .calculator-form {
-    padding: 1rem;
-  }
-
-  .vehicle-card,
-  .vehicle-form {
-    max-width: calc(100% - 2rem);
-    margin: 1rem;
-  }
-
+  .input-group input,
   .uber-button {
-    max-width: 100%;
+    font-size: 0.95rem; /* Fontes um pouco menores em inputs/botões */
+  }
+  .uber-button {
+    padding: 0.75rem 1.25rem;
   }
 
-  .result-card {
-    padding: 1rem;
+  .vehicle-cards {
+    grid-template-columns: 1fr; /* Uma coluna em telas pequenas */
   }
-
-  .history-section {
-    padding: 1rem;
+  .modal-content {
+    padding: 1.5rem;
   }
-
-  .stats-section {
-    padding: 1rem;
+  .modal-content h3 {
+    font-size: 1.3rem;
   }
 }
+
+@media (max-width: 480px) {
+  body {
+    padding: 0; /* Sem padding no body, container ocupa tudo */
+  }
+  .container {
+    margin: 0;
+    border-radius: 0; /* Sem radius em telas muito pequenas */
+    min-height: 100vh; /* Ocupa a altura toda */
+  }
+  .app-header .logo {
+    width: 50px;
+    height: 50px;
+  }
+  .app-header h1 {
+    font-size: 1.6rem;
+  }
+  .button-group {
+    flex-direction: column; /* Botões empilhados */
+  }
+  .button-group .uber-button {
+    width: 100%; /* Botões ocupam largura total */
+  }
+  .backup-buttons {
+    flex-direction: column;
+  }
+  .backup-buttons .uber-button {
+    width: 100%;
+  }
+  .notification-area {
+    left: 0.5rem;
+    right: 0.5rem;
+    top: 0.5rem;
+    max-width: none;
+  }
+}
+
+/* Estilos de acessibilidade para foco visível */
+*:focus-visible {
+  outline: 3px solid var(--uber-blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--uber-gray-dark), 0 0 0 6px var(--uber-blue); /* Dupla borda para contraste */
+}
+/* Remover outline padrão se focus-visible for suportado e aplicado */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+/* ===== FIM DO ARQUIVO ===== */

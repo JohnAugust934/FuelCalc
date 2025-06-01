@@ -1,38 +1,76 @@
-// ===== CONFIGURAÇÕES E CONSTANTES =====
+// app.js - Lógica Principal do FuelCalc
+// Data da última refatoração: 01/06/2025 (Exemplo)
+
+// "Modo Estrito" para ajudar a pegar erros comuns.
+"use strict";
+
+// ===== CONFIGURAÇÕES E CONSTANTES GLOBAIS =====
 const CONFIG = {
   STORAGE_KEYS: {
-    VEHICLES: "veiculos",
-    HISTORY: "historicoCombustivel",
+    VEHICLES: "fuelCalc_vehicles_v1", // Adicionado prefixo e versão
+    HISTORY: "fuelCalc_history_v1", // Adicionado prefixo e versão
+    APP_SETTINGS: "fuelCalc_settings_v1", // Para futuras configurações
   },
   VALIDATION: {
-    MIN_EFFICIENCY: 5,
-    MAX_EFFICIENCY: 50,
+    MIN_EFFICIENCY: 1, // km/L
+    MAX_EFFICIENCY: 70, // km/L (considerando motos e GNV)
     MIN_KM: 0,
-    MAX_KM: 999999,
-    MIN_PRICE: 0.1,
-    MAX_PRICE: 20,
+    MAX_KM: 9999999, // Aumentado limite de KM
+    MIN_PRICE: 0.1, // R$
+    MAX_PRICE: 25, // R$ (considerando flutuações)
+    MAX_TRIP_DISTANCE: 5000, // km (viagens mais longas)
+    MIN_VEHICLE_NAME_LENGTH: 2,
+    MAX_VEHICLE_NAME_LENGTH: 40,
+    MAX_UBER_GAIN: 20000, // R$
   },
-  HISTORY_LIMIT: 25,
-  DEBOUNCE_DELAY: 300,
+  HISTORY_DISPLAY_COUNT: 3, // Quantidade inicial de itens no histórico
+  HISTORY_LIMIT: 50, // Máximo de registros no histórico geral
+  DEBOUNCE_DELAY: 350, // ms
+  NOTIFICATION_TIMEOUT: 4000, // ms (4 segundos)
+  CHART_MAX_DAYS: 30, // Mostrar dados dos últimos 30 dias no gráfico
 };
 
-// ===== UTILITÁRIOS DE SEGURANÇA =====
-class SecurityUtils {
+// ===== UTILITÁRIOS GERAIS =====
+class Utils {
+  /**
+   * Sanitiza uma string para prevenir XSS básico, convertendo HTML para texto.
+   * @param {string} str - A string a ser sanitizada.
+   * @returns {string} A string sanitizada.
+   */
   static sanitizeHTML(str) {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
+    if (typeof str !== "string") return "";
+    const temp = document.createElement("div");
+    temp.textContent = str;
+    return temp.innerHTML;
   }
 
+  /**
+   * Valida se um valor é um número dentro de um intervalo.
+   * @param {any} value - O valor a ser validado.
+   * @param {number} min - O valor mínimo permitido.
+   * @param {number} max - O valor máximo permitido.
+   * @returns {boolean} True se válido, false caso contrário.
+   */
   static validateNumber(value, min = -Infinity, max = Infinity) {
     const num = parseFloat(value);
     return !isNaN(num) && num >= min && num <= max;
   }
 
+  /**
+   * Converte vírgulas em pontos em uma string numérica.
+   * @param {string|number} value - O valor a ser convertido.
+   * @returns {string|number} O valor com pontos ou o valor original se não for string.
+   */
   static convertCommaToPoint(value) {
     return typeof value === "string" ? value.replace(/,/g, ".") : value;
   }
 
+  /**
+   * Função Debounce: Atraso na execução de uma função até que um certo tempo tenha passado sem novas chamadas.
+   * @param {Function} func - A função a ser "debounced".
+   * @param {number} wait - O tempo de espera em milissegundos.
+   * @returns {Function} A nova função "debounced".
+   */
   static debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -44,1274 +82,1715 @@ class SecurityUtils {
       timeout = setTimeout(later, wait);
     };
   }
+
+  /**
+   * Formata um número como moeda brasileira (BRL).
+   * @param {number} value - O valor numérico.
+   * @returns {string} O valor formatado como R$ 0,00.
+   */
+  static formatCurrency(value) {
+    if (isNaN(parseFloat(value))) return "R$ --";
+    return parseFloat(value).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+  }
+
+  /**
+   * Formata uma data ISO para o formato local (dd/mm/aaaa hh:mm).
+   * @param {string} isoDateString - A data em formato ISO.
+   * @returns {string} A data formatada.
+   */
+  static formatLocalDate(isoDateString) {
+    if (!isoDateString) return "--";
+    try {
+      return new Date(isoDateString).toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (e) {
+      return "--";
+    }
+  }
 }
 
-// ===== GERENCIADOR DE NOTIFICAÇÕES =====
-class NotificationManager {
-  static showError(message) {
-    this.showNotification(message, "error");
+// ===== GERENCIADOR DE NOTIFICAÇÕES E MODAIS =====
+class UIManager {
+  constructor() {
+    // Cache de elementos do DOM para modais e notificações
+    this.notificationArea = document.getElementById("notificationArea");
+
+    this.detailsModalOverlay = document.getElementById("detailsModalOverlay");
+    this.detailsModalContent = document.getElementById("detailsModalContent");
+    this.closeDetailsModalBtn = document.getElementById("closeDetailsModalBtn");
+
+    this.confirmModalOverlay = document.getElementById("confirmModalOverlay");
+    this.confirmModalTitle = document.getElementById("confirmModalTitle");
+    this.confirmModalMessage = document.getElementById("confirmModalMessage");
+    this.confirmModalConfirmBtn = document.getElementById(
+      "confirmModalConfirmBtn"
+    );
+    this.confirmModalCancelBtn = document.getElementById(
+      "confirmModalCancelBtn"
+    );
+
+    this._bindModalEvents();
+    this._resolveConfirm = null; // Para promessa de confirmação
   }
 
-  static showSuccess(message) {
-    this.showNotification(message, "success");
+  /**
+   * Vincula eventos básicos para fechar modais.
+   * @private
+   */
+  _bindModalEvents() {
+    if (this.closeDetailsModalBtn) {
+      this.closeDetailsModalBtn.addEventListener("click", () =>
+        this.hideDetailsModal()
+      );
+    }
+    if (this.detailsModalOverlay) {
+      this.detailsModalOverlay.addEventListener("click", (e) => {
+        if (e.target === this.detailsModalOverlay) this.hideDetailsModal();
+      });
+    }
+
+    if (this.confirmModalCancelBtn) {
+      this.confirmModalCancelBtn.addEventListener("click", () =>
+        this._handleConfirm(false)
+      );
+    }
+    if (this.confirmModalConfirmBtn) {
+      this.confirmModalConfirmBtn.addEventListener("click", () =>
+        this._handleConfirm(true)
+      );
+    }
+    if (this.confirmModalOverlay) {
+      this.confirmModalOverlay.addEventListener("click", (e) => {
+        if (e.target === this.confirmModalOverlay) this._handleConfirm(false); // Cancelar se clicar fora
+      });
+    }
   }
 
-  static showNotification(message, type = "info") {
+  /**
+   * Mostra uma notificação (toast).
+   * @param {string} message - A mensagem da notificação.
+   * @param {'success'|'error'|'info'} type - O tipo de notificação.
+   */
+  showNotification(message, type = "info") {
+    if (!this.notificationArea) return;
+
     const notification = document.createElement("div");
-    notification.className = `notification notification-${type}`;
+    notification.className = `notification ${type}`;
     notification.setAttribute("role", "alert");
-    notification.setAttribute("aria-live", "polite");
+    notification.setAttribute("aria-live", "assertive"); // Importante para leitores de tela
 
     const messageSpan = document.createElement("span");
+    messageSpan.className = "notification-message";
     messageSpan.textContent = message;
 
     const closeBtn = document.createElement("button");
-    closeBtn.textContent = "×";
+    closeBtn.innerHTML = "&times;"; // 'x' para fechar
     closeBtn.className = "notification-close";
     closeBtn.setAttribute("aria-label", "Fechar notificação");
     closeBtn.addEventListener("click", () =>
-      this.removeNotification(notification)
+      this._removeNotification(notification)
     );
 
     notification.appendChild(messageSpan);
     notification.appendChild(closeBtn);
+    this.notificationArea.appendChild(notification);
 
-    document.body.appendChild(notification);
+    // Força reflow para a animação de entrada funcionar
+    void notification.offsetWidth;
+    notification.style.opacity = "1";
+    notification.style.transform = "translateX(0)";
 
-    // Auto-remove após 5 segundos
-    setTimeout(() => this.removeNotification(notification), 5000);
+    setTimeout(
+      () => this._removeNotification(notification),
+      CONFIG.NOTIFICATION_TIMEOUT
+    );
   }
 
-  static removeNotification(notification) {
+  /**
+   * Remove uma notificação do DOM.
+   * @param {HTMLElement} notification - O elemento da notificação a ser removido.
+   * @private
+   */
+  _removeNotification(notification) {
     if (notification && notification.parentNode) {
-      notification.parentNode.removeChild(notification);
+      notification.style.opacity = "0";
+      notification.style.transform = "translateX(100%)"; // Animação de saída
+      // Espera a transição CSS terminar antes de remover do DOM
+      notification.addEventListener(
+        "transitionend",
+        () => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        },
+        { once: true }
+      );
+      // Fallback caso a transição não dispare
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 350); // Duração da transição + pequeno buffer
+    }
+  }
+
+  /**
+   * Mostra o modal de detalhes.
+   * @param {string} title - Título do modal.
+   * @param {Array<{label: string, value: string}>} detailsArray - Array de objetos com label e valor.
+   */
+  showDetailsModal(title, detailsArray) {
+    if (!this.detailsModalOverlay || !this.detailsModalContent) return;
+
+    const modalTitleElement =
+      this.detailsModalOverlay.querySelector("#detailsModalTitle");
+    if (modalTitleElement) modalTitleElement.textContent = title;
+
+    this.detailsModalContent.innerHTML = ""; // Limpa conteúdo anterior
+
+    detailsArray.forEach((detail) => {
+      const itemDiv = document.createElement("div");
+      itemDiv.className = "modal-detail-item";
+
+      const labelSpan = document.createElement("span");
+      labelSpan.textContent = `${detail.label}:`;
+
+      const valueStrong = document.createElement("strong");
+      // Sanitiza o valor, pois pode vir de dados do usuário (histórico)
+      valueStrong.innerHTML = Utils.sanitizeHTML(String(detail.value));
+
+      itemDiv.appendChild(labelSpan);
+      itemDiv.appendChild(valueStrong);
+      this.detailsModalContent.appendChild(itemDiv);
+    });
+
+    this.detailsModalOverlay.style.display = "flex";
+    // Força reflow para a animação de entrada do modal
+    void this.detailsModalOverlay.offsetWidth;
+    this.detailsModalOverlay.classList.add("active");
+    if (this.closeDetailsModalBtn) this.closeDetailsModalBtn.focus();
+  }
+
+  /**
+   * Esconde o modal de detalhes.
+   */
+  hideDetailsModal() {
+    if (!this.detailsModalOverlay) return;
+    this.detailsModalOverlay.classList.remove("active");
+    // Espera a transição CSS antes de esconder com display:none
+    this.detailsModalOverlay.addEventListener(
+      "transitionend",
+      () => {
+        if (!this.detailsModalOverlay.classList.contains("active")) {
+          // Verifica se ainda deve estar escondido
+          this.detailsModalOverlay.style.display = "none";
+        }
+      },
+      { once: true }
+    );
+    setTimeout(() => {
+      // Fallback
+      if (!this.detailsModalOverlay.classList.contains("active")) {
+        this.detailsModalOverlay.style.display = "none";
+      }
+    }, 350);
+  }
+
+  /**
+   * Mostra um modal de confirmação.
+   * @param {string} message - A mensagem de confirmação.
+   * @param {string} [title="Confirmar Ação"] - O título do modal.
+   * @returns {Promise<boolean>} Uma promessa que resolve para true se confirmado, false caso contrário.
+   */
+  showConfirm(message, title = "Confirmar Ação") {
+    return new Promise((resolve) => {
+      if (
+        !this.confirmModalOverlay ||
+        !this.confirmModalTitle ||
+        !this.confirmModalMessage
+      ) {
+        // Fallback para o confirm nativo se o modal não estiver pronto
+        console.warn(
+          "Modal de confirmação não encontrado, usando confirm nativo."
+        );
+        resolve(window.confirm(message));
+        return;
+      }
+
+      this.confirmModalTitle.textContent = title;
+      this.confirmModalMessage.textContent = message;
+      this._resolveConfirm = resolve; // Armazena a função resolve da promessa
+
+      this.confirmModalOverlay.style.display = "flex";
+      void this.confirmModalOverlay.offsetWidth; // Reflow
+      this.confirmModalOverlay.classList.add("active");
+      if (this.confirmModalConfirmBtn) this.confirmModalConfirmBtn.focus();
+    });
+  }
+
+  /**
+   * Manipula a resposta do modal de confirmação.
+   * @param {boolean} confirmed - True se o usuário confirmou, false caso contrário.
+   * @private
+   */
+  _handleConfirm(confirmed) {
+    if (!this.confirmModalOverlay) return;
+    this.confirmModalOverlay.classList.remove("active");
+    this.confirmModalOverlay.addEventListener(
+      "transitionend",
+      () => {
+        if (!this.confirmModalOverlay.classList.contains("active")) {
+          this.confirmModalOverlay.style.display = "none";
+        }
+      },
+      { once: true }
+    );
+    setTimeout(() => {
+      // Fallback
+      if (!this.confirmModalOverlay.classList.contains("active")) {
+        this.confirmModalOverlay.style.display = "none";
+      }
+    }, 350);
+
+    if (this._resolveConfirm) {
+      this._resolveConfirm(confirmed);
+      this._resolveConfirm = null; // Limpa para a próxima chamada
     }
   }
 }
 
-// ===== GERENCIADOR DE ARMAZENAMENTO =====
+// ===== GERENCIADOR DE ARMAZENAMENTO LOCAL (LocalStorage) =====
 class StorageManager {
-  static safeGetItem(key, defaultValue = []) {
+  constructor(uiManager) {
+    this.uiManager = uiManager; // Para mostrar notificações de erro
+  }
+
+  /**
+   * Obtém um item do localStorage de forma segura, com parse de JSON.
+   * @param {string} key - A chave do item.
+   * @param {any} [defaultValue=[]] - O valor padrão a ser retornado se a chave não existir ou houver erro.
+   * @returns {any} O valor parseado ou o valor padrão.
+   */
+  safeGetItem(key, defaultValue = []) {
     try {
-      if (!this.isStorageAvailable()) {
-        console.warn("localStorage não disponível");
+      if (!this._isStorageAvailable()) {
+        console.warn("LocalStorage não está disponível. Usando valor padrão.");
         return defaultValue;
       }
-
       const item = localStorage.getItem(key);
       return item ? JSON.parse(item) : defaultValue;
     } catch (error) {
-      console.error(`Erro ao carregar ${key}:`, error);
-      NotificationManager.showError(`Erro ao carregar dados: ${error.message}`);
+      console.error(`Erro ao carregar ${key} do localStorage:`, error);
+      this.uiManager.showNotification(
+        `Erro ao carregar dados locais (${key}). Alguns dados podem ter sido perdidos.`,
+        "error"
+      );
+      localStorage.removeItem(key); // Remove item corrompido
       return defaultValue;
     }
   }
 
-  static safeSetItem(key, value) {
+  /**
+   * Define um item no localStorage de forma segura, com stringify para JSON.
+   * @param {string} key - A chave do item.
+   * @param {any} value - O valor a ser armazenado.
+   * @returns {boolean} True se salvo com sucesso, false caso contrário.
+   */
+  safeSetItem(key, value) {
     try {
-      if (!this.isStorageAvailable()) {
-        NotificationManager.showError("Armazenamento não disponível");
+      if (!this._isStorageAvailable()) {
+        this.uiManager.showNotification(
+          "Armazenamento local não disponível. Não foi possível salvar os dados.",
+          "error"
+        );
         return false;
       }
-
       localStorage.setItem(key, JSON.stringify(value));
       return true;
     } catch (error) {
-      console.error(`Erro ao salvar ${key}:`, error);
-      NotificationManager.showError(`Erro ao salvar dados: ${error.message}`);
+      console.error(`Erro ao salvar ${key} no localStorage:`, error);
+      let message = `Erro ao salvar dados (${key}).`;
+      if (error.name === "QuotaExceededError") {
+        message =
+          "Espaço de armazenamento local cheio. Não foi possível salvar. Tente limpar o histórico ou exportar dados.";
+      }
+      this.uiManager.showNotification(message, "error");
       return false;
     }
   }
 
-  static isStorageAvailable() {
+  /**
+   * Verifica se o localStorage está disponível e funcional.
+   * @returns {boolean} True se disponível, false caso contrário.
+   * @private
+   */
+  _isStorageAvailable() {
+    let storage;
     try {
-      const test = "__storage_test__";
-      localStorage.setItem(test, test);
-      localStorage.removeItem(test);
+      storage = window.localStorage;
+      const testKey = "__storage_test__";
+      storage.setItem(testKey, testKey);
+      storage.removeItem(testKey);
       return true;
     } catch (e) {
-      return false;
+      // Trata exceções comuns, incluindo QuotaExceededError
+      return (
+        e instanceof DOMException &&
+        (e.code === 22 || // Todos exceto Firefox
+          e.code === 1014 || // Firefox
+          e.name === "QuotaExceededError" || // Todos
+          e.name === "NS_ERROR_DOM_QUOTA_REACHED") && // Firefox
+        storage &&
+        storage.length !== 0 // Verifica se há algo, mesmo com erro de quota
+      );
     }
   }
 
-  static exportData() {
-    const data = {
-      vehicles: this.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES),
-      history: this.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY),
+  /**
+   * Exporta os dados da aplicação (veículos e histórico) para um arquivo JSON.
+   */
+  exportData() {
+    const dataToExport = {
+      app: "FuelCalc",
+      version: "1.0", // Versão do formato do backup
       exportDate: new Date().toISOString(),
+      vehicles: this.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []),
+      history: this.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY, []),
+      // Adicionar settings se houver:
+      // settings: this.safeGetItem(CONFIG.STORAGE_KEYS.APP_SETTINGS, {}),
     };
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], {
       type: "application/json",
     });
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement("a");
     a.href = url;
-    a.download = `fuelcalc-backup-${
+    a.download = `fuelcalc_backup_${
       new Date().toISOString().split("T")[0]
     }.json`;
-    document.body.appendChild(a);
+    document.body.appendChild(a); // Necessário para Firefox
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-
-    NotificationManager.showSuccess("Dados exportados com sucesso!");
+    this.uiManager.showNotification("Dados exportados com sucesso!", "success");
   }
 
-  static importData(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target.result);
+  /**
+   * Importa dados de um arquivo JSON para a aplicação.
+   * @param {File} file - O arquivo JSON a ser importado.
+   * @returns {Promise<boolean>} True se a importação (parcial ou total) foi bem-sucedida, false caso contrário.
+   */
+  async importData(file) {
+    if (!file || file.type !== "application/json") {
+      this.uiManager.showNotification(
+        "Arquivo inválido. Por favor, selecione um arquivo .json.",
+        "error"
+      );
+      return false;
+    }
 
-          if (data.vehicles && Array.isArray(data.vehicles)) {
-            this.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, data.vehicles);
-          }
+    try {
+      const fileContent = await file.text();
+      const data = JSON.parse(fileContent);
+      let vehiclesImported = false;
+      let historyImported = false;
 
-          if (data.history && Array.isArray(data.history)) {
-            this.safeSetItem(CONFIG.STORAGE_KEYS.HISTORY, data.history);
-          }
+      // Validação básica do formato do arquivo
+      if (typeof data !== "object" || data === null) {
+        this.uiManager.showNotification(
+          "Formato de arquivo de backup inválido.",
+          "error"
+        );
+        return false;
+      }
 
-          NotificationManager.showSuccess("Dados importados com sucesso!");
-          resolve(data);
-        } catch (error) {
-          NotificationManager.showError(
-            "Erro ao importar dados: arquivo inválido"
-          );
-          reject(error);
+      if (data.vehicles && Array.isArray(data.vehicles)) {
+        // TODO: Adicionar validação mais granular para cada veículo importado
+        if (this.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, data.vehicles)) {
+          vehiclesImported = true;
         }
-      };
-      reader.onerror = () => reject(new Error("Erro ao ler arquivo"));
-      reader.readAsText(file);
-    });
+      } else if (data.vehicles) {
+        this.uiManager.showNotification(
+          "Dados de veículos no arquivo de backup estão mal formatados.",
+          "warning"
+        );
+      }
+
+      if (data.history && Array.isArray(data.history)) {
+        // TODO: Adicionar validação mais granular para cada registro de histórico
+        if (this.safeSetItem(CONFIG.STORAGE_KEYS.HISTORY, data.history)) {
+          historyImported = true;
+        }
+      } else if (data.history) {
+        this.uiManager.showNotification(
+          "Dados de histórico no arquivo de backup estão mal formatados.",
+          "warning"
+        );
+      }
+
+      if (vehiclesImported || historyImported) {
+        this.uiManager.showNotification(
+          "Dados importados com sucesso! A página será atualizada.",
+          "success"
+        );
+        return true; // Indica que algo foi importado
+      } else {
+        this.uiManager.showNotification(
+          "Nenhum dado válido de veículos ou histórico encontrado no arquivo.",
+          "info"
+        );
+        return false;
+      }
+    } catch (error) {
+      console.error("Erro ao importar dados:", error);
+      this.uiManager.showNotification(
+        "Erro ao processar o arquivo de backup. Verifique o console para detalhes.",
+        "error"
+      );
+      return false;
+    }
   }
 }
 
-// ===== VALIDADOR APRIMORADO =====
+// ===== VALIDADOR DE DADOS DA APLICAÇÃO =====
 class Validator {
-  static validateVehicle(nome, eficiencia, tipo) {
+  constructor(uiManager) {
+    this.uiManager = uiManager;
+  }
+  /**
+   * Valida os dados de um veículo.
+   * @param {string} nome - Nome do veículo.
+   * @param {number|string} eficiencia - Eficiência do veículo.
+   * @param {string} tipo - Tipo do veículo ('carro' ou 'moto').
+   * @returns {{isValid: boolean, errors: string[], data: object|null}} Objeto com status da validação.
+   */
+  validateVehicle(nome, eficiencia, tipo) {
     const errors = [];
-
-    if (!nome || nome.trim().length < 2) {
-      errors.push("Nome do veículo deve ter pelo menos 2 caracteres");
-    }
-
-    if (nome && nome.trim().length > 50) {
-      errors.push("Nome do veículo deve ter no máximo 50 caracteres");
-    }
+    const parsedEficiencia = parseFloat(
+      Utils.convertCommaToPoint(String(eficiencia))
+    );
+    const trimmedNome = String(nome).trim();
 
     if (
-      !SecurityUtils.validateNumber(
-        eficiencia,
+      trimmedNome.length < CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH ||
+      trimmedNome.length > CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH
+    ) {
+      errors.push(
+        `Nome do veículo deve ter entre ${CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH} e ${CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH} caracteres.`
+      );
+    }
+    if (
+      !Utils.validateNumber(
+        parsedEficiencia,
         CONFIG.VALIDATION.MIN_EFFICIENCY,
         CONFIG.VALIDATION.MAX_EFFICIENCY
       )
     ) {
       errors.push(
-        `Eficiência deve estar entre ${CONFIG.VALIDATION.MIN_EFFICIENCY} e ${CONFIG.VALIDATION.MAX_EFFICIENCY} km/L`
+        `Eficiência deve ser um número entre ${CONFIG.VALIDATION.MIN_EFFICIENCY} e ${CONFIG.VALIDATION.MAX_EFFICIENCY} km/L.`
       );
     }
-
     if (!["carro", "moto"].includes(tipo)) {
-      errors.push("Tipo de veículo inválido");
+      errors.push("Tipo de veículo inválido. Selecione 'Carro' ou 'Moto'.");
     }
 
+    const isValid = errors.length === 0;
+    if (!isValid && this.uiManager)
+      this.uiManager.showNotification(errors.join("\n"), "error");
+
     return {
-      isValid: errors.length === 0,
+      isValid,
       errors,
+      data: isValid
+        ? { nome: trimmedNome, eficiencia: parsedEficiencia, tipo }
+        : null,
     };
   }
 
-  static validateTrip(
-    kmInicial,
-    kmFinal,
-    kmPorLitro,
-    precoCombustivel,
-    ganhoUber
-  ) {
+  /**
+   * Valida os dados de uma viagem.
+   * @returns {{isValid: boolean, errors: string[], data: object|null}} Objeto com status da validação.
+   */
+  validateTrip(kmInicial, kmFinal, kmPorLitro, precoCombustivel, ganhoUber) {
     const errors = [];
+    const data = {}; // Para armazenar os valores parseados
 
+    data.kmInicial = parseFloat(Utils.convertCommaToPoint(String(kmInicial)));
     if (
-      !SecurityUtils.validateNumber(
-        kmInicial,
+      !Utils.validateNumber(
+        data.kmInicial,
         CONFIG.VALIDATION.MIN_KM,
         CONFIG.VALIDATION.MAX_KM
       )
     ) {
-      errors.push("KM Inicial deve ser um número válido");
+      errors.push(
+        `KM Inicial inválido (entre ${CONFIG.VALIDATION.MIN_KM} e ${CONFIG.VALIDATION.MAX_KM}).`
+      );
     }
 
+    data.kmFinal = parseFloat(Utils.convertCommaToPoint(String(kmFinal)));
     if (
-      !SecurityUtils.validateNumber(
-        kmFinal,
-        kmInicial + 0.1,
+      !Utils.validateNumber(
+        data.kmFinal,
+        data.kmInicial + 0.01,
         CONFIG.VALIDATION.MAX_KM
       )
     ) {
-      errors.push("KM Final deve ser maior que KM Inicial");
+      // KM final deve ser maior
+      errors.push(
+        `KM Final inválido (deve ser maior que KM Inicial e até ${CONFIG.VALIDATION.MAX_KM}).`
+      );
+    } else if (
+      data.kmFinal - data.kmInicial >
+      CONFIG.VALIDATION.MAX_TRIP_DISTANCE
+    ) {
+      errors.push(
+        `Distância da viagem excede o limite de ${CONFIG.VALIDATION.MAX_TRIP_DISTANCE} km.`
+      );
     }
 
-    if (kmFinal - kmInicial > 2000) {
-      errors.push("Distância muito grande (máximo 2000 km por viagem)");
-    }
-
+    data.kmPorLitro = parseFloat(Utils.convertCommaToPoint(String(kmPorLitro)));
     if (
-      !SecurityUtils.validateNumber(
-        kmPorLitro,
+      !Utils.validateNumber(
+        data.kmPorLitro,
         CONFIG.VALIDATION.MIN_EFFICIENCY,
         CONFIG.VALIDATION.MAX_EFFICIENCY
       )
     ) {
       errors.push(
-        `Eficiência deve estar entre ${CONFIG.VALIDATION.MIN_EFFICIENCY} e ${CONFIG.VALIDATION.MAX_EFFICIENCY} km/L`
+        `Eficiência do veículo inválida (entre ${CONFIG.VALIDATION.MIN_EFFICIENCY} e ${CONFIG.VALIDATION.MAX_EFFICIENCY} km/L).`
       );
     }
 
+    data.precoCombustivel = parseFloat(
+      Utils.convertCommaToPoint(String(precoCombustivel))
+    );
     if (
-      !SecurityUtils.validateNumber(
-        precoCombustivel,
+      !Utils.validateNumber(
+        data.precoCombustivel,
         CONFIG.VALIDATION.MIN_PRICE,
         CONFIG.VALIDATION.MAX_PRICE
       )
     ) {
       errors.push(
-        `Preço deve estar entre R$ ${CONFIG.VALIDATION.MIN_PRICE} e R$ ${CONFIG.VALIDATION.MAX_PRICE}`
+        `Preço do combustível inválido (entre R$${CONFIG.VALIDATION.MIN_PRICE.toFixed(
+          2
+        )} e R$${CONFIG.VALIDATION.MAX_PRICE.toFixed(2)}).`
       );
     }
 
     if (
       ganhoUber !== null &&
-      ganhoUber !== "" &&
-      !SecurityUtils.validateNumber(ganhoUber, 0, 10000)
+      ganhoUber !== undefined &&
+      String(ganhoUber).trim() !== ""
     ) {
-      errors.push("Ganho da Uber deve ser um valor entre R$ 0 e R$ 10.000");
+      data.ganhoUber = parseFloat(Utils.convertCommaToPoint(String(ganhoUber)));
+      if (
+        !Utils.validateNumber(
+          data.ganhoUber,
+          0,
+          CONFIG.VALIDATION.MAX_UBER_GAIN
+        )
+      ) {
+        errors.push(
+          `Ganho da viagem inválido (entre R$0 e R$${CONFIG.VALIDATION.MAX_UBER_GAIN.toFixed(
+            2
+          )}).`
+        );
+      }
+    } else {
+      data.ganhoUber = null; // Tratar como não informado
     }
 
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
+    const isValid = errors.length === 0;
+    if (!isValid && this.uiManager)
+      this.uiManager.showNotification(errors.join("\n"), "error");
+
+    return { isValid, errors, data: isValid ? data : null };
   }
 }
 
 // ===== GERENCIADOR DE VEÍCULOS =====
 class VehicleManager {
-  constructor() {
-    this.currentVehicle = null;
-    this.currentType = "carro";
-    this.domCache = this.initDOMCache();
-    this.bindEvents();
-  }
+  constructor(storageManager, uiManager, validator) {
+    this.storageManager = storageManager;
+    this.uiManager = uiManager;
+    this.validator = validator;
 
-  initDOMCache() {
-    return {
-      vehicleList: document.getElementById("vehicleList"),
+    this.currentVehicle = null; // Objeto do veículo atualmente selecionado
+    this.currentVehicleType = "carro"; // 'carro' ou 'moto'
+
+    // Cache de elementos do DOM
+    this.dom = {
+      vehicleTypeButtons: document.querySelectorAll("[data-vehicle-type]"),
+      vehicleListContainer: document.getElementById("vehicleList"),
+      addVehicleBtn: document.getElementById("addVehicleBtn"),
       vehicleForm: document.getElementById("vehicleForm"),
-      vehicleName: document.getElementById("vehicleName"),
-      vehicleEfficiency: document.getElementById("vehicleEfficiency"),
-      vehicleType: document.getElementById("vehicleType"),
-      kmPorLitro: document.getElementById("kmPorLitro"),
-      typeButtons: document.querySelectorAll(
-        ".vehicle-type-buttons .uber-button"
-      ),
+      vehicleTypeInput: document.getElementById("vehicleType"), // Hidden input no form
+      vehicleNameInput: document.getElementById("vehicleName"),
+      vehicleEfficiencyInput: document.getElementById("vehicleEfficiency"),
+      saveVehicleBtn: document.getElementById("saveVehicleBtn"),
+      cancelVehicleBtn: document.getElementById("cancelVehicleBtn"),
+      // Input de eficiência no formulário principal de cálculo
+      mainFormEfficiencyInput: document.getElementById("kmPorLitro"),
     };
+    this._bindEvents();
   }
 
-  bindEvents() {
-    // Event listeners para botões de tipo de veículo
-    this.domCache.typeButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const tipo = button.getAttribute("data-tipo");
-        this.selectVehicleType(tipo);
+  _bindEvents() {
+    this.dom.vehicleTypeButtons.forEach((button) => {
+      button.addEventListener("click", (e) =>
+        this.selectVehicleType(e.currentTarget.dataset.vehicleType)
+      );
+    });
+    if (this.dom.addVehicleBtn)
+      this.dom.addVehicleBtn.addEventListener("click", () =>
+        this.showVehicleForm()
+      );
+    if (this.dom.vehicleForm)
+      this.dom.vehicleForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        this.saveVehicle();
       });
-    });
-
-    // Event listeners para formulário de veículo
-    const addBtn = document.getElementById("adicionarVeiculoBtn");
-    const saveBtn = document.getElementById("salvarVeiculoBtn");
-    const cancelBtn = document.getElementById("cancelarVeiculoBtn");
-
-    if (addBtn) addBtn.addEventListener("click", () => this.showVehicleForm());
-    if (saveBtn) saveBtn.addEventListener("click", () => this.saveVehicle());
-    if (cancelBtn)
-      cancelBtn.addEventListener("click", () => this.hideVehicleForm());
+    if (this.dom.cancelVehicleBtn)
+      this.dom.cancelVehicleBtn.addEventListener("click", () =>
+        this.hideVehicleForm()
+      );
   }
 
+  /**
+   * Seleciona o tipo de veículo (carro/moto) e atualiza a UI.
+   * @param {'carro'|'moto'} type - O tipo de veículo.
+   */
   selectVehicleType(type) {
-    this.currentType = type;
-    this.updateTypeButtons();
-    this.loadVehicles();
-  }
+    if (type !== "carro" && type !== "moto") return; // Validação básica
+    this.currentVehicleType = type;
 
-  updateTypeButtons() {
-    this.domCache.typeButtons.forEach((button) => {
-      const buttonType = button.getAttribute("data-tipo");
-      button.classList.toggle("selected", buttonType === this.currentType);
+    // Atualiza visual dos botões de tipo
+    this.dom.vehicleTypeButtons.forEach((btn) => {
+      btn.classList.toggle("selected", btn.dataset.vehicleType === type);
+      btn.setAttribute("aria-pressed", btn.dataset.vehicleType === type);
     });
+
+    // Limpa seleção de veículo e campo de eficiência se o tipo mudar
+    this.currentVehicle = null;
+    if (this.dom.mainFormEfficiencyInput)
+      this.dom.mainFormEfficiencyInput.value = "";
+
+    this.loadAndRenderVehicles();
+
+    // Notifica outros módulos da mudança de tipo (se necessário)
+    document.dispatchEvent(
+      new CustomEvent("vehicleTypeChanged", { detail: { type } })
+    );
   }
 
-  saveVehicle() {
-    const nome = this.domCache.vehicleName.value.trim();
-    const eficiencia = parseFloat(
-      SecurityUtils.convertCommaToPoint(this.domCache.vehicleEfficiency.value)
+  /**
+   * Carrega veículos do localStorage e renderiza na UI.
+   */
+  loadAndRenderVehicles() {
+    if (!this.dom.vehicleListContainer) return;
+    const allVehicles = this.storageManager.safeGetItem(
+      CONFIG.STORAGE_KEYS.VEHICLES,
+      []
     );
-    const tipo = this.domCache.vehicleType.value;
-
-    const validation = Validator.validateVehicle(nome, eficiencia, tipo);
-
-    if (!validation.isValid) {
-      NotificationManager.showError(validation.errors.join("\n"));
-      return;
-    }
-
-    // Verificar se já existe veículo com mesmo nome
-    const vehicles = StorageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES);
-    const existingVehicle = vehicles.find(
-      (v) => v.nome.toLowerCase() === nome.toLowerCase() && v.tipo === tipo
+    const filteredVehicles = allVehicles.filter(
+      (v) => v.tipo === this.currentVehicleType
     );
 
-    if (existingVehicle) {
-      NotificationManager.showError("Já existe um veículo com este nome");
-      return;
-    }
-
-    const vehicle = {
-      nome: SecurityUtils.sanitizeHTML(nome),
-      eficiencia,
-      tipo,
-      id: Date.now(),
-      createdAt: new Date().toISOString(),
-    };
-
-    vehicles.push(vehicle);
-
-    if (StorageManager.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, vehicles)) {
-      this.loadVehicles();
-      this.hideVehicleForm();
-      NotificationManager.showSuccess("Veículo salvo com sucesso!");
-    }
-  }
-
-  loadVehicles() {
-    const vehicles = StorageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES);
-    const filteredVehicles = vehicles.filter(
-      (v) => v.tipo === this.currentType
-    );
-
-    // Limpar container
-    this.domCache.vehicleList.innerHTML = "";
+    this.dom.vehicleListContainer.innerHTML = ""; // Limpa lista atual
 
     if (filteredVehicles.length === 0) {
-      const emptyMessage = document.createElement("div");
-      emptyMessage.className = "empty-message";
-      emptyMessage.textContent = `Nenhum ${this.currentType} cadastrado`;
-      this.domCache.vehicleList.appendChild(emptyMessage);
+      this.dom.vehicleListContainer.innerHTML = `<li class="empty-message">Nenhum ${this.currentVehicleType} cadastrado.</li>`;
       return;
     }
 
     filteredVehicles.forEach((vehicle) => {
-      const card = this.createVehicleCard(vehicle);
-      this.domCache.vehicleList.appendChild(card);
+      const card = this._createVehicleCardElement(vehicle);
+      this.dom.vehicleListContainer.appendChild(card);
     });
   }
 
-  createVehicleCard(vehicle) {
+  /**
+   * Cria o elemento HTML para um card de veículo.
+   * @param {object} vehicle - O objeto do veículo.
+   * @returns {HTMLElement} O elemento do card.
+   * @private
+   */
+  _createVehicleCardElement(vehicle) {
     const card = document.createElement("div");
-    card.className = `vehicle-card ${
-      vehicle.id === this.currentVehicle?.id ? "active" : ""
-    }`;
+    card.className = "vehicle-card";
+    card.dataset.vehicleId = vehicle.id;
     card.setAttribute("role", "button");
     card.setAttribute("tabindex", "0");
-    card.setAttribute("aria-label", `Selecionar veículo ${vehicle.nome}`);
+    card.setAttribute(
+      "aria-label",
+      `Selecionar veículo ${Utils.sanitizeHTML(vehicle.nome)}, ${
+        vehicle.eficiencia
+      } km/L`
+    );
+
+    if (this.currentVehicle && this.currentVehicle.id === vehicle.id) {
+      card.classList.add("active");
+    }
 
     const title = document.createElement("h4");
-    title.textContent = vehicle.nome;
+    title.textContent = Utils.sanitizeHTML(vehicle.nome);
 
-    const efficiency = document.createElement("span");
-    efficiency.textContent = `${vehicle.eficiencia} km/L`;
+    const efficiencySpan = document.createElement("span");
+    efficiencySpan.textContent = `${vehicle.eficiencia} km/L`;
 
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "delete-button";
-    deleteBtn.textContent = "Excluir";
-    deleteBtn.setAttribute("aria-label", `Excluir veículo ${vehicle.nome}`);
-
-    // Event listeners seguros
-    const selectHandler = () => this.selectVehicle(vehicle.id);
-    card.addEventListener("click", selectHandler);
-    card.addEventListener("keypress", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        selectHandler();
-      }
-    });
-
-    deleteBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      this.deleteVehicle(vehicle.id, vehicle.nome);
+    deleteBtn.innerHTML = "&times;"; // Ícone 'x'
+    deleteBtn.setAttribute(
+      "aria-label",
+      `Excluir veículo ${Utils.sanitizeHTML(vehicle.nome)}`
+    );
+    deleteBtn.addEventListener("click", async (e) => {
+      e.stopPropagation(); // Evita que o card seja selecionado ao clicar em excluir
+      const confirmed = await this.uiManager.showConfirm(
+        `Tem certeza que deseja excluir o veículo "${Utils.sanitizeHTML(
+          vehicle.nome
+        )}"?`
+      );
+      if (confirmed) this.deleteVehicle(vehicle.id);
     });
 
     card.appendChild(title);
-    card.appendChild(efficiency);
+    card.appendChild(efficiencySpan);
     card.appendChild(deleteBtn);
 
+    card.addEventListener("click", () => this.selectVehicle(vehicle.id));
+    card.addEventListener("keypress", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        this.selectVehicle(vehicle.id);
+      }
+    });
     return card;
   }
-  selectVehicle(id) {
-    const vehicles = StorageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES);
-    this.currentVehicle = vehicles.find((v) => v.id === id);
 
-    if (this.currentVehicle && this.domCache.kmPorLitro) {
-      this.domCache.kmPorLitro.value = this.currentVehicle.eficiencia;
+  /**
+   * Seleciona um veículo específico.
+   * @param {string} vehicleId - O ID do veículo a ser selecionado.
+   */
+  selectVehicle(vehicleId) {
+    const allVehicles = this.storageManager.safeGetItem(
+      CONFIG.STORAGE_KEYS.VEHICLES,
+      []
+    );
+    const vehicle = allVehicles.find((v) => v.id === vehicleId);
+
+    if (vehicle) {
+      this.currentVehicle = vehicle;
+      if (this.dom.mainFormEfficiencyInput) {
+        this.dom.mainFormEfficiencyInput.value = vehicle.eficiencia;
+      }
+      // Atualiza a classe 'active' nos cards
+      this.dom.vehicleListContainer
+        .querySelectorAll(".vehicle-card")
+        .forEach((cardEl) => {
+          cardEl.classList.toggle(
+            "active",
+            cardEl.dataset.vehicleId === vehicleId
+          );
+        });
+      this.uiManager.showNotification(
+        `Veículo "${Utils.sanitizeHTML(vehicle.nome)}" selecionado.`,
+        "info"
+      );
     }
-
-    this.loadVehicles();
   }
 
-  deleteVehicle(id, nome) {
-    if (confirm(`Tem certeza que deseja excluir o veículo "${nome}"?`)) {
-      let vehicles = StorageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES);
-      vehicles = vehicles.filter((v) => v.id !== id);
+  /**
+   * Mostra o formulário para adicionar/editar veículo.
+   */
+  showVehicleForm() {
+    if (!this.dom.vehicleForm || !this.dom.vehicleTypeInput) return;
+    this.dom.vehicleTypeInput.value = this.currentVehicleType; // Define o tipo no input hidden
+    this.dom.vehicleNameInput.value = "";
+    this.dom.vehicleEfficiencyInput.value = "";
+    this.dom.vehicleForm.style.display = "block";
+    this.dom.vehicleNameInput.focus();
+    // Opcional: rolar para o formulário
+    this.dom.vehicleForm.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }
 
-      if (StorageManager.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, vehicles)) {
-        if (this.currentVehicle && this.currentVehicle.id === id) {
-          this.currentVehicle = null;
-          if (this.domCache.kmPorLitro) {
-            this.domCache.kmPorLitro.value = "";
-          }
-        }
-        this.loadVehicles();
-        NotificationManager.showSuccess("Veículo excluído com sucesso!");
+  /**
+   * Esconde o formulário de veículo.
+   */
+  hideVehicleForm() {
+    if (this.dom.vehicleForm) this.dom.vehicleForm.style.display = "none";
+  }
+
+  /**
+   * Salva um novo veículo ou atualiza um existente.
+   */
+  saveVehicle() {
+    const validationResult = this.validator.validateVehicle(
+      this.dom.vehicleNameInput.value,
+      this.dom.vehicleEfficiencyInput.value,
+      this.dom.vehicleTypeInput.value // Pega o tipo do input hidden
+    );
+
+    if (!validationResult.isValid) return; // Notificação de erro já foi mostrada pelo validador
+
+    const { nome, eficiencia, tipo } = validationResult.data;
+    const newVehicle = {
+      id: `vehicle_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      nome, // Já sanitizado e trimado pelo validador
+      eficiencia,
+      tipo,
+      createdAt: new Date().toISOString(),
+    };
+
+    const vehicles = this.storageManager.safeGetItem(
+      CONFIG.STORAGE_KEYS.VEHICLES,
+      []
+    );
+    // Verifica se já existe um veículo com o mesmo nome e tipo
+    const existingVehicle = vehicles.find(
+      (v) => v.nome.toLowerCase() === nome.toLowerCase() && v.tipo === tipo
+    );
+    if (existingVehicle) {
+      this.uiManager.showNotification(
+        `Já existe um ${tipo} com o nome "${nome}".`,
+        "error"
+      );
+      return;
+    }
+
+    vehicles.push(newVehicle);
+    if (
+      this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, vehicles)
+    ) {
+      this.uiManager.showNotification(
+        `Veículo "${nome}" salvo com sucesso!`,
+        "success"
+      );
+      this.hideVehicleForm();
+      this.loadAndRenderVehicles(); // Atualiza a lista
+      // Se este é o primeiro veículo do tipo, seleciona-o automaticamente
+      if (
+        vehicles.filter((v) => v.tipo === this.currentVehicleType).length === 1
+      ) {
+        this.selectVehicle(newVehicle.id);
       }
     }
   }
 
-  showVehicleForm() {
-    this.domCache.vehicleType.value = this.currentType;
-    this.domCache.vehicleForm.style.display = "block";
-    this.domCache.vehicleName.focus();
+  /**
+   * Deleta um veículo.
+   * @param {string} vehicleId - O ID do veículo a ser deletado.
+   */
+  deleteVehicle(vehicleId) {
+    let vehicles = this.storageManager.safeGetItem(
+      CONFIG.STORAGE_KEYS.VEHICLES,
+      []
+    );
+    const vehicleToDelete = vehicles.find((v) => v.id === vehicleId);
+    if (!vehicleToDelete) return;
+
+    vehicles = vehicles.filter((v) => v.id !== vehicleId);
+    if (
+      this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, vehicles)
+    ) {
+      this.uiManager.showNotification(
+        `Veículo "${Utils.sanitizeHTML(vehicleToDelete.nome)}" excluído.`,
+        "success"
+      );
+      if (this.currentVehicle && this.currentVehicle.id === vehicleId) {
+        this.currentVehicle = null; // Desseleciona se era o veículo ativo
+        if (this.dom.mainFormEfficiencyInput)
+          this.dom.mainFormEfficiencyInput.value = "";
+      }
+      this.loadAndRenderVehicles(); // Atualiza a lista
+      // Se não houver mais veículos, pode ser útil limpar o campo de eficiência principal
+      if (
+        vehicles.filter((v) => v.tipo === this.currentVehicleType).length ===
+          0 &&
+        this.dom.mainFormEfficiencyInput
+      ) {
+        this.dom.mainFormEfficiencyInput.placeholder =
+          "Adicione um veículo ou informe";
+      }
+    }
   }
 
-  hideVehicleForm() {
-    this.domCache.vehicleForm.style.display = "none";
-    this.clearVehicleForm();
-  }
-
-  clearVehicleForm() {
-    this.domCache.vehicleName.value = "";
-    this.domCache.vehicleEfficiency.value = "";
-    this.domCache.vehicleType.value = this.currentType;
+  /**
+   * Obtém o nome do veículo atual, se selecionado.
+   * @returns {string|null} Nome do veículo ou null.
+   */
+  getCurrentVehicleName() {
+    return this.currentVehicle ? this.currentVehicle.nome : null;
   }
 }
 
 // ===== CALCULADORA DE COMBUSTÍVEL =====
 class FuelCalculator {
-  constructor(vehicleManager) {
-    this.vehicleManager = vehicleManager;
-    this.domCache = this.initDOMCache();
-    this.bindEvents();
-  }
+  constructor(storageManager, uiManager, validator, vehicleManager) {
+    this.storageManager = storageManager;
+    this.uiManager = uiManager;
+    this.validator = validator;
+    this.vehicleManager = vehicleManager; // Para obter tipo e ID do veículo atual
 
-  initDOMCache() {
-    return {
+    this.dom = {
       form: document.getElementById("fuelForm"),
-      kmInicial: document.getElementById("kmInicial"),
-      kmFinal: document.getElementById("kmFinal"),
-      kmPorLitro: document.getElementById("kmPorLitro"),
-      precoCombustivel: document.getElementById("precoCombustivel"),
-      ganhoUber: document.getElementById("ganhoUber"),
-      resultado: document.getElementById("resultado"),
-      calcularBtn: document.getElementById("calcularGastosBtn"),
+      kmInicialInput: document.getElementById("kmInicial"),
+      kmFinalInput: document.getElementById("kmFinal"),
+      kmPorLitroInput: document.getElementById("kmPorLitro"), // Eficiência no form principal
+      precoCombustivelInput: document.getElementById("precoCombustivel"),
+      ganhoUberInput: document.getElementById("ganhoUber"),
+      // Elementos do card de resultado
+      resultCard: document.getElementById("resultCard"),
+      distanciaResult: document.getElementById("distanciaResult"),
+      litrosResult: document.getElementById("litrosResult"),
+      custoResult: document.getElementById("custoResult"),
+      lucroResult: document.getElementById("lucroResult"),
     };
+    this._bindEvents();
   }
 
-  bindEvents() {
-    if (this.domCache.form) {
-      this.domCache.form.addEventListener("submit", (e) => {
+  _bindEvents() {
+    if (this.dom.form) {
+      this.dom.form.addEventListener("submit", (e) => {
         e.preventDefault();
-        this.calculate();
-      });
-    }
-
-    if (this.domCache.calcularBtn) {
-      this.domCache.calcularBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        this.calculate();
+        this.calculateAndDisplayTrip();
       });
     }
   }
 
-  calculate() {
-    const kmInicial = parseFloat(
-      SecurityUtils.convertCommaToPoint(this.domCache.kmInicial.value)
-    );
-    const kmFinal = parseFloat(
-      SecurityUtils.convertCommaToPoint(this.domCache.kmFinal.value)
-    );
-    const kmPorLitro = parseFloat(
-      SecurityUtils.convertCommaToPoint(this.domCache.kmPorLitro.value)
-    );
-    const precoCombustivel = parseFloat(
-      SecurityUtils.convertCommaToPoint(this.domCache.precoCombustivel.value)
-    );
-    const ganhoUber = this.domCache.ganhoUber.value
-      ? parseFloat(
-          SecurityUtils.convertCommaToPoint(this.domCache.ganhoUber.value)
-        )
-      : null;
-
-    const validation = Validator.validateTrip(
-      kmInicial,
-      kmFinal,
-      kmPorLitro,
-      precoCombustivel,
-      ganhoUber
+  /**
+   * Calcula os gastos da viagem e exibe os resultados.
+   */
+  calculateAndDisplayTrip() {
+    const validationResult = this.validator.validateTrip(
+      this.dom.kmInicialInput.value,
+      this.dom.kmFinalInput.value,
+      this.dom.kmPorLitroInput.value,
+      this.dom.precoCombustivelInput.value,
+      this.dom.ganhoUberInput.value
     );
 
-    if (!validation.isValid) {
-      NotificationManager.showError(validation.errors.join("\n"));
-      return;
-    }
+    if (!validationResult.isValid) return; // Erros já mostrados pelo validador
 
-    const results = this.performCalculation(
-      kmInicial,
-      kmFinal,
-      kmPorLitro,
-      precoCombustivel,
-      ganhoUber
-    );
+    const { kmInicial, kmFinal, kmPorLitro, precoCombustivel, ganhoUber } =
+      validationResult.data;
 
-    this.displayResults(results);
-    this.saveToHistory(results);
-    this.clearForm();
-
-    // Atualizar estatísticas e histórico
-    if (window.historyManager) {
-      window.historyManager.updateHistory();
-    }
-    if (window.statisticsManager) {
-      window.statisticsManager.updateStatistics();
-    }
-  }
-
-  performCalculation(
-    kmInicial,
-    kmFinal,
-    kmPorLitro,
-    precoCombustivel,
-    ganhoUber
-  ) {
     const distancia = kmFinal - kmInicial;
-    const litros = distancia / kmPorLitro;
-    const custo = litros * precoCombustivel;
-    const ganho = ganhoUber !== null ? ganhoUber - custo : null;
+    const litrosConsumidos = distancia / kmPorLitro;
+    const custoTotal = litrosConsumidos * precoCombustivel;
+    const lucroLiquido = ganhoUber !== null ? ganhoUber - custoTotal : null;
 
-    return {
-      distancia,
-      litros,
-      custo,
-      ganho,
-      kmInicial,
-      kmFinal,
-      kmPorLitro,
-      precoCombustivel,
-    };
-  }
+    // Exibe os resultados
+    if (this.dom.distanciaResult)
+      this.dom.distanciaResult.textContent = `${distancia.toFixed(1)} km`;
+    if (this.dom.litrosResult)
+      this.dom.litrosResult.textContent = `${litrosConsumidos.toFixed(1)} L`;
+    if (this.dom.custoResult)
+      this.dom.custoResult.textContent = Utils.formatCurrency(custoTotal);
 
-  displayResults(results) {
-    const resultElements = {
-      distancia: document.getElementById("distancia"),
-      litros: document.getElementById("litros"),
-      custo: document.getElementById("custo"),
-      ganho: document.getElementById("ganho"),
-    };
-
-    if (resultElements.distancia) {
-      resultElements.distancia.textContent = `${results.distancia.toFixed(
-        1
-      )} km`;
-    }
-    if (resultElements.litros) {
-      resultElements.litros.textContent = `${results.litros.toFixed(1)} L`;
-    }
-    if (resultElements.custo) {
-      resultElements.custo.textContent = `R$ ${results.custo.toFixed(2)}`;
-    }
-    if (resultElements.ganho) {
-      if (results.ganho !== null) {
-        resultElements.ganho.textContent = `R$ ${results.ganho.toFixed(2)}`;
+    if (this.dom.lucroResult) {
+      if (lucroLiquido !== null) {
+        this.dom.lucroResult.textContent = Utils.formatCurrency(lucroLiquido);
+        this.dom.lucroResult.closest(".result-item").style.display = ""; // Mostra o item do lucro
       } else {
-        resultElements.ganho.textContent = "N/A";
+        this.dom.lucroResult.textContent = "N/A";
+        this.dom.lucroResult.closest(".result-item").style.display = "none"; // Esconde se não houver ganho
       }
     }
+    if (this.dom.resultCard) this.dom.resultCard.style.display = "block";
 
-    this.domCache.resultado.style.display = "block";
+    // Salva no histórico
+    this._saveTripToHistory({
+      kmInicial,
+      kmFinal,
+      kmPorLitro,
+      precoCombustivel,
+      ganhoBrutoUber: ganhoUber,
+      distancia,
+      litrosConsumidos,
+      custoTotal,
+      lucroLiquido,
+    });
+
+    this._clearTripForm();
+
+    // Notifica outros módulos para atualização (ex: histórico, estatísticas)
+    document.dispatchEvent(new CustomEvent("tripCalculated"));
   }
 
-  saveToHistory(results) {
-    const history = StorageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY);
+  /**
+   * Salva os dados da viagem no histórico.
+   * @param {object} tripData - Dados calculados da viagem.
+   * @private
+   */
+  _saveTripToHistory(tripData) {
+    const history = this.storageManager.safeGetItem(
+      CONFIG.STORAGE_KEYS.HISTORY,
+      []
+    );
+    const currentVehicle = this.vehicleManager.currentVehicle;
 
-    const record = {
-      preco: results.precoCombustivel,
-      kmInicial: results.kmInicial,
-      kmFinal: results.kmFinal,
-      kmPorLitro: results.kmPorLitro,
-      tipo: this.vehicleManager.currentType,
-      data: new Date().toLocaleString("pt-BR"),
-      distancia: results.distancia.toFixed(1),
-      litros: results.litros.toFixed(1),
-      custo: results.custo.toFixed(2),
+    const newRecord = {
+      id: `trip_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      dataISO: new Date().toISOString(),
+      tipoVeiculo: this.vehicleManager.currentVehicleType,
+      veiculoId: currentVehicle ? currentVehicle.id : null,
+      veiculoNome: currentVehicle
+        ? currentVehicle.nome
+        : "Manual/Não especificado",
+      kmInicial: tripData.kmInicial,
+      kmFinal: tripData.kmFinal,
+      distancia: tripData.distancia.toFixed(1),
+      kmPorLitroUtilizado: tripData.kmPorLitro, // Eficiência usada no cálculo
+      litrosConsumidos: tripData.litrosConsumidos.toFixed(1),
+      precoPorLitro: tripData.precoCombustivel,
+      custoTotalCombustivel: tripData.custoTotal.toFixed(2),
+      ganhoBrutoInformado:
+        tripData.ganhoBrutoUber !== null
+          ? tripData.ganhoBrutoUber.toFixed(2)
+          : null,
+      lucroLiquidoViagem:
+        tripData.lucroLiquido !== null
+          ? tripData.lucroLiquido.toFixed(2)
+          : null,
     };
 
-    if (results.ganho !== null) {
-      record.ganho = results.ganho.toFixed(2);
-    }
-
-    history.unshift(record);
+    history.unshift(newRecord); // Adiciona no início
     if (history.length > CONFIG.HISTORY_LIMIT) {
-      history.pop();
+      history.pop(); // Remove o mais antigo se o limite for excedido
     }
-
-    StorageManager.safeSetItem(CONFIG.STORAGE_KEYS.HISTORY, history);
+    this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.HISTORY, history);
   }
 
-  clearForm() {
-    if (this.domCache.form) {
-      this.domCache.form.reset();
+  /**
+   * Limpa os campos do formulário de cálculo de viagem.
+   * @private
+   */
+  _clearTripForm() {
+    if (this.dom.form) {
+      // Não reseta kmPorLitro se um veículo estiver selecionado,
+      // pois ele é preenchido automaticamente.
+      // Se nenhum veículo estiver selecionado, o usuário pode querer manter o valor manual.
+      this.dom.kmInicialInput.value = "";
+      this.dom.kmFinalInput.value = "";
+      // this.dom.kmPorLitroInput.value = ""; // Decidir se deve limpar ou não
+      this.dom.precoCombustivelInput.value = "";
+      this.dom.ganhoUberInput.value = "";
+      this.dom.kmInicialInput.focus();
     }
   }
 }
 
-// ===== GERENCIADOR DE HISTÓRICO =====
+// ===== GERENCIADOR DE HISTÓRICO DE VIAGENS =====
 class HistoryManager {
-  constructor(vehicleManager) {
-    this.vehicleManager = vehicleManager;
-    this.domCache = this.initDOMCache();
-    this.bindEvents();
-  }
+  constructor(storageManager, uiManager, vehicleManager) {
+    this.storageManager = storageManager;
+    this.uiManager = uiManager;
+    this.vehicleManager = vehicleManager; // Para filtrar por tipo de veículo
 
-  initDOMCache() {
-    return {
+    this.isFullHistoryVisible = false;
+
+    this.dom = {
       historySection: document.getElementById("historySection"),
-      historicoPrecos: document.getElementById("historicoPrecos"),
-      verMaisBtn: document.getElementById("verMaisBtn"),
-      minimizarBtn: document.getElementById("minimizarBtn"),
-      limparHistoricoBtn: document.getElementById("limparHistoricoBtn"),
-      modalOverlay: document.getElementById("modalOverlay"),
-      modalDetails: document.getElementById("modalDetails"),
-      fecharModalBtn: document.getElementById("fecharModalBtn"),
+      historyList: document.getElementById("historyList"),
+      seeMoreBtn: document.getElementById("seeMoreHistoryBtn"),
+      minimizeBtn: document.getElementById("minimizeHistoryBtn"),
+      clearHistoryBtn: document.getElementById("clearHistoryBtn"),
     };
+    this._bindEvents();
   }
 
-  bindEvents() {
-    if (this.domCache.verMaisBtn) {
-      this.domCache.verMaisBtn.addEventListener("click", () =>
-        this.showFullHistory()
+  _bindEvents() {
+    if (this.dom.seeMoreBtn)
+      this.dom.seeMoreBtn.addEventListener("click", () =>
+        this.toggleFullHistory(true)
       );
-    }
-
-    if (this.domCache.minimizarBtn) {
-      this.domCache.minimizarBtn.addEventListener("click", () =>
-        this.minimizeHistory()
+    if (this.dom.minimizeBtn)
+      this.dom.minimizeBtn.addEventListener("click", () =>
+        this.toggleFullHistory(false)
       );
-    }
-
-    if (this.domCache.limparHistoricoBtn) {
-      this.domCache.limparHistoricoBtn.addEventListener("click", () =>
-        this.clearHistory()
-      );
-    }
-
-    if (this.domCache.fecharModalBtn) {
-      this.domCache.fecharModalBtn.addEventListener("click", () =>
-        this.closeModal()
-      );
-    }
-
-    if (this.domCache.modalOverlay) {
-      this.domCache.modalOverlay.addEventListener("click", (e) => {
-        if (e.target === this.domCache.modalOverlay) {
-          this.closeModal();
-        }
+    if (this.dom.clearHistoryBtn) {
+      this.dom.clearHistoryBtn.addEventListener("click", async () => {
+        const confirmed = await this.uiManager.showConfirm(
+          `Tem certeza que deseja limpar TODO o histórico de viagens para ${this.vehicleManager.currentVehicleType}s? Esta ação não pode ser desfeita.`
+        );
+        if (confirmed) this.clearHistoryForCurrentType();
       });
     }
+    // Ouvir evento de mudança de tipo de veículo para atualizar o histórico
+    document.addEventListener("vehicleTypeChanged", () => this.renderHistory());
+    // Ouvir evento de nova viagem calculada
+    document.addEventListener("tripCalculated", () => this.renderHistory());
   }
 
-  updateHistory() {
-    const history = StorageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY);
-    const filteredHistory = history.filter(
-      (item) => item.tipo === this.vehicleManager.currentType
+  /**
+   * Alterna a visualização do histórico completo ou resumido.
+   * @param {boolean} showFull - True para mostrar completo, false para resumido.
+   */
+  toggleFullHistory(showFull) {
+    this.isFullHistoryVisible = showFull;
+    this.renderHistory();
+  }
+
+  /**
+   * Renderiza a lista de histórico na UI.
+   */
+  renderHistory() {
+    if (!this.dom.historyList || !this.dom.historySection) return;
+
+    const allHistory = this.storageManager.safeGetItem(
+      CONFIG.STORAGE_KEYS.HISTORY,
+      []
+    );
+    const filteredHistory = allHistory.filter(
+      (item) => item.tipoVeiculo === this.vehicleManager.currentVehicleType
     );
 
-    this.domCache.historicoPrecos.innerHTML = "";
+    this.dom.historyList.innerHTML = ""; // Limpa
 
     if (filteredHistory.length === 0) {
-      this.domCache.historySection.style.display = "none";
+      this.dom.historySection.style.display = "none";
       return;
     }
 
-    this.domCache.historySection.style.display = "block";
+    this.dom.historySection.style.display = "block";
+    const itemsToRender = this.isFullHistoryVisible
+      ? filteredHistory
+      : filteredHistory.slice(0, CONFIG.HISTORY_DISPLAY_COUNT);
 
-    // Mostrar apenas os 3 primeiros registros inicialmente
-    const displayedHistory = filteredHistory.slice(0, 3);
-    this.renderHistoryItems(displayedHistory, filteredHistory);
+    if (itemsToRender.length === 0 && filteredHistory.length > 0) {
+      // Caso onde display_count é 0 mas há histórico
+      this.dom.historyList.innerHTML = `<li class="empty-message-list">Nenhum registro para exibir (verifique 'Ver Mais').</li>`;
+    } else if (itemsToRender.length === 0) {
+      this.dom.historyList.innerHTML = `<li class="empty-message-list">Nenhum histórico para ${this.vehicleManager.currentVehicleType}s.</li>`;
+    }
 
-    // Controlar botões Ver Mais/Minimizar
-    if (filteredHistory.length > 3) {
-      this.domCache.verMaisBtn.style.display = "block";
-      this.domCache.minimizarBtn.style.display = "none";
-    } else {
-      this.domCache.verMaisBtn.style.display = "none";
-      this.domCache.minimizarBtn.style.display = "none";
+    itemsToRender.forEach((record) => {
+      this.dom.historyList.appendChild(this._createHistoryItemElement(record));
+    });
+
+    // Controla visibilidade dos botões "Ver Mais" / "Minimizar"
+    const totalFiltered = filteredHistory.length;
+    if (this.dom.seeMoreBtn) {
+      this.dom.seeMoreBtn.style.display =
+        totalFiltered > CONFIG.HISTORY_DISPLAY_COUNT &&
+        !this.isFullHistoryVisible
+          ? "block"
+          : "none";
+    }
+    if (this.dom.minimizeBtn) {
+      this.dom.minimizeBtn.style.display =
+        totalFiltered > CONFIG.HISTORY_DISPLAY_COUNT &&
+        this.isFullHistoryVisible
+          ? "block"
+          : "none";
     }
   }
 
-  renderHistoryItems(items, fullHistory) {
-    this.domCache.historicoPrecos.innerHTML = "";
+  /**
+   * Cria o elemento HTML para um item do histórico.
+   * @param {object} record - O registro do histórico.
+   * @returns {HTMLElement} O elemento <li> do item.
+   * @private
+   */
+  _createHistoryItemElement(record) {
+    const li = document.createElement("li");
+    li.setAttribute("role", "button");
+    li.setAttribute("tabindex", "0");
+    li.setAttribute(
+      "aria-label",
+      `Detalhes da viagem de ${Utils.formatLocalDate(record.dataISO)}`
+    );
+    li.dataset.recordId = record.id;
 
-    items.forEach((item, index) => {
-      const li = document.createElement("li");
-      li.setAttribute("data-index", index);
-      li.setAttribute("role", "button");
-      li.setAttribute("tabindex", "0");
-      li.setAttribute("aria-label", `Ver detalhes da viagem de ${item.data}`);
+    const dateSpan = document.createElement("span");
+    dateSpan.textContent = Utils.formatLocalDate(record.dataISO);
 
-      const dateSpan = document.createElement("span");
-      dateSpan.textContent = item.data;
+    const costStrong = document.createElement("strong");
+    costStrong.textContent = `Custo: ${Utils.formatCurrency(
+      parseFloat(record.custoTotalCombustivel)
+    )}`;
+    if (record.lucroLiquidoViagem !== null) {
+      costStrong.textContent += ` / Lucro: ${Utils.formatCurrency(
+        parseFloat(record.lucroLiquidoViagem)
+      )}`;
+    }
 
-      const priceStrong = document.createElement("strong");
-      priceStrong.textContent = `R$ ${parseFloat(item.preco).toFixed(2)}`;
+    li.appendChild(dateSpan);
+    li.appendChild(costStrong);
 
-      li.appendChild(dateSpan);
-      li.appendChild(priceStrong);
-
-      // Event listeners seguros
-      const showDetailsHandler = () =>
-        this.showDetails(fullHistory.findIndex((h) => h.data === item.data));
-      li.addEventListener("click", showDetailsHandler);
-      li.addEventListener("keypress", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          showDetailsHandler();
-        }
-      });
-
-      this.domCache.historicoPrecos.appendChild(li);
+    li.addEventListener("click", () => this._showRecordDetails(record.id));
+    li.addEventListener("keypress", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        this._showRecordDetails(record.id);
+      }
     });
+    return li;
   }
 
-  showFullHistory() {
-    const history = StorageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY);
-    const filteredHistory = history.filter(
-      (item) => item.tipo === this.vehicleManager.currentType
+  /**
+   * Mostra os detalhes de um registro específico do histórico em um modal.
+   * @param {string} recordId - O ID do registro.
+   * @private
+   */
+  _showRecordDetails(recordId) {
+    const allHistory = this.storageManager.safeGetItem(
+      CONFIG.STORAGE_KEYS.HISTORY,
+      []
     );
-
-    this.renderHistoryItems(filteredHistory, filteredHistory);
-    this.domCache.verMaisBtn.style.display = "none";
-    this.domCache.minimizarBtn.style.display = "block";
-  }
-
-  minimizeHistory() {
-    const history = StorageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY);
-    const filteredHistory = history.filter(
-      (item) => item.tipo === this.vehicleManager.currentType
-    );
-    const displayedHistory = filteredHistory.slice(0, 3);
-
-    this.renderHistoryItems(displayedHistory, filteredHistory);
-    this.domCache.verMaisBtn.style.display = "block";
-    this.domCache.minimizarBtn.style.display = "none";
-  }
-
-  showDetails(index) {
-    const history = StorageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY);
-    const filteredHistory = history.filter(
-      (item) => item.tipo === this.vehicleManager.currentType
-    );
-    const record = filteredHistory[index];
-
-    if (!record) return;
-
-    this.domCache.modalDetails.innerHTML = "";
+    const record = allHistory.find((item) => item.id === recordId);
+    if (!record) {
+      this.uiManager.showNotification("Registro não encontrado.", "error");
+      return;
+    }
 
     const details = [
-      { label: "Data", value: record.data },
+      { label: "Data/Hora", value: Utils.formatLocalDate(record.dataISO) },
+      { label: "Veículo", value: record.veiculoNome },
+      { label: "Tipo", value: record.tipoVeiculo },
       { label: "KM Inicial", value: `${record.kmInicial} km` },
       { label: "KM Final", value: `${record.kmFinal} km` },
       { label: "Distância", value: `${record.distancia} km` },
-      { label: "Eficiência", value: `${record.kmPorLitro} km/L` },
-      { label: "Combustível", value: `${record.litros} L` },
       {
-        label: "Preço por Litro",
-        value: `R$ ${parseFloat(record.preco).toFixed(2)}`,
+        label: "Eficiência (no cálculo)",
+        value: `${record.kmPorLitroUtilizado} km/L`,
       },
-      { label: "Custo Total", value: `R$ ${record.custo}` },
+      { label: "Combustível Consumido", value: `${record.litrosConsumidos} L` },
+      {
+        label: "Preço por Litro (na data)",
+        value: Utils.formatCurrency(record.precoPorLitro),
+      },
+      {
+        label: "Custo Total Combustível",
+        value: Utils.formatCurrency(record.custoTotalCombustivel),
+      },
     ];
-
-    if (record.ganho) {
-      details.push({ label: "Ganho na Uber", value: `R$ ${record.ganho}` });
+    if (record.ganhoBrutoInformado !== null) {
+      details.push({
+        label: "Ganho Bruto Informado",
+        value: Utils.formatCurrency(record.ganhoBrutoInformado),
+      });
+      details.push({
+        label: "Lucro Líquido Estimado",
+        value: Utils.formatCurrency(record.lucroLiquidoViagem),
+      });
     }
-
-    details.forEach((detail) => {
-      const div = document.createElement("div");
-      div.className = "modal-detail-item";
-
-      const labelSpan = document.createElement("span");
-      labelSpan.textContent = detail.label + ":";
-
-      const valueStrong = document.createElement("strong");
-      valueStrong.textContent = detail.value;
-
-      div.appendChild(labelSpan);
-      div.appendChild(valueStrong);
-      this.domCache.modalDetails.appendChild(div);
-    });
-
-    this.domCache.modalOverlay.style.display = "flex";
+    this.uiManager.showDetailsModal("Detalhes da Viagem", details);
   }
 
-  closeModal() {
-    this.domCache.modalOverlay.style.display = "none";
-  }
+  /**
+   * Limpa o histórico de viagens para o tipo de veículo atualmente selecionado.
+   */
+  clearHistoryForCurrentType() {
+    const currentType = this.vehicleManager.currentVehicleType;
+    let allHistory = this.storageManager.safeGetItem(
+      CONFIG.STORAGE_KEYS.HISTORY,
+      []
+    );
+    // Mantém apenas os registros que NÃO são do tipo atual
+    const remainingHistory = allHistory.filter(
+      (item) => item.tipoVeiculo !== currentType
+    );
 
-  clearHistory() {
     if (
-      confirm(
-        `Tem certeza que deseja limpar todo o histórico de ${this.vehicleManager.currentType}s?`
+      this.storageManager.safeSetItem(
+        CONFIG.STORAGE_KEYS.HISTORY,
+        remainingHistory
       )
     ) {
-      const history = StorageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY);
-      const filteredHistory = history.filter(
-        (item) => item.tipo !== this.vehicleManager.currentType
+      this.uiManager.showNotification(
+        `Histórico de ${currentType}s limpo com sucesso!`,
+        "success"
       );
-
-      if (
-        StorageManager.safeSetItem(CONFIG.STORAGE_KEYS.HISTORY, filteredHistory)
-      ) {
-        this.updateHistory();
-        if (window.statisticsManager) {
-          window.statisticsManager.updateStatistics();
-        }
-        NotificationManager.showSuccess("Histórico limpo com sucesso!");
-      }
+      this.isFullHistoryVisible = false; // Reseta a visualização
+      this.renderHistory(); // Atualiza a UI
+      document.dispatchEvent(
+        new CustomEvent("historyCleared", { detail: { type: currentType } })
+      );
     }
   }
 }
+
 // ===== GERENCIADOR DE ESTATÍSTICAS =====
 class StatisticsManager {
-  constructor(vehicleManager) {
+  constructor(storageManager, uiManager, vehicleManager) {
+    this.storageManager = storageManager;
+    this.uiManager = uiManager;
     this.vehicleManager = vehicleManager;
-    this.domCache = this.initDOMCache();
-    this.chart = null;
-    this.debouncedUpdate = SecurityUtils.debounce(
+
+    this.chartInstance = null;
+    this.debouncedUpdate = Utils.debounce(
       () => this.updateStatistics(),
       CONFIG.DEBOUNCE_DELAY
     );
-  }
 
-  initDOMCache() {
-    return {
+    this.dom = {
       statsSection: document.getElementById("statsSection"),
-      totalKm: document.getElementById("totalKm"),
-      totalGasto: document.getElementById("totalGasto"),
-      mediaConsumo: document.getElementById("mediaConsumo"),
-      chartCanvas: document.getElementById("fuelChart"),
+      totalKmStat: document.getElementById("totalKmStat"),
+      totalGastoStat: document.getElementById("totalGastoStat"),
+      mediaConsumoStat: document.getElementById("mediaConsumoStat"),
+      chartCanvas: document.getElementById("fuelChartCanvas"),
     };
+    this._bindEvents();
   }
 
+  _bindEvents() {
+    // Ouve eventos que indicam necessidade de atualizar estatísticas
+    document.addEventListener("vehicleTypeChanged", () =>
+      this.debouncedUpdate()
+    );
+    document.addEventListener("tripCalculated", () => this.debouncedUpdate());
+    document.addEventListener("historyCleared", () => this.debouncedUpdate());
+  }
+
+  /**
+   * Atualiza e renderiza as estatísticas e o gráfico.
+   */
   updateStatistics() {
-    const history = StorageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY);
-    const filteredHistory = history.filter(
-      (item) => item.tipo === this.vehicleManager.currentType
+    if (!this.dom.statsSection) return;
+
+    const allHistory = this.storageManager.safeGetItem(
+      CONFIG.STORAGE_KEYS.HISTORY,
+      []
+    );
+    const filteredHistory = allHistory.filter(
+      (item) => item.tipoVeiculo === this.vehicleManager.currentVehicleType
     );
 
     if (filteredHistory.length === 0) {
-      this.domCache.statsSection.style.display = "none";
+      this.dom.statsSection.style.display = "none";
+      if (this.chartInstance) {
+        this.chartInstance.destroy();
+        this.chartInstance = null;
+      }
       return;
     }
 
-    this.domCache.statsSection.style.display = "block";
-
-    // Calcular estatísticas
-    const stats = this.calculateStatistics(filteredHistory);
-    this.displayStatistics(stats);
-    this.updateChart(filteredHistory);
+    this.dom.statsSection.style.display = "block";
+    this._calculateAndDisplaySummary(filteredHistory);
+    this._renderOrUpdateChart(filteredHistory);
   }
 
-  calculateStatistics(history) {
-    const totalKm = history.reduce(
+  /**
+   * Calcula e exibe as estatísticas resumidas.
+   * @param {Array<object>} historyData - Dados do histórico filtrados.
+   * @private
+   */
+  _calculateAndDisplaySummary(historyData) {
+    const totalKm = historyData.reduce(
       (sum, item) => sum + parseFloat(item.distancia),
       0
     );
-    const totalGasto = history.reduce(
-      (sum, item) => sum + parseFloat(item.custo),
+    const totalGasto = historyData.reduce(
+      (sum, item) => sum + parseFloat(item.custoTotalCombustivel),
       0
     );
-    const totalLitros = history.reduce(
-      (sum, item) => sum + parseFloat(item.litros),
+    const totalLitros = historyData.reduce(
+      (sum, item) => sum + parseFloat(item.litrosConsumidos),
       0
     );
     const mediaConsumo = totalLitros > 0 ? totalKm / totalLitros : 0;
 
-    return {
-      totalKm: totalKm.toFixed(1),
-      totalGasto: totalGasto.toFixed(2),
-      mediaConsumo: mediaConsumo.toFixed(1),
-      totalViagens: history.length,
-    };
+    if (this.dom.totalKmStat)
+      this.dom.totalKmStat.textContent = `${totalKm.toFixed(1)} km`;
+    if (this.dom.totalGastoStat)
+      this.dom.totalGastoStat.textContent = Utils.formatCurrency(totalGasto);
+    if (this.dom.mediaConsumoStat)
+      this.dom.mediaConsumoStat.textContent = `${mediaConsumo.toFixed(1)} km/L`;
   }
 
-  displayStatistics(stats) {
-    if (this.domCache.totalKm) {
-      this.domCache.totalKm.textContent = `${stats.totalKm} km`;
-    }
-    if (this.domCache.totalGasto) {
-      this.domCache.totalGasto.textContent = `R$ ${stats.totalGasto}`;
-    }
-    if (this.domCache.mediaConsumo) {
-      this.domCache.mediaConsumo.textContent = `${stats.mediaConsumo} km/L`;
-    }
-  }
+  /**
+   * Prepara os dados para o gráfico de gastos diários.
+   * @param {Array<object>} historyData - Dados do histórico filtrados.
+   * @returns {{labels: string[], data: string[]}} Dados para o gráfico.
+   * @private
+   */
+  _prepareChartData(historyData) {
+    const dailyCosts = {};
+    // Considerar apenas os últimos X dias para o gráfico
+    const cutOffDate = new Date();
+    cutOffDate.setDate(cutOffDate.getDate() - CONFIG.CHART_MAX_DAYS);
 
-  updateChart(history) {
-    if (!this.domCache.chartCanvas || !window.Chart) return;
-
-    // Destruir gráfico anterior de forma segura
-    if (this.chart) {
-      this.chart.destroy();
-      this.chart = null;
-    }
-
-    if (history.length === 0) return;
-
-    try {
-      const ctx = this.domCache.chartCanvas.getContext("2d");
-      const chartData = this.prepareChartData(history);
-
-      this.chart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: chartData.labels,
-          datasets: [
-            {
-              label: "Gasto Diário (R$)",
-              data: chartData.data,
-              borderColor: "#00C165",
-              backgroundColor: "rgba(0, 193, 101, 0.1)",
-              tension: 0.1,
-              fill: true,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              labels: {
-                color: "#ffffff",
-              },
-            },
-          },
-          scales: {
-            x: {
-              ticks: {
-                color: "#ffffff",
-              },
-              grid: {
-                color: "rgba(255, 255, 255, 0.1)",
-              },
-            },
-            y: {
-              ticks: {
-                color: "#ffffff",
-              },
-              grid: {
-                color: "rgba(255, 255, 255, 0.1)",
-              },
-            },
-          },
-        },
-      });
-    } catch (error) {
-      console.error("Erro ao criar gráfico:", error);
-      NotificationManager.showError("Erro ao carregar gráfico de estatísticas");
-    }
-  }
-
-  prepareChartData(history) {
-    // Agrupar por data e somar gastos do mesmo dia
-    const groupedData = {};
-
-    history.forEach((item) => {
-      const date = item.data.split(",")[0]; // Pegar apenas a data, sem horário
-      if (!groupedData[date]) {
-        groupedData[date] = 0;
+    historyData.forEach((item) => {
+      const itemDate = new Date(item.dataISO);
+      if (itemDate >= cutOffDate) {
+        const dateKey = itemDate.toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+        });
+        dailyCosts[dateKey] =
+          (dailyCosts[dateKey] || 0) + parseFloat(item.custoTotalCombustivel);
       }
-      groupedData[date] += parseFloat(item.custo);
     });
 
-    // Ordenar por data e preparar dados para o gráfico
-    const sortedEntries = Object.entries(groupedData)
-      .sort(
-        ([a], [b]) =>
-          new Date(a.split("/").reverse().join("-")) -
-          new Date(b.split("/").reverse().join("-"))
-      )
-      .slice(-10); // Mostrar apenas os últimos 10 dias
+    // Ordenar as chaves (datas) para o gráfico
+    const sortedDates = Object.keys(dailyCosts).sort((a, b) => {
+      const [dayA, monthA] = a.split("/");
+      const [dayB, monthB] = b.split("/");
+      // Assume mesmo ano para simplificar, ou adicione ano à chave se necessário
+      return (
+        new Date(`2000/${monthA}/${dayA}`) - new Date(`2000/${monthB}/${dayB}`)
+      );
+    });
 
     return {
-      labels: sortedEntries.map(([date]) => date),
-      data: sortedEntries.map(([, cost]) => cost.toFixed(2)),
+      labels: sortedDates,
+      data: sortedDates.map((date) => dailyCosts[date].toFixed(2)),
     };
+  }
+
+  /**
+   * Renderiza ou atualiza o gráfico de estatísticas.
+   * @param {Array<object>} historyData - Dados do histórico filtrados.
+   * @private
+   */
+  _renderOrUpdateChart(historyData) {
+    if (!this.dom.chartCanvas || typeof Chart === "undefined") {
+      // console.warn("Chart.js não carregado ou canvas não encontrado para estatísticas.");
+      return;
+    }
+
+    const { labels, data } = this._prepareChartData(historyData);
+
+    if (this.chartInstance) {
+      // Atualiza gráfico existente
+      this.chartInstance.data.labels = labels;
+      this.chartInstance.data.datasets[0].data = data;
+      this.chartInstance.data.datasets[0].label = `Gasto Diário (${this.vehicleManager.currentVehicleType}) (R$)`;
+      this.chartInstance.update();
+    } else {
+      // Cria novo gráfico
+      try {
+        const ctx = this.dom.chartCanvas.getContext("2d");
+        this.chartInstance = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: `Gasto Diário (${this.vehicleManager.currentVehicleType}) (R$)`,
+                data: data,
+                borderColor: "var(--uber-green, #00C165)",
+                backgroundColor: "rgba(0, 193, 101, 0.15)",
+                tension: 0.3,
+                fill: true,
+                pointBackgroundColor: "var(--uber-green, #00C165)",
+                pointBorderColor: "#fff",
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: "#fff",
+                pointHoverBorderColor: "var(--uber-green, #00C165)",
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                ticks: { color: "var(--uber-text-secondary, #ccc)" },
+                grid: { color: "var(--uber-gray-light, #444)" },
+              },
+              y: {
+                ticks: {
+                  color: "var(--uber-text-secondary, #ccc)",
+                  callback: (value) => Utils.formatCurrency(value),
+                },
+                grid: { color: "var(--uber-gray-light, #444)" },
+                beginAtZero: true,
+              },
+            },
+            plugins: {
+              legend: {
+                labels: { color: "var(--uber-text-primary, #e0e0e0)" },
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    let label = context.dataset.label || "";
+                    if (label) {
+                      label += ": ";
+                    }
+                    if (context.parsed.y !== null) {
+                      label += Utils.formatCurrency(context.parsed.y);
+                    }
+                    return label;
+                  },
+                },
+              },
+            },
+          },
+        });
+      } catch (error) {
+        console.error(
+          "Erro ao criar/atualizar gráfico de estatísticas:",
+          error
+        );
+        this.uiManager.showNotification(
+          "Erro ao exibir gráfico de estatísticas.",
+          "error"
+        );
+        this.chartInstance = null;
+      }
+    }
   }
 }
 
-// ===== GERENCIADOR DE APLICAÇÃO PRINCIPAL =====
+// ===== GERENCIADOR PRINCIPAL DA APLICAÇÃO (AppManager) =====
 class AppManager {
   constructor() {
-    this.vehicleManager = new VehicleManager();
-    this.fuelCalculator = new FuelCalculator(this.vehicleManager);
-    this.historyManager = new HistoryManager(this.vehicleManager);
-    this.statisticsManager = new StatisticsManager(this.vehicleManager);
+    // Instanciação dos gerenciadores
+    this.uiManager = new UIManager();
+    this.storageManager = new StorageManager(this.uiManager);
+    this.validator = new Validator(this.uiManager);
+    this.vehicleManager = new VehicleManager(
+      this.storageManager,
+      this.uiManager,
+      this.validator
+    );
+    this.fuelCalculator = new FuelCalculator(
+      this.storageManager,
+      this.uiManager,
+      this.validator,
+      this.vehicleManager
+    );
+    this.historyManager = new HistoryManager(
+      this.storageManager,
+      this.uiManager,
+      this.vehicleManager
+    );
+    this.statisticsManager = new StatisticsManager(
+      this.storageManager,
+      this.uiManager,
+      this.vehicleManager
+    );
 
-    // Disponibilizar globalmente para compatibilidade
-    window.vehicleManager = this.vehicleManager;
-    window.fuelCalculator = this.fuelCalculator;
-    window.historyManager = this.historyManager;
-    window.statisticsManager = this.statisticsManager;
-
-    this.init();
+    this._init();
   }
 
-  init() {
-    this.registerServiceWorker();
-    this.bindGlobalEvents();
-    this.initializeApp();
+  /**
+   * Inicializa a aplicação.
+   * @private
+   */
+  _init() {
+    this._registerServiceWorker();
+    this._bindGlobalAppEvents();
+    this._initializeAppState();
+    this._hideSplashScreen();
   }
 
-  registerServiceWorker() {
+  /**
+   * Registra o Service Worker.
+   * @private
+   */
+  _registerServiceWorker() {
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker
-          .register("sw.js")
-          .then((registration) => {
-            console.log("Service Worker registrado com sucesso:", registration);
-          })
-          .catch((error) => {
-            console.error("Falha no registro do Service Worker:", error);
-            NotificationManager.showError("Falha ao registrar Service Worker");
-          });
+          .register("./sw.js") // Caminho relativo ao index.html
+          .then((registration) =>
+            console.log(
+              "Service Worker FuelCalc registrado com sucesso. Escopo:",
+              registration.scope
+            )
+          )
+          .catch((error) =>
+            console.error(
+              "Falha no registro do Service Worker FuelCalc:",
+              error
+            )
+          );
       });
     }
   }
 
-  bindGlobalEvents() {
-    // Event listener para exportar dados
+  /**
+   * Vincula eventos globais da aplicação (ex: import/export).
+   * @private
+   */
+  _bindGlobalAppEvents() {
     const exportBtn = document.getElementById("exportDataBtn");
-    if (exportBtn) {
-      exportBtn.addEventListener("click", () => StorageManager.exportData());
-    }
+    if (exportBtn)
+      exportBtn.addEventListener("click", () =>
+        this.storageManager.exportData()
+      );
 
-    // Event listener para importar dados
     const importBtn = document.getElementById("importDataBtn");
-    const importFile = document.getElementById("importFileInput");
-
-    if (importBtn && importFile) {
-      importBtn.addEventListener("click", () => importFile.click());
-      importFile.addEventListener("change", (e) => {
+    const importFileInput = document.getElementById("importFileInput");
+    if (importBtn && importFileInput) {
+      importBtn.addEventListener("click", () => importFileInput.click());
+      importFileInput.addEventListener("change", async (e) => {
         const file = e.target.files[0];
         if (file) {
-          StorageManager.importData(file)
-            .then(() => {
-              this.refreshAllData();
-            })
-            .catch((error) => {
-              console.error("Erro na importação:", error);
-            });
+          const success = await this.storageManager.importData(file);
+          if (success) {
+            // Recarrega todos os dados e atualiza a UI completamente
+            this.vehicleManager.selectVehicleType(
+              this.vehicleManager.currentVehicleType
+            ); // Força recarga
+            this.historyManager.renderHistory();
+            this.statisticsManager.updateStatistics();
+          }
+          importFileInput.value = ""; // Limpa o input para permitir reimportar o mesmo arquivo
         }
       });
     }
 
-    // Event listener para tela de carregamento - corrigido
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => {
-        setTimeout(() => this.hideSplashScreen(), 1000);
-      });
-    } else {
-      // Se o DOM já estiver carregado, executar imediatamente
-      setTimeout(() => this.hideSplashScreen(), 1000);
-    }
-
-    // Event listeners para teclado (acessibilidade)
+    // Fechar modais com a tecla Escape
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
-        this.historyManager.closeModal();
+        this.uiManager.hideDetailsModal();
+        // Se o modal de confirmação estiver ativo, ele será cancelado pelo seu próprio handler
+        // que também ouve o Escape (ou deveria, se implementado de forma robusta).
+        // Por simplicidade, aqui só fechamos o de detalhes.
+        // O modal de confirmação é resolvido com 'false' ao clicar fora ou Esc (se o overlay tiver o listener).
       }
     });
   }
 
-  initializeApp() {
-    // Inicializar com carros por padrão
+  /**
+   * Define o estado inicial da aplicação (ex: tipo de veículo padrão).
+   * @private
+   */
+  _initializeAppState() {
+    // Define 'carro' como tipo de veículo padrão e carrega dados relacionados.
+    // Isso já vai disparar a renderização de veículos, histórico e estatísticas.
     this.vehicleManager.selectVehicleType("carro");
-
-    // Carregar dados iniciais
-    this.refreshAllData();
   }
 
-  refreshAllData() {
-    this.vehicleManager.loadVehicles();
-    this.historyManager.updateHistory();
-    this.statisticsManager.updateStatistics();
-  }
-
-  hideSplashScreen() {
+  /**
+   * Esconde a tela de carregamento (splash screen).
+   * @private
+   */
+  _hideSplashScreen() {
     const splashScreen = document.getElementById("splash-screen");
     if (splashScreen) {
-      // Forçar a remoção imediata se já estiver carregado
-      splashScreen.style.transition = "opacity 1s ease-out";
-      splashScreen.style.opacity = "0";
-
-      setTimeout(() => {
-        if (splashScreen && splashScreen.parentNode) {
-          splashScreen.style.display = "none";
-          // Como fallback, remover completamente do DOM
-          splashScreen.remove();
-        }
-      }, 1000);
+      // Adiciona a classe 'hidden' que tem a transição CSS
+      splashScreen.classList.add("hidden");
+      // O CSS cuida da transição e do display:none via visibility
     }
-  }
-}
-
-// ===== FUNÇÕES GLOBAIS PARA COMPATIBILIDADE =====
-// Manter algumas funções globais para compatibilidade com HTML existente
-
-function selecionarTipoVeiculo(tipo) {
-  if (window.vehicleManager) {
-    window.vehicleManager.selectVehicleType(tipo);
-  }
-}
-
-function calcularGastos() {
-  if (window.fuelCalculator) {
-    window.fuelCalculator.calculate();
-  }
-}
-
-function mostrarFormVeiculo() {
-  if (window.vehicleManager) {
-    window.vehicleManager.showVehicleForm();
-  }
-}
-
-function salvarVeiculo() {
-  if (window.vehicleManager) {
-    window.vehicleManager.saveVehicle();
-  }
-}
-
-function cancelarVeiculo() {
-  if (window.vehicleManager) {
-    window.vehicleManager.hideVehicleForm();
-  }
-}
-
-function limparDados() {
-  if (window.historyManager) {
-    window.historyManager.clearHistory();
-  }
-}
-
-function fecharModal() {
-  if (window.historyManager) {
-    window.historyManager.closeModal();
   }
 }
 
 // ===== INICIALIZAÇÃO DA APLICAÇÃO =====
-document.addEventListener("DOMContentLoaded", () => {
-  try {
-    new AppManager();
-  } catch (error) {
-    console.error("Erro ao inicializar aplicação:", error);
-    NotificationManager.showError(
-      "Erro ao inicializar aplicação. Recarregue a página."
-    );
-  }
-});
-
-// ===== CSS ADICIONAL PARA NOTIFICAÇÕES =====
-const notificationStyles = `  
-.notification {  
-  position: fixed;  
-  top: 20px;  
-  right: 20px;  
-  background: var(--uber-gray);  
-  color: var(--uber-text);  
-  padding: 1rem;  
-  border-radius: 8px;  
-  border-left: 4px solid var(--uber-green);  
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);  
-  z-index: 10000;  
-  max-width: 300px;  
-  display: flex;  
-  align-items: center;  
-  justify-content: space-between;  
-  animation: slideIn 0.3s ease-out;  
-}  
-  
-.notification-error {  
-  border-left-color: #ff4444;  
-}  
-  
-.notification-success {  
-  border-left-color: var(--uber-green);  
-}  
-  
-.notification-close {  
-  background: none;  
-  border: none;  
-  color: var(--uber-text);  
-  font-size: 1.2rem;  
-  cursor: pointer;  
-  margin-left: 1rem;  
-  padding: 0;  
-  width: 20px;  
-  height: 20px;  
-  display: flex;  
-  align-items: center;  
-  justify-content: center;  
-}  
-  
-.empty-message {  
-  text-align: center;  
-  color: var(--uber-light-gray);  
-  padding: 2rem;  
-  font-style: italic;  
-}  
-  
-@keyframes slideIn {  
-  from {  
-    transform: translateX(100%);  
-    opacity: 0;  
-  }  
-  to {  
-    transform: translateX(0);  
-    opacity: 1;  
-  }  
-}  
-  
-@media (max-width: 480px) {  
-  .notification {  
-    right: 10px;  
-    left: 10px;  
-    max-width: none;  
-  }  
-}  
-`;
-
-// Adicionar estilos ao documento
-const styleSheet = document.createElement("style");
-styleSheet.textContent = notificationStyles;
-document.head.appendChild(styleSheet);
+// Garante que o DOM esteja pronto antes de instanciar o AppManager.
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => new AppManager());
+} else {
+  new AppManager(); // DOM já carregado
+}

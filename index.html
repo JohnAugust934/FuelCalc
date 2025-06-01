@@ -4,177 +4,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FuelCalc</title>
-    <meta name="description" content="Calculadora de gastos com combustível para motoristas de Uber">
+    <title>FuelCalc: Calculadora de Combustível</title>
+    <meta name="description"
+        content="Calculadora PWA de gastos com combustível, com estatísticas e gerenciamento de veículos.">
+    <meta name="keywords"
+        content="uber, 99, combustível, gasolina, etanol, gnv, motorista, app, pwa, calculadora, gastos">
+    <meta name="author" content="Seu Nome ou Nome do Projeto">
+
     <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <meta name="theme-color" content="#00C165">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    <link rel="shortcut icon" href="icons/favicon.ico">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="styles.css">
-    <link rel="icon" type="image/png" href="icons/icon-192x192.png">
 </head>
 
 <body>
-    <!-- Tela de carregamento -->
-    <div id="splash-screen" class="splash-screen">
-        <img src="icons/icon-192x192.png" alt="Uber Fuel Logo" class="logo">
-        <h1>Fuel Calculator</h1>
+    <div id="splash-screen" class="splash-screen" aria-hidden="true">
+        <img src="icons/icon-192x192.png" alt="Logo FuelCalc" class="logo">
+        <h1>FuelCalc</h1>
+        <p>Carregando sua calculadora...</p>
     </div>
 
     <div class="container">
-        <!-- Cabeçalho da aplicação -->
         <header class="app-header">
-            <img src="icons/icon-192x192.png" alt="Uber Fuel Logo" class="logo">
-            <h1>Fuel Calculator</h1>
-            <p>Calculadora de gastos com combustível para motoristas de Uber</p>
+            <img src="icons/icon-192x192.png" alt="Logo FuelCalc" class="logo">
+            <h1>FuelCalc</h1>
+            <p>Sua calculadora de combustível inteligente</p>
         </header>
 
-        <!-- Seção de seleção de veículos -->
-        <section class="vehicle-selector">
-            <h2>Selecione o Veículo</h2>
+        <section class="vehicle-selector content-section" aria-labelledby="vehicle-selector-title">
+            <h2 id="vehicle-selector-title">Gerenciar Veículos</h2>
             <div class="vehicle-type-buttons">
-                <button class="uber-button" data-tipo="carro" aria-label="Selecionar Carro">Carro</button>
-                <button class="uber-button" data-tipo="moto" aria-label="Selecionar Moto">Moto</button>
+                <button type="button" class="uber-button" data-vehicle-type="carro" aria-pressed="true">Carro</button>
+                <button type="button" class="uber-button" data-vehicle-type="moto" aria-pressed="false">Moto</button>
             </div>
-            <div class="vehicle-cards" id="vehicleList"></div>
-            <button class="uber-button secondary" id="adicionarVeiculoBtn" aria-label="Adicionar Veículo">+ Adicionar
-                Veículo</button>
-            <div class="vehicle-form" id="vehicleForm" style="display:none;">
+            <div class="vehicle-cards" id="vehicleList" aria-live="polite">
+            </div>
+            <button type="button" class="uber-button secondary full-width" id="addVehicleBtn"
+                aria-label="Adicionar Novo Veículo">
+                + Adicionar Veículo
+            </button>
+            <form id="vehicleForm" class="vehicle-form" style="display:none;" novalidate>
+                <input type="hidden" id="vehicleType" name="vehicleType">
                 <div class="input-group">
-                    <label for="vehicleName">Nome do Veículo</label>
-                    <input type="text" id="vehicleName" placeholder="Nome do Veículo">
+                    <label for="vehicleName">Nome do Veículo:</label>
+                    <input type="text" id="vehicleName" name="vehicleName" placeholder="Ex: Onix 1.0" required
+                        minlength="2" maxlength="50">
                 </div>
                 <div class="input-group">
-                    <label for="vehicleEfficiency">Eficiência (km/L)</label>
-                    <input type="number" id="vehicleEfficiency" step="0.1" placeholder="Eficiência (km/L)">
+                    <label for="vehicleEfficiency">Eficiência (km/L):</label>
+                    <input type="number" id="vehicleEfficiency" name="vehicleEfficiency" placeholder="Ex: 12.5"
+                        step="0.1" min="1" max="50" required>
                 </div>
-                <input type="hidden" id="vehicleType">
-                <button class="uber-button" id="salvarVeiculoBtn" aria-label="Salvar Veículo">Salvar Veículo</button>
-                <button class="uber-button secondary" id="cancelarVeiculoBtn" aria-label="Cancelar">Cancelar</button>
-            </div>
+                <div class="button-group">
+                    <button type="submit" class="uber-button" id="saveVehicleBtn">Salvar Veículo</button>
+                    <button type="button" class="uber-button secondary" id="cancelVehicleBtn">Cancelar</button>
+                </div>
+            </form>
         </section>
 
-        <!-- Formulário principal para calcular gastos de combustível -->
-        <main>
-            <form id="fuelForm" class="calculator-form">
+        <main class="calculator-form content-section" aria-labelledby="calculator-title">
+            <h2 id="calculator-title">Calcular Gastos da Viagem</h2>
+            <form id="fuelForm" novalidate>
                 <div class="input-group">
-                    <label for="kmInicial">KM Inicial</label>
-                    <input type="number" id="kmInicial" step="0.1" placeholder="KM Inicial" required>
+                    <label for="kmPorLitro">Eficiência do Veículo (km/L):</label>
+                    <input type="number" id="kmPorLitro" name="kmPorLitro" placeholder="Selecione um veículo ou informe"
+                        step="0.1" min="1" max="50" required>
                 </div>
-
                 <div class="input-group">
-                    <label for="kmFinal">KM Final</label>
-                    <input type="number" id="kmFinal" step="0.1" placeholder="KM Final" required>
+                    <label for="kmInicial">KM Inicial:</label>
+                    <input type="number" id="kmInicial" name="kmInicial" placeholder="Ex: 15000.0" step="0.1" min="0"
+                        required>
                 </div>
-
                 <div class="input-group">
-                    <label for="kmPorLitro">Eficiência (km/L)</label>
-                    <input type="number" id="kmPorLitro" step="0.1" placeholder="KM por Litro" required>
+                    <label for="kmFinal">KM Final:</label>
+                    <input type="number" id="kmFinal" name="kmFinal" placeholder="Ex: 15120.5" step="0.1" min="0"
+                        required>
                 </div>
-
                 <div class="input-group">
-                    <label for="precoCombustivel">Preço por Litro (R$)</label>
-                    <input type="number" id="precoCombustivel" step="0.01" placeholder="Preço do Combustível" required>
+                    <label for="precoCombustivel">Preço por Litro (R$):</label>
+                    <input type="number" id="precoCombustivel" name="precoCombustivel" placeholder="Ex: 5.89"
+                        step="0.01" min="0.1" max="20" required>
                 </div>
-
                 <div class="input-group">
-                    <label for="ganhoUber">Ganho na Uber (R$)</label>
-                    <input type="number" id="ganhoUber" step="0.01" placeholder="Ganho na Uber" required>
+                    <label for="ganhoUber">Ganho Bruto da Viagem (R$, opcional):</label>
+                    <input type="number" id="ganhoUber" name="ganhoUber" placeholder="Ex: 75.50" step="0.01" min="0">
                 </div>
-
-                <button type="submit" class="uber-button" id="calcularGastosBtn" aria-label="Calcular Gastos">
+                <button type="submit" class="uber-button full-width" id="calculateTripBtn">
                     Calcular Gastos
                 </button>
             </form>
-            <!-- Seção de Backup e Restauração -->
-            <div class="backup-section">
-                <h3>Backup e Restauração</h3>
-                <div class="backup-buttons">
-                    <button id="exportDataBtn" class="uber-button backup-btn">
-                        📤 Exportar Dados
-                    </button>
-                    <button id="importDataBtn" class="uber-button backup-btn">
-                        📥 Importar Dados
-                    </button>
-                    <input type="file" id="importFileInput" accept=".json" style="display: none;">
-                </div>
-                <p class="backup-info">
-                    Exporte seus dados para fazer backup ou importe dados de um backup anterior.
-                </p>
-            </div>
         </main>
 
-        <!-- Div para exibir o resultado do cálculo -->
-        <div id="resultado" class="result-card">
-            <h3>Resultado do Cálculo</h3>
+        <section id="resultCard" class="result-card content-section" style="display:none;"
+            aria-labelledby="result-title">
+            <h3 id="result-title">Resultado do Cálculo</h3>
             <div class="result-item">
-                <span>Distância:</span>
-                <strong id="distancia"></strong>
-            </div>
-            <div class="result-item">
-                <span>Litros:</span>
-                <strong id="litros"></strong>
+                <span>Distância Percorrida:</span>
+                <strong id="distanciaResult">-- km</strong>
             </div>
             <div class="result-item">
-                <span>Custo:</span>
-                <strong id="custo"></strong>
+                <span>Combustível Consumido:</span>
+                <strong id="litrosResult">-- L</strong>
             </div>
-            <div class="result-item total">
-                <span>Ganho na Uber:</span>
-                <strong id="ganho"></strong>
+            <div class="result-item">
+                <span>Custo Total do Combustível:</span>
+                <strong id="custoResult">R$ --</strong>
             </div>
-        </div>
-
-        <!-- Seção de histórico de preços -->
-        <div class="history-section" id="historySection" style="display: none;">
-            <h3>Histórico de Preços</h3>
-            <ul id="historicoPrecos" class="price-list"></ul>
-            <button id="verMaisBtn" class="uber-button secondary" style="display:none;" aria-label="Ver Mais">Ver
-                Mais</button>
-            <button id="minimizarBtn" class="uber-button secondary" style="display:none;"
-                aria-label="Minimizar">Minimizar</button>
-            <button id="limparHistoricoBtn" class="uber-button secondary" type="button"
-                aria-label="Limpar Histórico">Limpar Histórico</button>
-        </div>
-
-        <!-- Modal para exibir detalhes do registro -->
-        <div class="modal-overlay" id="modalOverlay" style="display:none;">
-            <div class="modal-content">
-                <button class="modal-close" id="fecharModalBtn" aria-label="Fechar Modal">&times;</button>
-                <h3>Detalhes do Registro</h3>
-                <div class="modal-details" id="modalDetails">
-                    <!-- Conteúdo dinâmico -->
-                </div>
+            <div class="result-item total"> <span>Lucro Líquido da Viagem:</span>
+                <strong id="lucroResult">R$ --</strong>
             </div>
-        </div>
+        </section>
 
-        <!-- Seção de estatísticas do mês -->
-        <div class="stats-section" id="statsSection" style="display: none;">
-            <h3>Estatísticas do Mês</h3>
+        <section id="historySection" class="history-section content-section" style="display:none;"
+            aria-labelledby="history-title">
+            <h3 id="history-title">Histórico de Viagens</h3>
+            <ul id="historyList" class="price-list" aria-live="polite">
+            </ul>
+            <div class="button-group">
+                <button type="button" id="seeMoreHistoryBtn" class="uber-button secondary" style="display:none;">Ver
+                    Mais</button>
+                <button type="button" id="minimizeHistoryBtn" class="uber-button secondary"
+                    style="display:none;">Minimizar</button>
+            </div>
+            <button type="button" id="clearHistoryBtn" class="uber-button danger full-width"
+                style="margin-top: 1rem;">Limpar Histórico deste Veículo</button>
+        </section>
+
+        <section id="statsSection" class="stats-section content-section" style="display:none;"
+            aria-labelledby="stats-title">
+            <h3 id="stats-title">Estatísticas do Veículo Atual</h3>
             <div class="stat-item">
-                <span>Total Km Rodados:</span>
-                <strong id="totalKm">0 km</strong>
+                <span>Total de KM Rodados:</span>
+                <strong id="totalKmStat">0 km</strong>
             </div>
             <div class="stat-item">
-                <span>Total Gastos:</span>
-                <strong id="totalGasto">R$ 0,00</strong>
+                <span>Total Gasto com Combustível:</span>
+                <strong id="totalGastoStat">R$ 0,00</strong>
+            </div>
+            <div class="stat-item">
+                <span>Média de Consumo Geral:</span>
+                <strong id="mediaConsumoStat">0 km/L</strong>
             </div>
             <div class="chart-container">
-                <canvas id="fuelChart"></canvas>
+                <canvas id="fuelChartCanvas" aria-label="Gráfico de gastos diários com combustível"></canvas>
+            </div>
+        </section>
+
+        <section class="backup-section content-section" aria-labelledby="backup-title">
+            <h3 id="backup-title">Backup e Restauração de Dados</h3>
+            <div class="backup-buttons">
+                <button type="button" id="exportDataBtn" class="uber-button">
+                    📤 Exportar Dados
+                </button>
+                <button type="button" id="importDataBtn" class="uber-button">
+                    📥 Importar Dados
+                </button>
+                <input type="file" id="importFileInput" accept=".json" style="display: none;" aria-hidden="true">
+            </div>
+            <p class="backup-info">
+                Exporte seus dados para um arquivo de backup ou importe de um arquivo salvo anteriormente.
+            </p>
+        </section>
+
+    </div>
+    <footer class="app-footer">
+        <p>&copy; <span id="currentYear"></span> FuelCalc. Todos os direitos reservados.</p>
+        <p>Desenvolvido com ❤️</p>
+    </footer>
+
+    <div id="detailsModalOverlay" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="detailsModalTitle" style="display:none;">
+        <div class="modal-content">
+            <button type="button" class="modal-close-button" id="closeDetailsModalBtn"
+                aria-label="Fechar Detalhes">&times;</button>
+            <h3 id="detailsModalTitle">Detalhes da Viagem</h3>
+            <div id="detailsModalContent" class="modal-details">
             </div>
         </div>
-
-        <!-- Mensagem de carregamento -->
-        <div class="loading" id="loading">
-            Carregando...
-        </div>
-
-        <!-- Rodapé da aplicação -->
-        <footer class="app-footer">
-            <p>© 2025 Uber Fuel Calculator - PWA</p>
-        </footer>
     </div>
 
-    <!-- Scripts -->
-    <script src="app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <div id="confirmModalOverlay" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="confirmModalTitle" style="display:none;">
+        <div class="modal-content">
+            <h3 id="confirmModalTitle">Confirmar Ação</h3>
+            <p id="confirmModalMessage" style="margin-bottom: 1.5rem; text-align: center;">Você tem certeza?</p>
+            <div class="confirm-modal-actions">
+                <button type="button" class="uber-button secondary" id="confirmModalCancelBtn">Cancelar</button>
+                <button type="button" class="uber-button" id="confirmModalConfirmBtn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notificationArea" class="notification-area" aria-live="assertive">
+    </div>
+
+
+    <script src="/libs/chart.min.js" defer></script>
+    <script src="app.js" defer></script>
+
+    <script>
+        // Pequeno script inline para o ano no footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
 </body>
 
 </html>
