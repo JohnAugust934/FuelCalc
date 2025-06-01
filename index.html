@@ -29,18 +29,18 @@
     <div id="splash-screen" class="splash-screen" aria-hidden="true">
         <img src="icons/icon-192x192.png" alt="Logo FuelCalc" class="logo">
         <h1>FuelCalc</h1>
-        <p>Carregando sua calculadora...</p>
+        <p>A carregar a sua calculadora...</p>
     </div>
 
     <div class="container">
         <header class="app-header">
             <img src="icons/icon-192x192.png" alt="Logo FuelCalc" class="logo">
             <h1>FuelCalc</h1>
-            <p>Sua calculadora de combustível inteligente</p>
+            <p>A sua calculadora de combustível inteligente</p>
         </header>
 
         <section class="vehicle-selector content-section" aria-labelledby="vehicle-selector-title">
-            <h2 id="vehicle-selector-title">Gerenciar Veículos</h2>
+            <h2 id="vehicle-selector-title">Gerir Veículos</h2>
             <div class="vehicle-type-buttons">
                 <button type="button" class="uber-button" data-vehicle-type="carro" aria-pressed="true">Carro</button>
                 <button type="button" class="uber-button" data-vehicle-type="moto" aria-pressed="false">Moto</button>
@@ -64,7 +64,7 @@
                         step="0.1" min="1" max="50" required>
                 </div>
                 <div class="button-group">
-                    <button type="submit" class="uber-button" id="saveVehicleBtn">Salvar Veículo</button>
+                    <button type="submit" class="uber-button" id="saveVehicleBtn">Guardar Veículo</button>
                     <button type="button" class="uber-button secondary" id="cancelVehicleBtn">Cancelar</button>
                 </div>
             </form>
@@ -135,12 +135,12 @@
                     style="display:none;">Minimizar</button>
             </div>
             <button type="button" id="clearHistoryBtn" class="uber-button danger full-width"
-                style="margin-top: 1rem;">Limpar Histórico deste Veículo</button>
+                style="margin-top: 1rem;">Limpar Histórico deste Tipo de Veículo</button>
         </section>
 
         <section id="statsSection" class="stats-section content-section" style="display:none;"
             aria-labelledby="stats-title">
-            <h3 id="stats-title">Estatísticas do Veículo Atual</h3>
+            <h3 id="stats-title">Estatísticas do Tipo de Veículo Atual</h3>
             <div class="stat-item">
                 <span>Total de KM Rodados:</span>
                 <strong id="totalKmStat">0 km</strong>
@@ -159,7 +159,7 @@
         </section>
 
         <section class="backup-section content-section" aria-labelledby="backup-title">
-            <h3 id="backup-title">Backup e Restauração de Dados</h3>
+            <h3 id="backup-title">Backup e Restauro de Dados</h3>
             <div class="backup-buttons">
                 <button type="button" id="exportDataBtn" class="uber-button">
                     📤 Exportar Dados
@@ -170,7 +170,14 @@
                 <input type="file" id="importFileInput" accept=".json" style="display: none;" aria-hidden="true">
             </div>
             <p class="backup-info">
-                Exporte seus dados para um arquivo de backup ou importe de um arquivo salvo anteriormente.
+                Exporte os seus dados para um ficheiro de backup ou importe de um ficheiro guardado anteriormente.
+            </p>
+            <hr style="margin: 1.5rem 0; border-color: var(--uber-gray-light);">
+            <button type="button" id="clearAllDataBtn" class="uber-button danger full-width">
+                ⚠️ Limpar Todos os Dados da Aplicação
+            </button>
+            <p class="backup-info" style="margin-top: 0.5rem; color: var(--uber-red);">
+                Atenção: Esta ação é irreversível e apagará todos os veículos e históricos.
             </p>
         </section>
 
@@ -195,7 +202,7 @@
         aria-labelledby="confirmModalTitle" style="display:none;">
         <div class="modal-content">
             <h3 id="confirmModalTitle">Confirmar Ação</h3>
-            <p id="confirmModalMessage" style="margin-bottom: 1.5rem; text-align: center;">Você tem certeza?</p>
+            <p id="confirmModalMessage" style="margin-bottom: 1.5rem; text-align: center;">Tem a certeza?</p>
             <div class="confirm-modal-actions">
                 <button type="button" class="uber-button secondary" id="confirmModalCancelBtn">Cancelar</button>
                 <button type="button" class="uber-button" id="confirmModalConfirmBtn">Confirmar</button>
@@ -207,7 +214,7 @@
     </div>
 
 
-    <script src="/libs/chart.min.js" defer></script>
+    <script src="libs/chart.min.js" defer></script>
     <script src="app.js" defer></script>
 
     <script>

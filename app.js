@@ -264,7 +264,7 @@ class UIManager {
       labelSpan.textContent = `${detail.label}:`;
 
       const valueStrong = document.createElement("strong");
-      // Sanitiza o valor, pois pode vir de dados do usuário (histórico)
+      // Sanitiza o valor, pois pode vir de dados do utilizador (histórico)
       valueStrong.innerHTML = Utils.sanitizeHTML(String(detail.value));
 
       itemDiv.appendChild(labelSpan);
@@ -338,7 +338,7 @@ class UIManager {
 
   /**
    * Manipula a resposta do modal de confirmação.
-   * @param {boolean} confirmed - True se o usuário confirmou, false caso contrário.
+   * @param {boolean} confirmed - True se o utilizador confirmou, false caso contrário.
    * @private
    */
   _handleConfirm(confirmed) {
@@ -382,7 +382,7 @@ class StorageManager {
   safeGetItem(key, defaultValue = []) {
     try {
       if (!this._isStorageAvailable()) {
-        console.warn("LocalStorage não está disponível. Usando valor padrão.");
+        console.warn("LocalStorage não está disponível. A usar valor padrão.");
         return defaultValue;
       }
       const item = localStorage.getItem(key);
@@ -408,7 +408,7 @@ class StorageManager {
     try {
       if (!this._isStorageAvailable()) {
         this.uiManager.showNotification(
-          "Armazenamento local não disponível. Não foi possível salvar os dados.",
+          "Armazenamento local não disponível. Não foi possível guardar os dados.",
           "error"
         );
         return false;
@@ -416,11 +416,11 @@ class StorageManager {
       localStorage.setItem(key, JSON.stringify(value));
       return true;
     } catch (error) {
-      console.error(`Erro ao salvar ${key} no localStorage:`, error);
-      let message = `Erro ao salvar dados (${key}).`;
+      console.error(`Erro ao guardar ${key} no localStorage:`, error);
+      let message = `Erro ao guardar dados (${key}).`;
       if (error.name === "QuotaExceededError") {
         message =
-          "Espaço de armazenamento local cheio. Não foi possível salvar. Tente limpar o histórico ou exportar dados.";
+          "Espaço de armazenamento local cheio. Não foi possível guardar. Tente limpar o histórico ou exportar dados.";
       }
       this.uiManager.showNotification(message, "error");
       return false;
@@ -455,7 +455,7 @@ class StorageManager {
   }
 
   /**
-   * Exporta os dados da aplicação (veículos e histórico) para um arquivo JSON.
+   * Exporta os dados da aplicação (veículos e histórico) para um ficheiro JSON.
    */
   exportData() {
     const dataToExport = {
@@ -485,14 +485,14 @@ class StorageManager {
   }
 
   /**
-   * Importa dados de um arquivo JSON para a aplicação.
-   * @param {File} file - O arquivo JSON a ser importado.
+   * Importa dados de um ficheiro JSON para a aplicação.
+   * @param {File} file - O ficheiro JSON a ser importado.
    * @returns {Promise<boolean>} True se a importação (parcial ou total) foi bem-sucedida, false caso contrário.
    */
   async importData(file) {
     if (!file || file.type !== "application/json") {
       this.uiManager.showNotification(
-        "Arquivo inválido. Por favor, selecione um arquivo .json.",
+        "Ficheiro inválido. Por favor, selecione um ficheiro .json.",
         "error"
       );
       return false;
@@ -504,10 +504,10 @@ class StorageManager {
       let vehiclesImported = false;
       let historyImported = false;
 
-      // Validação básica do formato do arquivo
+      // Validação básica do formato do ficheiro
       if (typeof data !== "object" || data === null) {
         this.uiManager.showNotification(
-          "Formato de arquivo de backup inválido.",
+          "Formato de ficheiro de backup inválido.",
           "error"
         );
         return false;
@@ -520,32 +520,32 @@ class StorageManager {
         }
       } else if (data.vehicles) {
         this.uiManager.showNotification(
-          "Dados de veículos no arquivo de backup estão mal formatados.",
+          "Dados de veículos no ficheiro de backup estão mal formatados.",
           "warning"
         );
       }
 
       if (data.history && Array.isArray(data.history)) {
-        // TODO: Adicionar validação mais granular para cada registro de histórico
+        // TODO: Adicionar validação mais granular para cada registo de histórico
         if (this.safeSetItem(CONFIG.STORAGE_KEYS.HISTORY, data.history)) {
           historyImported = true;
         }
       } else if (data.history) {
         this.uiManager.showNotification(
-          "Dados de histórico no arquivo de backup estão mal formatados.",
+          "Dados de histórico no ficheiro de backup estão mal formatados.",
           "warning"
         );
       }
 
       if (vehiclesImported || historyImported) {
         this.uiManager.showNotification(
-          "Dados importados com sucesso! A página será atualizada.",
+          "Dados importados com sucesso! A aplicação será atualizada.",
           "success"
         );
         return true; // Indica que algo foi importado
       } else {
         this.uiManager.showNotification(
-          "Nenhum dado válido de veículos ou histórico encontrado no arquivo.",
+          "Nenhum dado válido de veículos ou histórico encontrado no ficheiro.",
           "info"
         );
         return false;
@@ -553,11 +553,53 @@ class StorageManager {
     } catch (error) {
       console.error("Erro ao importar dados:", error);
       this.uiManager.showNotification(
-        "Erro ao processar o arquivo de backup. Verifique o console para detalhes.",
+        "Erro ao processar o ficheiro de backup. Verifique a consola para detalhes.",
         "error"
       );
       return false;
     }
+  }
+
+  /**
+   * Limpa todos os dados da aplicação armazenados no localStorage.
+   * @returns {boolean} True se todos os dados foram limpos com sucesso.
+   */
+  clearAllData() {
+    let allCleared = true;
+    const keysToClear = [
+      CONFIG.STORAGE_KEYS.VEHICLES,
+      CONFIG.STORAGE_KEYS.HISTORY,
+      CONFIG.STORAGE_KEYS.APP_SETTINGS, // Se existirem configurações futuras
+    ];
+
+    if (!this._isStorageAvailable()) {
+      this.uiManager.showNotification(
+        "Armazenamento local não disponível. Não foi possível limpar os dados.",
+        "error"
+      );
+      return false;
+    }
+
+    keysToClear.forEach((key) => {
+      try {
+        localStorage.removeItem(key);
+      } catch (error) {
+        console.error(`Erro ao limpar a chave ${key} do localStorage:`, error);
+        this.uiManager.showNotification(
+          `Erro ao tentar limpar parte dos dados (${key}).`,
+          "error"
+        );
+        allCleared = false;
+      }
+    });
+
+    if (allCleared) {
+      this.uiManager.showNotification(
+        "Todos os dados da aplicação foram limpos com sucesso!",
+        "success"
+      );
+    }
+    return allCleared;
   }
 }
 
@@ -810,7 +852,7 @@ class VehicleManager {
     this.dom.vehicleListContainer.innerHTML = ""; // Limpa lista atual
 
     if (filteredVehicles.length === 0) {
-      this.dom.vehicleListContainer.innerHTML = `<li class="empty-message">Nenhum ${this.currentVehicleType} cadastrado.</li>`;
+      this.dom.vehicleListContainer.innerHTML = `<li class="empty-message">Nenhum ${this.currentVehicleType} registado.</li>`;
       return;
     }
 
@@ -859,7 +901,7 @@ class VehicleManager {
     deleteBtn.addEventListener("click", async (e) => {
       e.stopPropagation(); // Evita que o card seja selecionado ao clicar em excluir
       const confirmed = await this.uiManager.showConfirm(
-        `Tem certeza que deseja excluir o veículo "${Utils.sanitizeHTML(
+        `Tem a certeza que deseja excluir o veículo "${Utils.sanitizeHTML(
           vehicle.nome
         )}"?`
       );
@@ -978,7 +1020,7 @@ class VehicleManager {
       this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, vehicles)
     ) {
       this.uiManager.showNotification(
-        `Veículo "${nome}" salvo com sucesso!`,
+        `Veículo "${nome}" guardado com sucesso!`,
         "success"
       );
       this.hideVehicleForm();
@@ -1036,6 +1078,20 @@ class VehicleManager {
    */
   getCurrentVehicleName() {
     return this.currentVehicle ? this.currentVehicle.nome : null;
+  }
+
+  /**
+   * Reseta o estado do gestor de veículos (ex: após limpar todos os dados).
+   */
+  resetState() {
+    this.currentVehicle = null;
+    this.currentVehicleType = "carro"; // Volta para o tipo padrão
+    if (this.dom.mainFormEfficiencyInput) {
+      this.dom.mainFormEfficiencyInput.value = "";
+      this.dom.mainFormEfficiencyInput.placeholder =
+        "Selecione um veículo ou informe";
+    }
+    this.selectVehicleType("carro"); // Re-renderiza com o tipo padrão (lista vazia)
   }
 }
 
@@ -1184,15 +1240,28 @@ class FuelCalculator {
    */
   _clearTripForm() {
     if (this.dom.form) {
-      // Não reseta kmPorLitro se um veículo estiver selecionado,
-      // pois ele é preenchido automaticamente.
-      // Se nenhum veículo estiver selecionado, o usuário pode querer manter o valor manual.
       this.dom.kmInicialInput.value = "";
       this.dom.kmFinalInput.value = "";
-      // this.dom.kmPorLitroInput.value = ""; // Decidir se deve limpar ou não
+      // Não limpar kmPorLitro se um veículo estiver selecionado
+      if (!this.vehicleManager.currentVehicle) {
+        this.dom.kmPorLitroInput.value = "";
+      }
       this.dom.precoCombustivelInput.value = "";
       this.dom.ganhoUberInput.value = "";
       this.dom.kmInicialInput.focus();
+    }
+  }
+  /**
+   * Reseta o estado da calculadora (ex: após limpar todos os dados).
+   */
+  resetState() {
+    this._clearTripForm();
+    if (this.dom.resultCard) {
+      this.dom.resultCard.style.display = "none"; // Esconde o card de resultado
+    }
+    // Garante que o campo de eficiência seja limpo se não houver veículo
+    if (this.dom.kmPorLitroInput && !this.vehicleManager.currentVehicle) {
+      this.dom.kmPorLitroInput.value = "";
     }
   }
 }
@@ -1228,7 +1297,7 @@ class HistoryManager {
     if (this.dom.clearHistoryBtn) {
       this.dom.clearHistoryBtn.addEventListener("click", async () => {
         const confirmed = await this.uiManager.showConfirm(
-          `Tem certeza que deseja limpar TODO o histórico de viagens para ${this.vehicleManager.currentVehicleType}s? Esta ação não pode ser desfeita.`
+          `Tem a certeza que deseja limpar TODO o histórico de viagens para ${this.vehicleManager.currentVehicleType}s? Esta ação não pode ser desfeita.`
         );
         if (confirmed) this.clearHistoryForCurrentType();
       });
@@ -1237,6 +1306,8 @@ class HistoryManager {
     document.addEventListener("vehicleTypeChanged", () => this.renderHistory());
     // Ouvir evento de nova viagem calculada
     document.addEventListener("tripCalculated", () => this.renderHistory());
+    // Ouvir evento de limpeza geral de dados
+    document.addEventListener("allDataCleared", () => this.renderHistory());
   }
 
   /**
@@ -1275,8 +1346,7 @@ class HistoryManager {
       : filteredHistory.slice(0, CONFIG.HISTORY_DISPLAY_COUNT);
 
     if (itemsToRender.length === 0 && filteredHistory.length > 0) {
-      // Caso onde display_count é 0 mas há histórico
-      this.dom.historyList.innerHTML = `<li class="empty-message-list">Nenhum registro para exibir (verifique 'Ver Mais').</li>`;
+      this.dom.historyList.innerHTML = `<li class="empty-message-list">Nenhum registo para exibir (verifique 'Ver Mais').</li>`;
     } else if (itemsToRender.length === 0) {
       this.dom.historyList.innerHTML = `<li class="empty-message-list">Nenhum histórico para ${this.vehicleManager.currentVehicleType}s.</li>`;
     }
@@ -1305,7 +1375,7 @@ class HistoryManager {
 
   /**
    * Cria o elemento HTML para um item do histórico.
-   * @param {object} record - O registro do histórico.
+   * @param {object} record - O registo do histórico.
    * @returns {HTMLElement} O elemento <li> do item.
    * @private
    */
@@ -1346,8 +1416,8 @@ class HistoryManager {
   }
 
   /**
-   * Mostra os detalhes de um registro específico do histórico em um modal.
-   * @param {string} recordId - O ID do registro.
+   * Mostra os detalhes de um registo específico do histórico em um modal.
+   * @param {string} recordId - O ID do registo.
    * @private
    */
   _showRecordDetails(recordId) {
@@ -1357,7 +1427,7 @@ class HistoryManager {
     );
     const record = allHistory.find((item) => item.id === recordId);
     if (!record) {
-      this.uiManager.showNotification("Registro não encontrado.", "error");
+      this.uiManager.showNotification("Registo não encontrado.", "error");
       return;
     }
 
@@ -1404,7 +1474,7 @@ class HistoryManager {
       CONFIG.STORAGE_KEYS.HISTORY,
       []
     );
-    // Mantém apenas os registros que NÃO são do tipo atual
+    // Mantém apenas os registos que NÃO são do tipo atual
     const remainingHistory = allHistory.filter(
       (item) => item.tipoVeiculo !== currentType
     );
@@ -1425,6 +1495,13 @@ class HistoryManager {
         new CustomEvent("historyCleared", { detail: { type: currentType } })
       );
     }
+  }
+  /**
+   * Reseta o estado do gestor de histórico (ex: após limpar todos os dados).
+   */
+  resetState() {
+    this.isFullHistoryVisible = false;
+    this.renderHistory(); // Isso mostrará a seção de histórico como vazia
   }
 }
 
@@ -1458,6 +1535,7 @@ class StatisticsManager {
     );
     document.addEventListener("tripCalculated", () => this.debouncedUpdate());
     document.addEventListener("historyCleared", () => this.debouncedUpdate());
+    document.addEventListener("allDataCleared", () => this.debouncedUpdate());
   }
 
   /**
@@ -1683,6 +1761,12 @@ class StatisticsManager {
       }
     }
   }
+  /**
+   * Reseta o estado do gestor de estatísticas (ex: após limpar todos os dados).
+   */
+  resetState() {
+    this.updateStatistics(); // Isso irá esconder a seção se não houver dados
+  }
 }
 
 // ===== GERENCIADOR PRINCIPAL DA APLICAÇÃO (AppManager) =====
@@ -1739,22 +1823,19 @@ class AppManager {
           .register("./sw.js") // Caminho relativo ao index.html
           .then((registration) =>
             console.log(
-              "Service Worker FuelCalc registrado com sucesso. Escopo:",
+              "Service Worker FuelCalc registado com sucesso. Escopo:",
               registration.scope
             )
           )
           .catch((error) =>
-            console.error(
-              "Falha no registro do Service Worker FuelCalc:",
-              error
-            )
+            console.error("Falha no registo do Service Worker FuelCalc:", error)
           );
       });
     }
   }
 
   /**
-   * Vincula eventos globais da aplicação (ex: import/export).
+   * Vincula eventos globais da aplicação (ex: import/export, limpar tudo).
    * @private
    */
   _bindGlobalAppEvents() {
@@ -1773,14 +1854,46 @@ class AppManager {
         if (file) {
           const success = await this.storageManager.importData(file);
           if (success) {
-            // Recarrega todos os dados e atualiza a UI completamente
+            // Força a atualização completa da UI após importação
             this.vehicleManager.selectVehicleType(
               this.vehicleManager.currentVehicleType
-            ); // Força recarga
+            ); // Re-seleciona o tipo atual para forçar recarga
+            // Os eventos 'vehicleTypeChanged' já devem acionar historyManager e statisticsManager
+            // Mas para garantir, podemos chamar explicitamente:
             this.historyManager.renderHistory();
             this.statisticsManager.updateStatistics();
           }
-          importFileInput.value = ""; // Limpa o input para permitir reimportar o mesmo arquivo
+          importFileInput.value = ""; // Limpa o input para permitir reimportar o mesmo ficheiro
+        }
+      });
+    }
+
+    // Botão para Limpar Todos os Dados
+    const clearAllDataBtn = document.getElementById("clearAllDataBtn");
+    if (clearAllDataBtn) {
+      clearAllDataBtn.addEventListener("click", async () => {
+        const confirmed = await this.uiManager.showConfirm(
+          "TEM A CERTEZA ABSOLUTA?\n\nEsta ação apagará TODOS os veículos, TODO o histórico e quaisquer outras configurações guardadas.\n\nEsta ação é IRREVERSÍVEL!",
+          "⚠️ ATENÇÃO: Limpar Todos os Dados ⚠️"
+        );
+        if (confirmed) {
+          const doubleConfirmed = await this.uiManager.showConfirm(
+            "CONFIRMAÇÃO FINAL:\n\nRealmente deseja apagar todos os dados? Não haverá como os recuperar.",
+            "⚠️ Confirmação Final ⚠️"
+          );
+          if (doubleConfirmed) {
+            this._performClearAllData();
+          } else {
+            this.uiManager.showNotification(
+              "Ação de limpeza total cancelada.",
+              "info"
+            );
+          }
+        } else {
+          this.uiManager.showNotification(
+            "Ação de limpeza total cancelada.",
+            "info"
+          );
         }
       });
     }
@@ -1789,8 +1902,6 @@ class AppManager {
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         this.uiManager.hideDetailsModal();
-        // Se o modal de confirmação estiver ativo, ele será cancelado pelo seu próprio handler
-        // que também ouve o Escape (ou deveria, se implementado de forma robusta).
         if (
           this.uiManager.confirmModalOverlay &&
           this.uiManager.confirmModalOverlay.classList.contains("active")
@@ -1799,6 +1910,35 @@ class AppManager {
         }
       }
     });
+  }
+
+  /**
+   * Executa a limpeza de todos os dados da aplicação.
+   * @private
+   */
+  _performClearAllData() {
+    const success = this.storageManager.clearAllData();
+    if (success) {
+      // Reseta o estado de cada gestor para refletir os dados vazios
+      this.vehicleManager.resetState(); // Irá chamar selectVehicleType("carro") e limpar a UI
+      this.fuelCalculator.resetState();
+      this.historyManager.resetState(); // Já renderiza a lista vazia
+      this.statisticsManager.resetState(); // Já esconde a seção se não houver dados
+
+      // Dispara um evento global para que qualquer outro módulo possa reagir, se necessário
+      document.dispatchEvent(new CustomEvent("allDataCleared"));
+      this.uiManager.showNotification(
+        "Todos os dados da aplicação foram apagados com sucesso.",
+        "success"
+      );
+      // Poderia recarregar a página para um reset "mais forte", mas resetar os estados deve ser suficiente
+      // window.location.reload();
+    } else {
+      this.uiManager.showNotification(
+        "Ocorreu um erro ao tentar limpar todos os dados.",
+        "error"
+      );
+    }
   }
 
   /**
@@ -1820,14 +1960,10 @@ class AppManager {
     if (splashScreen) {
       // Adiciona a classe 'hidden' que tem a transição CSS
       splashScreen.classList.add("hidden");
-      // O CSS cuida da transição e do display:none via visibility
-      // Pode ser útil remover o elemento do DOM após a transição para liberar recursos,
-      // mas visibility:hidden já o remove do fluxo de renderização.
       splashScreen.addEventListener(
         "transitionend",
         () => {
           if (splashScreen.classList.contains("hidden")) {
-            // Garante que não foi reexibido
             // splashScreen.remove(); // Opcional: remover completamente
           }
         },
