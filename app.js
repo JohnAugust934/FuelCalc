@@ -1104,12 +1104,13 @@ class FuelCalculator {
       this.dom.custoResult.textContent = Utils.formatCurrency(custoTotal);
 
     if (this.dom.lucroResult) {
+      const lucroItem = this.dom.lucroResult.closest(".result-item"); // Encontra o elemento pai '.result-item'
       if (lucroLiquido !== null) {
         this.dom.lucroResult.textContent = Utils.formatCurrency(lucroLiquido);
-        this.dom.lucroResult.closest(".result-item").style.display = ""; // Mostra o item do lucro
+        if (lucroItem) lucroItem.style.display = ""; // Mostra o item do lucro
       } else {
         this.dom.lucroResult.textContent = "N/A";
-        this.dom.lucroResult.closest(".result-item").style.display = "none"; // Esconde se não houver ganho
+        if (lucroItem) lucroItem.style.display = "none"; // Esconde se não houver ganho
       }
     }
     if (this.dom.resultCard) this.dom.resultCard.style.display = "block";
@@ -1544,9 +1545,18 @@ class StatisticsManager {
       const [dayA, monthA] = a.split("/");
       const [dayB, monthB] = b.split("/");
       // Assume mesmo ano para simplificar, ou adicione ano à chave se necessário
-      return (
-        new Date(`2000/${monthA}/${dayA}`) - new Date(`2000/${monthB}/${dayB}`)
+      // Para ordenação correta entre meses diferentes, é melhor converter para objeto Date
+      const dateA = new Date(
+        new Date().getFullYear(),
+        parseInt(monthA) - 1,
+        parseInt(dayA)
       );
+      const dateB = new Date(
+        new Date().getFullYear(),
+        parseInt(monthB) - 1,
+        parseInt(dayB)
+      );
+      return dateA - dateB;
     });
 
     return {
@@ -1562,80 +1572,104 @@ class StatisticsManager {
    */
   _renderOrUpdateChart(historyData) {
     if (!this.dom.chartCanvas || typeof Chart === "undefined") {
-      // console.warn("Chart.js não carregado ou canvas não encontrado para estatísticas.");
       return;
     }
 
     const { labels, data } = this._prepareChartData(historyData);
+    const vehicleTypeLabel =
+      this.vehicleManager.currentVehicleType.charAt(0).toUpperCase() +
+      this.vehicleManager.currentVehicleType.slice(1);
+
+    // Cores para o tema escuro
+    const textColor = "#e0e0e0"; // --uber-text-primary
+    const gridColor = "#444444"; // --uber-gray-light
+    const uberGreen = "#00c165"; // --uber-green
+    const uberGreenTransparent = "rgba(0, 193, 101, 0.2)"; // Para área de preenchimento
+
+    const chartConfig = {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: `Gasto Diário (${vehicleTypeLabel}) (R$)`,
+            data: data,
+            borderColor: uberGreen,
+            backgroundColor: uberGreenTransparent,
+            tension: 0.3, // Linha mais suave
+            fill: true,
+            pointBackgroundColor: uberGreen,
+            pointBorderColor: "#fff", // Borda branca nos pontos para destaque
+            pointRadius: 4, // Tamanho dos pontos
+            pointHoverRadius: 7, // Tamanho dos pontos no hover
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: uberGreen,
+            borderWidth: 2, // Linha um pouco mais grossa
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            ticks: { color: textColor, font: { size: 10 } }, // Tamanho da fonte dos ticks
+            grid: { color: gridColor, drawBorder: false }, // Remove borda do eixo X
+          },
+          y: {
+            ticks: {
+              color: textColor,
+              callback: (value) => Utils.formatCurrency(value),
+              font: { size: 10 },
+            },
+            grid: { color: gridColor, drawBorder: false }, // Remove borda do eixo Y
+            beginAtZero: true,
+          },
+        },
+        plugins: {
+          legend: {
+            labels: { color: textColor, font: { size: 12 } }, // Tamanho da fonte da legenda
+          },
+          tooltip: {
+            backgroundColor: "rgba(0,0,0,0.8)", // Fundo escuro para tooltip
+            titleColor: uberGreen, // Cor do título do tooltip
+            bodyColor: textColor, // Cor do corpo do tooltip
+            borderColor: uberGreen, // Borda do tooltip
+            borderWidth: 1,
+            padding: 10, // Padding interno
+            cornerRadius: 4, // Bordas arredondadas
+            callbacks: {
+              label: function (context) {
+                let label = context.dataset.label || "";
+                if (label) {
+                  label += ": ";
+                }
+                if (context.parsed.y !== null) {
+                  label += Utils.formatCurrency(context.parsed.y);
+                }
+                return label;
+              },
+            },
+          },
+        },
+        animation: {
+          duration: 800, // Duração da animação
+          easing: "easeInOutQuart", // Efeito de suavização
+        },
+      },
+    };
 
     if (this.chartInstance) {
       // Atualiza gráfico existente
       this.chartInstance.data.labels = labels;
       this.chartInstance.data.datasets[0].data = data;
-      this.chartInstance.data.datasets[0].label = `Gasto Diário (${this.vehicleManager.currentVehicleType}) (R$)`;
+      this.chartInstance.data.datasets[0].label = `Gasto Diário (${vehicleTypeLabel}) (R$)`;
       this.chartInstance.update();
     } else {
       // Cria novo gráfico
       try {
         const ctx = this.dom.chartCanvas.getContext("2d");
-        this.chartInstance = new Chart(ctx, {
-          type: "line",
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: `Gasto Diário (${this.vehicleManager.currentVehicleType}) (R$)`,
-                data: data,
-                borderColor: "var(--uber-green, #00C165)",
-                backgroundColor: "rgba(0, 193, 101, 0.15)",
-                tension: 0.3,
-                fill: true,
-                pointBackgroundColor: "var(--uber-green, #00C165)",
-                pointBorderColor: "#fff",
-                pointHoverRadius: 6,
-                pointHoverBackgroundColor: "#fff",
-                pointHoverBorderColor: "var(--uber-green, #00C165)",
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              x: {
-                ticks: { color: "var(--uber-text-secondary, #ccc)" },
-                grid: { color: "var(--uber-gray-light, #444)" },
-              },
-              y: {
-                ticks: {
-                  color: "var(--uber-text-secondary, #ccc)",
-                  callback: (value) => Utils.formatCurrency(value),
-                },
-                grid: { color: "var(--uber-gray-light, #444)" },
-                beginAtZero: true,
-              },
-            },
-            plugins: {
-              legend: {
-                labels: { color: "var(--uber-text-primary, #e0e0e0)" },
-              },
-              tooltip: {
-                callbacks: {
-                  label: function (context) {
-                    let label = context.dataset.label || "";
-                    if (label) {
-                      label += ": ";
-                    }
-                    if (context.parsed.y !== null) {
-                      label += Utils.formatCurrency(context.parsed.y);
-                    }
-                    return label;
-                  },
-                },
-              },
-            },
-          },
-        });
+        this.chartInstance = new Chart(ctx, chartConfig);
       } catch (error) {
         console.error(
           "Erro ao criar/atualizar gráfico de estatísticas:",
@@ -1757,8 +1791,12 @@ class AppManager {
         this.uiManager.hideDetailsModal();
         // Se o modal de confirmação estiver ativo, ele será cancelado pelo seu próprio handler
         // que também ouve o Escape (ou deveria, se implementado de forma robusta).
-        // Por simplicidade, aqui só fechamos o de detalhes.
-        // O modal de confirmação é resolvido com 'false' ao clicar fora ou Esc (se o overlay tiver o listener).
+        if (
+          this.uiManager.confirmModalOverlay &&
+          this.uiManager.confirmModalOverlay.classList.contains("active")
+        ) {
+          this.uiManager._handleConfirm(false); // Chama o handler de cancelamento do confirm modal
+        }
       }
     });
   }
@@ -1783,6 +1821,18 @@ class AppManager {
       // Adiciona a classe 'hidden' que tem a transição CSS
       splashScreen.classList.add("hidden");
       // O CSS cuida da transição e do display:none via visibility
+      // Pode ser útil remover o elemento do DOM após a transição para liberar recursos,
+      // mas visibility:hidden já o remove do fluxo de renderização.
+      splashScreen.addEventListener(
+        "transitionend",
+        () => {
+          if (splashScreen.classList.contains("hidden")) {
+            // Garante que não foi reexibido
+            // splashScreen.remove(); // Opcional: remover completamente
+          }
+        },
+        { once: true }
+      );
     }
   }
 }
