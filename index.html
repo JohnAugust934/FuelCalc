@@ -34,7 +34,8 @@
                 <button class="uber-button" data-tipo="moto" aria-label="Selecionar Moto">Moto</button>
             </div>
             <div class="vehicle-cards" id="vehicleList"></div>
-            <button class="uber-button secondary" id="adicionarVeiculoBtn" aria-label="Adicionar Veículo">+ Adicionar Veículo</button>
+            <button class="uber-button secondary" id="adicionarVeiculoBtn" aria-label="Adicionar Veículo">+ Adicionar
+                Veículo</button>
             <div class="vehicle-form" id="vehicleForm" style="display:none;">
                 <div class="input-group">
                     <label for="vehicleName">Nome do Veículo</label>
@@ -82,6 +83,22 @@
                     Calcular Gastos
                 </button>
             </form>
+            <!-- Seção de Backup e Restauração -->
+            <div class="backup-section">
+                <h3>Backup e Restauração</h3>
+                <div class="backup-buttons">
+                    <button id="exportDataBtn" class="uber-button backup-btn">
+                        📤 Exportar Dados
+                    </button>
+                    <button id="importDataBtn" class="uber-button backup-btn">
+                        📥 Importar Dados
+                    </button>
+                    <input type="file" id="importFileInput" accept=".json" style="display: none;">
+                </div>
+                <p class="backup-info">
+                    Exporte seus dados para fazer backup ou importe dados de um backup anterior.
+                </p>
+            </div>
         </main>
 
         <!-- Div para exibir o resultado do cálculo -->
@@ -109,9 +126,12 @@
         <div class="history-section" id="historySection" style="display: none;">
             <h3>Histórico de Preços</h3>
             <ul id="historicoPrecos" class="price-list"></ul>
-            <button id="verMaisBtn" class="uber-button secondary" style="display:none;" aria-label="Ver Mais">Ver Mais</button>
-            <button id="minimizarBtn" class="uber-button secondary" style="display:none;" aria-label="Minimizar">Minimizar</button>
-            <button id="limparHistoricoBtn" class="uber-button secondary" type="button" aria-label="Limpar Histórico">Limpar Histórico</button>
+            <button id="verMaisBtn" class="uber-button secondary" style="display:none;" aria-label="Ver Mais">Ver
+                Mais</button>
+            <button id="minimizarBtn" class="uber-button secondary" style="display:none;"
+                aria-label="Minimizar">Minimizar</button>
+            <button id="limparHistoricoBtn" class="uber-button secondary" type="button"
+                aria-label="Limpar Histórico">Limpar Histórico</button>
         </div>
 
         <!-- Modal para exibir detalhes do registro -->
