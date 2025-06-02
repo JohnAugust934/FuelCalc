@@ -862,9 +862,16 @@ body {
   .backup-buttons {
     flex-direction: column;
   }
+  /* Correção para os botões de backup em telas pequenas */
   .backup-buttons .uber-button {
-    width: 100%;
+    width: 100%; /* Garante que ocupem a largura total */
+    flex-basis: auto; /* Reseta o flex-basis para permitir que a largura seja 100% */
+    margin-bottom: 0.5rem; /* Adiciona um pouco de espaço entre eles quando empilhados */
   }
+  .backup-buttons .uber-button:last-child {
+    margin-bottom: 0;
+  }
+
   .notification-area {
     left: 0.5rem;
     right: 0.5rem;
