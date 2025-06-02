@@ -77,7 +77,7 @@ export class AppManager {
   }
 
   _isDesktop() {
-    const minWidthForDesktop = 1024;
+    const minWidthForDesktop = 600; // Largura mínima para considerar como desktop
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     if (
       /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
