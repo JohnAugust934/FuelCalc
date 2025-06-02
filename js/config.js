@@ -305,4 +305,8 @@ export const translations = {
     currencyPlaceholder: "$ --",
     // Novas chaves para o aviso de desktop
     desktopNoticeTitle: "Optimized for Mobile!",
-    desktopNoticeMessage
+    desktopNoticeMessage: "This application is designed for a mobile experience. To use FuelCalc, please access it via your smartphone or tablet.",
+    desktopScanQrMessage: "Scan the QR Code below with your mobile device:",
+    desktopOrVisit: "Or visit:",
+  },
+};
