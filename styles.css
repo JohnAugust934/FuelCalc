@@ -2,17 +2,17 @@
 
 /* ===== VARIÁVEIS GLOBAIS E RESET ===== */
 :root {
-  --uber-black: #0c0c0c; /* Um preto um pouco mais suave */
+  --uber-black: #0c0c0c;
   --uber-green: #00c165;
-  --uber-green-dark: #00a756; /* Para hover/active em botões verdes */
-  --uber-gray-dark: #1a1a1a; /* Background principal */
-  --uber-gray-medium: #2c2c2c; /* Cards, inputs */
-  --uber-gray-light: #444444; /* Bordas, divisores */
-  --uber-text-primary: #e0e0e0; /* Texto principal mais claro */
-  --uber-text-secondary: #b0b0b0; /* Texto secundário, labels */
-  --uber-red: #e74c3c; /* Vermelho para erros/deleção */
-  --uber-red-dark: #c0392b; /* Hover/active para botões vermelhos */
-  --uber-blue: #3498db; /* Para informações ou ações secundárias */
+  --uber-green-dark: #00a756;
+  --uber-gray-dark: #1a1a1a;
+  --uber-gray-medium: #2c2c2c;
+  --uber-gray-light: #444444;
+  --uber-text-primary: #e0e0e0;
+  --uber-text-secondary: #b0b0b0;
+  --uber-red: #e74c3c;
+  --uber-red-dark: #c0392b;
+  --uber-blue: #3498db;
 
   --font-primary: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI",
     Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
@@ -25,7 +25,6 @@
   --transition-medium: all 0.3s ease-in-out;
 }
 
-/* Reset básico e box-sizing */
 *,
 *::before,
 *::after {
@@ -34,7 +33,6 @@
   box-sizing: border-box;
 }
 
-/* Estilo base do corpo da página */
 body {
   font-family: var(--font-primary);
   background-color: var(--uber-gray-dark);
@@ -47,12 +45,10 @@ body {
   align-items: center;
 }
 
-/* Classe para bloquear o scroll do body quando um modal está aberto */
 body.modal-open {
   overflow: hidden;
 }
 
-/* ===== LAYOUT PRINCIPAL ===== */
 .container {
   width: 100%;
   max-width: 700px;
@@ -64,7 +60,6 @@ body.modal-open {
   padding: 0;
 }
 
-/* Cabeçalho da aplicação */
 .app-header {
   padding: 1.5rem;
   background: linear-gradient(135deg, var(--uber-green), var(--uber-black));
@@ -97,7 +92,6 @@ body.modal-open {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
 }
 
-/* Language Switcher */
 .language-switcher {
   position: absolute;
   top: 10px;
@@ -132,7 +126,6 @@ body.modal-open {
   box-shadow: 0 0 5px rgba(0, 193, 101, 0.5);
 }
 
-/* Rodapé da aplicação */
 .app-footer {
   text-align: center;
   padding: 1.5rem 1rem;
@@ -146,7 +139,6 @@ body.modal-open {
   color: var(--uber-text-primary);
 }
 
-/* ===== COMPONENTES GERAIS (Inputs, Botões) ===== */
 .input-group {
   margin-bottom: 1.25rem;
 }
@@ -256,7 +248,6 @@ body.modal-open {
   flex-grow: 1;
 }
 
-/* ===== SEÇÕES ESPECÍFICAS ===== */
 .content-section {
   padding: 1.5rem;
   border-bottom: 1px solid var(--uber-gray-light);
@@ -340,13 +331,11 @@ body.modal-open {
   color: var(--uber-text-primary);
   margin-bottom: 0.25rem;
 }
-
 .vehicle-card span {
   font-size: 0.9rem;
   color: var(--uber-text-secondary);
   margin-bottom: 0.5rem;
 }
-
 .vehicle-card .delete-button {
   position: absolute;
   top: 0.5rem;
@@ -365,14 +354,12 @@ body.modal-open {
   justify-content: center;
   transition: var(--transition-fast);
 }
-
 .vehicle-card .delete-button:hover,
 .vehicle-card .delete-button:focus {
   color: var(--uber-red);
   background-color: rgba(231, 76, 60, 0.1);
   outline: none;
 }
-
 .vehicle-form {
   background-color: var(--uber-gray-dark);
   padding: 1.5rem;
@@ -380,7 +367,6 @@ body.modal-open {
   margin-top: 1.5rem;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
 }
-
 .result-card {
   background: var(--uber-gray-dark);
   border-radius: var(--border-radius-medium);
@@ -388,7 +374,6 @@ body.modal-open {
   margin-top: 1.5rem;
   box-shadow: var(--box-shadow-soft);
 }
-
 .result-item {
   display: flex;
   justify-content: space-between;
@@ -412,7 +397,6 @@ body.modal-open {
   font-size: 1.2rem;
   font-weight: bold;
 }
-
 .history-section {
 }
 .price-list {
@@ -431,9 +415,8 @@ body.modal-open {
   cursor: pointer;
   transition: var(--transition-fast);
   border: 1px solid var(--uber-gray-light);
-  /* Melhoria para quebra de texto dentro do item da lista de histórico */
-  overflow-wrap: break-word; /* Quebra palavras se necessário */
-  word-break: break-word; /* Ajuda na quebra de palavras longas */
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .price-list li:hover,
 .price-list li:focus-within {
@@ -443,24 +426,20 @@ body.modal-open {
   outline: none;
 }
 .price-list li span {
-  /* Data */
   font-size: 0.9rem;
   color: var(--uber-text-secondary);
-  margin-right: 0.5rem; /* Espaço para o valor */
-  flex-shrink: 0; /* Evita que a data encolha demais */
+  margin-right: 0.5rem;
+  flex-shrink: 0;
 }
 .price-list li strong {
-  /* Custo/Lucro */
   font-size: 1rem;
   color: var(--uber-text-primary);
   text-align: right;
-  flex-grow: 1; /* Permite que o valor ocupe espaço */
-  /* Para melhor quebra de texto no resumo do histórico */
+  flex-grow: 1;
   overflow-wrap: break-word;
   word-break: break-word;
-  min-width: 0; /* Ajuda flexbox a lidar com overflow */
+  min-width: 0;
 }
-
 .stats-section {
 }
 .stat-item {
@@ -490,7 +469,6 @@ body.modal-open {
   border-radius: var(--border-radius-medium);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
-
 .backup-section {
 }
 .backup-buttons {
@@ -536,7 +514,6 @@ body.modal-open {
   visibility: visible;
   transition-delay: 0s;
 }
-
 .modal-content {
   background: var(--uber-gray-medium);
   padding: 1.5rem;
@@ -583,29 +560,25 @@ body.modal-open {
   transform: rotate(90deg) scale(1.1);
   outline: none;
 }
-
 .modal-details {
   display: grid;
   gap: 0.6rem 1rem;
   grid-template-columns: auto 1fr;
 }
 .modal-detail-item span {
-  /* Label do detalhe */
   color: var(--uber-text-secondary);
   font-weight: 500;
-  padding-right: 0.5em; /* Espaço entre label e valor */
-  white-space: nowrap; /* Evita que a label quebre linha */
+  padding-right: 0.5em;
+  white-space: nowrap;
 }
 .modal-detail-item strong {
-  /* Valor do detalhe */
   color: var(--uber-text-primary);
   text-align: right;
   word-break: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
-  min-width: 0; /* Importante para o grid lidar com overflow */
+  min-width: 0;
 }
-
 .confirm-modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -718,7 +691,6 @@ body.modal-open {
   font-size: 1rem;
   color: var(--uber-text-secondary);
 }
-
 .empty-message {
   text-align: center;
   color: var(--uber-text-secondary);
@@ -735,6 +707,87 @@ body.modal-open {
   text-align: center;
   font-style: italic;
   list-style-type: none;
+}
+
+/* ===== AVISO PARA DESKTOP E QR CODE ===== */
+.desktop-notice-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--uber-gray-dark);
+  color: var(--uber-text-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 10000;
+  padding: 2rem;
+}
+.desktop-notice-content {
+  background-color: var(--uber-gray-medium);
+  padding: 2rem;
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--box-shadow-strong);
+  max-width: 500px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centraliza conteúdo interno */
+}
+.desktop-notice-content .logo {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 1rem;
+  border-radius: 50%;
+  border: 2px solid var(--uber-green);
+}
+.desktop-notice-content h2 {
+  color: var(--uber-green);
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+.desktop-notice-content p {
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  color: var(--uber-text-secondary);
+}
+
+/* Contêiner para o QR Code para melhor controle do fundo branco e padding */
+.qr-code-container {
+  background-color: white; /* Fundo branco para o QR code */
+  padding: 15px; /* Espaçamento entre o QR code e a borda do contêiner branco */
+  border-radius: var(
+    --border-radius-small
+  ); /* Bordas arredondadas para o quadrado branco */
+  display: inline-block; /* Para que o padding funcione corretamente */
+  margin: 1rem auto 1.5rem auto; /* Centraliza o contêiner branco */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra suave opcional */
+}
+
+#qrCodeCanvas {
+  display: block; /* Remove espaço extra abaixo do canvas se for inline */
+  /* O tamanho é definido pela biblioteca Qrious (ex: size: 200) */
+  /* A centralização do canvas em si dentro do .qr-code-container é automática se o canvas for menor que o padding */
+}
+
+#desktop-url-info {
+  font-size: 0.9rem;
+  color: var(--uber-text-secondary);
+}
+#desktop-url-info a {
+  color: var(--uber-green);
+  text-decoration: none;
+  word-break: break-all;
+}
+#desktop-url-info a:hover {
+  text-decoration: underline;
+}
+.app-content-hidden {
+  display: none !important;
 }
 
 /* ===== MEDIA QUERIES (Responsividade) ===== */
@@ -788,7 +841,6 @@ body.modal-open {
     font-size: 0.7rem;
   }
 }
-
 @media (max-width: 480px) {
   body {
     padding: 0;
@@ -840,9 +892,14 @@ body.modal-open {
   .price-list li strong {
     text-align: left;
   }
+  .desktop-notice-content {
+    padding: 1.5rem;
+  }
+  .qr-code-container {
+    padding: 10px; /* Menor padding em telas menores, embora seja para desktop */
+  }
+  /* #qrCodeCanvas { max-width: 180px; } // O tamanho do canvas é definido pela lib, max-width no container é melhor */
 }
-
-/* Estilos de acessibilidade para foco visível */
 *:focus-visible {
   outline: 3px solid var(--uber-blue);
   outline-offset: 2px;

@@ -1,41 +1,40 @@
 // js/config.js
 
 // Versão atual da aplicação, visível para o utilizador e útil para versionamento de cache/storage.
-export const APP_VERSION = "1.5.2"; // Incrementada a versão devido à refatoração de módulos
+export const APP_VERSION = "1.5.3"; // Incrementada a versão
 
 // Configurações e constantes globais da aplicação.
 export const CONFIG = {
-  APP_VERSION, // Inclui a versão da aplicação para fácil acesso
+  APP_VERSION,
   STORAGE_KEYS: {
-    VEHICLES: `fuelCalc_vehicles_v${APP_VERSION.substring(0, 3)}`, // Chaves de storage podem ser versionadas
+    VEHICLES: `fuelCalc_vehicles_v${APP_VERSION.substring(0, 3)}`,
     HISTORY: `fuelCalc_history_v${APP_VERSION.substring(0, 3)}`,
-    APP_SETTINGS: `fuelCalc_settings_v${APP_VERSION.substring(0, 3)}`, // Incluindo idioma
+    APP_SETTINGS: `fuelCalc_settings_v${APP_VERSION.substring(0, 3)}`,
   },
-  DEFAULT_LANGUAGE: "pt-BR", // Idioma padrão da aplicação
+  DEFAULT_LANGUAGE: "pt-BR",
   VALIDATION: {
-    // Regras de validação para inputs
-    MIN_EFFICIENCY: 1, // km/L
-    MAX_EFFICIENCY: 70, // km/L (considerando motos e GNV)
+    MIN_EFFICIENCY: 1,
+    MAX_EFFICIENCY: 70,
     MIN_KM: 0,
-    MAX_KM: 9999999, // Aumentado limite de KM
-    MIN_PRICE: 0.1, // R$
-    MAX_PRICE: 25, // R$ (considerando flutuações)
-    MAX_TRIP_DISTANCE: 5000, // km (viagens mais longas)
+    MAX_KM: 9999999,
+    MIN_PRICE: 0.1,
+    MAX_PRICE: 25,
+    MAX_TRIP_DISTANCE: 5000,
     MIN_VEHICLE_NAME_LENGTH: 2,
     MAX_VEHICLE_NAME_LENGTH: 40,
-    MAX_UBER_GAIN: 20000, // R$
+    MAX_UBER_GAIN: 20000,
   },
-  HISTORY_DISPLAY_COUNT: 3, // Quantidade inicial de itens no histórico a serem exibidos
-  HISTORY_LIMIT: 50, // Máximo de registos no histórico geral por tipo de veículo
-  DEBOUNCE_DELAY: 350, // ms - Atraso para funções "debounced" (ex: atualização de estatísticas)
-  NOTIFICATION_TIMEOUT: 4000, // ms (4 segundos) - Duração das notificações "toast"
-  CHART_MAX_DAYS: 30, // Mostrar dados dos últimos 30 dias no gráfico de estatísticas
+  HISTORY_DISPLAY_COUNT: 3,
+  HISTORY_LIMIT: 50,
+  DEBOUNCE_DELAY: 350,
+  NOTIFICATION_TIMEOUT: 4000,
+  CHART_MAX_DAYS: 30,
 };
 
 // Objeto contendo todas as strings de tradução para os idiomas suportados.
 export const translations = {
   "pt-BR": {
-    // Chaves para elementos HTML (identificados por data-translate-key)
+    // ... (todas as traduções anteriores) ...
     appTitle: "FuelCalc: Calculadora de Combustível",
     appDescriptionMeta:
       "Calculadora PWA de gastos com combustível, com estatísticas e gerenciamento de veículos.",
@@ -94,8 +93,6 @@ export const translations = {
     confirmActionModalTitle: "Confirmar Ação",
     areYouSure: "Você tem certeza?",
     closeModalAriaLabel: "Fechar Detalhes",
-
-    // Chaves para strings usadas no JavaScript (notificações, mensagens de erro, etc.)
     vehicleSelected: 'Veículo "{name}" selecionado.',
     vehicleSaved: 'Veículo "{name}" salvo com sucesso!',
     vehicleDeleted: 'Veículo "{name}" excluído.',
@@ -137,13 +134,12 @@ export const translations = {
     chartDailyExpenseLabel: "Gasto Diário ({type}) (R$)",
     noHistoryForType: "Nenhum histórico para {type}s.",
     noRecordsToDisplay: "Nenhum registro para exibir (verifique 'Ver Mais').",
-    manualOrUnspecified: "Manual/Não especificado", // Para histórico sem veículo selecionado
-    costLabel: "Custo", // Usado na lista de histórico
-    profitLabel: "Lucro", // Usado na lista de histórico
+    manualOrUnspecified: "Manual/Não especificado",
+    costLabel: "Custo",
+    profitLabel: "Lucro",
     selectVehicleAriaLabel: "Selecionar veículo {name}, {efficiency} km/L",
     deleteVehicleAriaLabel: "Excluir veículo {name}",
     tripDetailsAriaLabel: "Detalhes da viagem de {date}",
-    // Labels para o modal de detalhes do histórico
     detailLabelDate: "Data/Hora",
     detailLabelVehicle: "Veículo",
     detailLabelType: "Tipo",
@@ -156,7 +152,6 @@ export const translations = {
     detailLabelTotalFuelCost: "Custo Total Combustível",
     detailLabelGrossGain: "Ganho Bruto Informado",
     detailLabelNetProfit: "Lucro Líquido Estimado",
-    // Mensagens de erro de validação
     vehicleNameLengthError:
       "Nome do veículo deve ter entre {min} e {max} caracteres.",
     vehicleEfficiencyError:
@@ -169,11 +164,17 @@ export const translations = {
     maxTripDistanceError: "Distância da viagem excede o limite de {limit} km.",
     fuelPriceError: "Preço do combustível inválido (entre R${min} e R${max}).",
     tripGainError: "Ganho da viagem inválido (entre R$0 e R${max}).",
-    currencyPlaceholder: "R$ --", // Placeholder para valores monetários não calculados
+    currencyPlaceholder: "R$ --",
+    // Novas chaves para o aviso de desktop
+    desktopNoticeTitle: "Otimizado para Mobile!",
+    desktopNoticeMessage:
+      "Esta aplicação foi desenhada para uma experiência móvel. Para usar o FuelCalc, por favor, acesse através do seu smartphone ou tablet.",
+    desktopScanQrMessage:
+      "Escaneie o QR Code abaixo com seu dispositivo móvel:",
+    desktopOrVisit: "Ou visite:",
   },
   en: {
-    // ... (traduções para inglês - preencher conforme necessário) ...
-    // Mantenha a mesma estrutura de chaves que em "pt-BR"
+    // ... (todas as traduções anteriores para inglês) ...
     appTitle: "FuelCalc: Fuel Calculator",
     appDescriptionMeta:
       "PWA fuel expense calculator with statistics and vehicle management.",
@@ -186,7 +187,7 @@ export const translations = {
     addVehicleBtn: "+ Add Vehicle",
     vehicleNameLabel: "Vehicle Name:",
     vehicleNamePlaceholder: "Ex: Civic 1.8",
-    vehicleEfficiencyLabel: "Efficiency (km/L or MPG):", // Ajustar unidade se necessário
+    vehicleEfficiencyLabel: "Efficiency (km/L or MPG):",
     vehicleEfficiencyPlaceholder: "Ex: 12.5",
     saveVehicleBtn: "Save Vehicle",
     cancelBtn: "Cancel",
@@ -232,7 +233,6 @@ export const translations = {
     confirmActionModalTitle: "Confirm Action",
     areYouSure: "Are you sure?",
     closeModalAriaLabel: "Close Details",
-
     vehicleSelected: 'Vehicle "{name}" selected.',
     vehicleSaved: 'Vehicle "{name}" saved successfully!',
     vehicleDeleted: 'Vehicle "{name}" deleted.',
@@ -269,13 +269,13 @@ export const translations = {
       "Error loading local data ({key}). Some data may have been lost.",
     recordNotFound: "Record not found.",
     genericError: "An error occurred. Please try again.",
-    chartDailyExpenseLabel: "Daily Expense ({type})", // Moeda será adicionada pela função de formatação
+    chartDailyExpenseLabel: "Daily Expense ({type})",
     noHistoryForType: "No history for {type}s.",
     noRecordsToDisplay: "No records to display (check 'See More').",
     manualOrUnspecified: "Manual/Unspecified",
     costLabel: "Cost",
     profitLabel: "Profit",
-    selectVehicleAriaLabel: "Select vehicle {name}, {efficiency} km/L", // ou MPG
+    selectVehicleAriaLabel: "Select vehicle {name}, {efficiency} km/L",
     deleteVehicleAriaLabel: "Delete vehicle {name}",
     tripDetailsAriaLabel: "Trip details from {date}",
     detailLabelDate: "Date/Time",
@@ -286,7 +286,7 @@ export const translations = {
     detailLabelDistance: "Distance",
     detailLabelEfficiencyUsed: "Efficiency (at calculation)",
     detailLabelFuelConsumed: "Fuel Consumed",
-    detailLabelPricePerLiter: "Price per Unit (at date)", // Litro ou Galão
+    detailLabelPricePerLiter: "Price per Unit (at date)",
     detailLabelTotalFuelCost: "Total Fuel Cost",
     detailLabelGrossGain: "Gross Earnings Reported",
     detailLabelNetProfit: "Estimated Net Profit",
@@ -300,8 +300,9 @@ export const translations = {
     finalKmError:
       "Final KM/Miles invalid (must be greater than Initial and up to {max}).",
     maxTripDistanceError: "Trip distance exceeds the limit of {limit}.",
-    fuelPriceError: "Fuel price invalid (between {min} and {max}).",
-    tripGainError: "Trip earnings invalid (between 0 and {max}).",
+    fuelPriceError: "Fuel price invalid (between ${min} and ${max}).",
+    tripGainError: "Trip earnings invalid (between $0 and ${max}).",
     currencyPlaceholder: "$ --",
-  },
-};
+    // Novas chaves para o aviso de desktop
+    desktopNoticeTitle: "Optimized for Mobile!",
+    desktopNoticeMessage

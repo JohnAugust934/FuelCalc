@@ -4,7 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title data-translate-key="appTitle">FuelCalc: Calculadora de Combustível</title>
     <meta name="description" data-translate-key="appDescriptionMeta"
         content="Calculadora PWA de gastos com combustível, com estatísticas e gerenciamento de veículos.">
@@ -12,9 +11,6 @@
         content="uber, 99, combustível, gasolina, etanol, gnv, motorista, app, pwa, calculadora, gastos, fuel, calculator, pwa, expenses">
     <meta name="author" content="João Augusto">
 
-    <!-- Link para o Manifest do PWA. O caminho deve ser relativo ao index.html ou absoluto a partir da raiz do site.
-         Para GitHub Pages, se index.html está em /FuelCalc/, manifest.json deve ser referenciado como 'manifest.json'
-         e o start_url no manifest deve ser '/FuelCalc/' -->
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <meta name="theme-color" content="#00C165">
@@ -37,7 +33,21 @@
         <p data-translate-key="splashLoading">Carregando sua calculadora...</p>
     </div>
 
-    <div class="container">
+    <div id="desktop-notice-overlay" class="desktop-notice-overlay" style="display: none;">
+        <div class="desktop-notice-content">
+            <img src="icons/icon-192x192.png" alt="Logo FuelCalc" class="logo">
+            <h2 data-translate-key="desktopNoticeTitle">Otimizado para Mobile!</h2>
+            <p data-translate-key="desktopScanQrMessage">Escaneie o QR Code abaixo com seu dispositivo móvel:</p>
+            <div class="qr-code-container">
+                <canvas id="qrCodeCanvas"></canvas>
+            </div>
+            <p id="desktop-url-info">
+                <span data-translate-key="desktopOrVisit">Ou visite:</span> <a id="pageUrlLink" href="#"></a>
+            </p>
+        </div>
+    </div>
+
+    <div class="container" id="appContainer">
         <header class="app-header">
             <img src="icons/icon-192x192.png" alt="Logo FuelCalc" class="logo">
             <h1 data-translate-key="appName">FuelCalc</h1>
@@ -245,6 +255,7 @@
     <div id="notificationArea" class="notification-area" aria-live="assertive"></div>
 
     <script src="libs/chart.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" defer></script>
     <script type="module" src="js/main.js" defer></script>
 
     <script>

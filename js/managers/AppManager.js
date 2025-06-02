@@ -2,10 +2,7 @@
 // Responsável por orquestrar todos os módulos da aplicação,
 // inicializar o estado da aplicação e gerir eventos globais.
 
-// Importa as configurações globais, incluindo a versão da aplicação.
 import { CONFIG } from "../config.js";
-
-// Importa todas as classes de gestores.
 import { LanguageManager } from "./LanguageManager.js";
 import { UIManager } from "./UIManager.js";
 import { StorageManager } from "./StorageManager.js";
@@ -14,12 +11,9 @@ import { VehicleManager } from "./VehicleManager.js";
 import { FuelCalculator } from "./FuelCalculator.js";
 import { HistoryManager } from "./HistoryManager.js";
 import { StatisticsManager } from "./StatisticsManager.js";
+// Qrious será carregado via CDN, então estará disponível globalmente como `QRious`.
 
 export class AppManager {
-  /**
-   * Construtor da classe AppManager.
-   * Instancia todos os gestores e inicializa a aplicação.
-   */
   constructor() {
     this.storageManager = new StorageManager(null);
     this.languageManager = new LanguageManager(this.storageManager);
@@ -55,60 +49,100 @@ export class AppManager {
 
     this.dom = {
       appVersionSpan: document.getElementById("appVersion"),
+      appContainer: document.getElementById("appContainer"),
+      desktopNoticeOverlay: document.getElementById("desktop-notice-overlay"),
+      qrCodeCanvas: document.getElementById("qrCodeCanvas"),
+      pageUrlLink: document.getElementById("pageUrlLink"),
     };
 
     this._init();
   }
 
-  /**
-   * Inicializa os componentes principais da aplicação.
-   * @private
-   */
   _init() {
     this._displayAppVersion();
     this.languageManager.setLanguage(this.languageManager.currentLanguage);
 
-    this._registerServiceWorker();
-    this._bindGlobalAppEvents();
-    this._hideSplashScreen(); // Chamada para esconder a splash screen
-  }
+    if (this._isDesktop()) {
+      this._setupDesktopNotice();
+    } else {
+      if (this.dom.appContainer)
+        this.dom.appContainer.classList.remove("app-content-hidden");
+      if (this.dom.desktopNoticeOverlay)
+        this.dom.desktopNoticeOverlay.style.display = "none";
 
-  /**
-   * Exibe a versão atual da aplicação no elemento DOM correspondente.
-   * @private
-   */
-  _displayAppVersion() {
-    if (this.dom.appVersionSpan) {
-      this.dom.appVersionSpan.textContent = CONFIG.APP_VERSION;
+      this._registerServiceWorker();
+      this._bindGlobalAppEvents();
+      this._hideSplashScreen();
     }
   }
 
-  /**
-   * Regista o Service Worker para funcionalidades PWA (offline, cache).
-   * @private
-   */
+  _isDesktop() {
+    const minWidthForDesktop = 1024;
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    if (
+      /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+        userAgent.toLowerCase()
+      )
+    ) {
+      return false;
+    }
+    return window.innerWidth >= minWidthForDesktop;
+  }
+
+  _setupDesktopNotice() {
+    if (this.dom.appContainer)
+      this.dom.appContainer.classList.add("app-content-hidden");
+    if (this.dom.desktopNoticeOverlay) {
+      this.dom.desktopNoticeOverlay.style.display = "flex";
+
+      this.languageManager.applyTranslationsToPage();
+
+      const pageUrl = "https://johnaugust934.github.io/FuelCalc/";
+
+      if (this.dom.pageUrlLink) {
+        this.dom.pageUrlLink.href = pageUrl;
+        this.dom.pageUrlLink.textContent = pageUrl;
+      }
+
+      if (this.dom.qrCodeCanvas && typeof QRious !== "undefined") {
+        new QRious({
+          element: this.dom.qrCodeCanvas,
+          value: pageUrl,
+          size: 200, // Este será o tamanho do canvas
+          level: "H",
+          // background: null, // Define o fundo do canvas como transparente
+          backgroundAlpha: 0, // Alternativa para fundo transparente
+          foreground: "black", // Cor do QR code
+          // padding: 0, // Padding interno da biblioteca QRious
+        });
+      } else {
+        console.warn(
+          "Elemento canvas para QR Code não encontrado ou biblioteca QRious não carregada."
+        );
+        if (this.dom.qrCodeCanvas) this.dom.qrCodeCanvas.style.display = "none";
+      }
+    }
+    this._hideSplashScreen();
+  }
+
+  _displayAppVersion() {
+    if (this.dom.appVersionSpan)
+      this.dom.appVersionSpan.textContent = CONFIG.APP_VERSION;
+  }
+
   _registerServiceWorker() {
-    if ("serviceWorker" in navigator) {
+    if ("serviceWorker" in navigator && !this._isDesktop()) {
       window.addEventListener("load", () => {
         navigator.serviceWorker
           .register("./sw.js")
           .then((registration) =>
-            console.log(
-              "Service Worker FuelCalc registado com sucesso. Escopo:",
-              registration.scope
-            )
+            console.log("SW FuelCalc registado. Escopo:", registration.scope)
           )
-          .catch((error) =>
-            console.error("Falha no registo do Service Worker FuelCalc:", error)
-          );
+          .catch((error) => console.error("Falha SW FuelCalc:", error));
       });
     }
   }
 
-  /**
-   * Vincula listeners a eventos globais da aplicação.
-   * @private
-   */
   _bindGlobalAppEvents() {
     const exportBtn = document.getElementById("exportDataBtn");
     if (exportBtn)
@@ -174,10 +208,6 @@ export class AppManager {
     });
   }
 
-  /**
-   * Executa a limpeza de todos os dados da aplicação.
-   * @private
-   */
   _performClearAllData() {
     const success = this.storageManager.clearAllData();
     if (success) {
@@ -189,61 +219,33 @@ export class AppManager {
       document.dispatchEvent(new CustomEvent("allDataCleared"));
       this.uiManager.showNotification("allDataClearedSuccess", "success");
     } else {
-      // A notificação de erro já deve ter sido mostrada pelo StorageManager.
+      // Notificação de erro já tratada pelo StorageManager
     }
   }
 
-  /**
-   * Esconde a tela de carregamento (splash screen) após a inicialização da aplicação.
-   * Adiciona um pequeno atraso antes de aplicar a classe 'hidden' para garantir
-   * que a transição CSS seja acionada corretamente.
-   * @private
-   */
   _hideSplashScreen() {
     const splashScreen = document.getElementById("splash-screen");
     if (splashScreen) {
-      console.log("[AppManager] Tentando esconder a splash screen."); // Para depuração
-
-      // Adiciona um pequeno atraso para garantir que o browser esteja pronto para a transição.
-      // 50ms é geralmente suficiente.
       setTimeout(() => {
         splashScreen.classList.add("hidden");
-        console.log("[AppManager] Classe 'hidden' adicionada à splash screen.");
-
-        // O CSS já tem uma transição para 'visibility' que esconde o elemento
-        // após a transição de 'opacity'.
-        // Opcional: remover o elemento do DOM após a transição se desejar.
         splashScreen.addEventListener(
           "transitionend",
           (event) => {
-            // Verifica se a transição que terminou foi a de opacidade.
             if (
               event.propertyName === "opacity" &&
               splashScreen.classList.contains("hidden")
             ) {
-              console.log("[AppManager] Transição da splash screen terminada.");
-              // Se quiser remover completamente o elemento do DOM:
-              // splashScreen.remove();
-              // Por agora, a classe 'hidden' com 'visibility: hidden' é suficiente.
+              // Opcional: splashScreen.remove();
             }
           },
           { once: true }
-        ); // O listener é removido após a primeira execução.
-
-        // Fallback: se o evento 'transitionend' não disparar por algum motivo
-        // (ex: transições desabilitadas no browser), garante que o elemento
-        // não fique "preso" visualmente, embora a classe 'hidden' já deva cuidar disso.
-        // Este timeout deve ser maior que a duração total da transição CSS.
-        // A transição de opacidade é 0.5s com delay de 0.5s (total 1s), visibility muda em 1s.
+        );
         setTimeout(() => {
           if (splashScreen.classList.contains("hidden")) {
-            console.log(
-              "[AppManager] Fallback: Splash screen deveria estar escondida pelo CSS agora."
-            );
-            // Se splashScreen.remove() fosse usado, poderia ser chamado aqui como último recurso.
+            // Fallback
           }
-        }, 1200); // Um pouco mais que a duração da transição (1s).
-      }, 50); // Atraso de 50ms antes de adicionar a classe 'hidden'.
+        }, 1200);
+      }, 50);
     } else {
       console.warn("[AppManager] Elemento da splash screen não encontrado.");
     }
