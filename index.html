@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title data-translate-key="appTitle">FuelCalc: Calculadora de Combustível</title>
     <meta name="description" data-translate-key="appDescriptionMeta"
         content="Calculadora PWA de gastos com combustível, com estatísticas e gerenciamento de veículos.">
@@ -11,8 +12,9 @@
         content="uber, 99, combustível, gasolina, etanol, gnv, motorista, app, pwa, calculadora, gastos, fuel, calculator, pwa, expenses">
     <meta name="author" content="João Augusto">
 
-    <base href="/FuelCalc/">
-
+    <!-- Link para o Manifest do PWA. O caminho deve ser relativo ao index.html ou absoluto a partir da raiz do site.
+         Para GitHub Pages, se index.html está em /FuelCalc/, manifest.json deve ser referenciado como 'manifest.json'
+         e o start_url no manifest deve ser '/FuelCalc/' -->
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <meta name="theme-color" content="#00C165">
@@ -20,6 +22,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
     <link rel="shortcut icon" href="icons/favicon.ico">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -207,7 +210,6 @@
             </p>
         </section>
     </div>
-
     <footer class="app-footer">
         <p>&copy; <span id="currentYear"></span> FuelCalc. <span data-translate-key="allRightsReserved">Todos os
                 direitos reservados.</span></p>
@@ -243,7 +245,8 @@
     <div id="notificationArea" class="notification-area" aria-live="assertive"></div>
 
     <script src="libs/chart.min.js" defer></script>
-    <script src="app.js" defer></script>
+    <script type="module" src="js/main.js" defer></script>
+
     <script>
         document.getElementById('currentYear').textContent = new Date().getFullYear();
     </script>
