@@ -42,52 +42,57 @@ body {
   line-height: 1.6;
   min-height: 100vh;
   padding: 1rem;
-  display: flex; /* Para centralizar o container se necessário */
-  flex-direction: column; /* Para o footer ficar no final */
-  align-items: center; /* Centraliza o container */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Classe para bloquear o scroll do body quando um modal está aberto */
+body.modal-open {
+  overflow: hidden;
 }
 
 /* ===== LAYOUT PRINCIPAL ===== */
 .container {
   width: 100%;
-  max-width: 700px; /* Um pouco mais estreito para melhor leitura */
-  margin: 1rem auto; /* Margem vertical e centralização horizontal */
+  max-width: 700px;
+  margin: 1rem auto;
   background: var(--uber-gray-medium);
   border-radius: var(--border-radius-large);
-  overflow: hidden; /* Para que o border-radius funcione com filhos */
+  overflow: hidden;
   box-shadow: var(--box-shadow-strong);
-  padding: 0; /* Padding será aplicado nas seções internas */
+  padding: 0;
 }
 
 /* Cabeçalho da aplicação */
 .app-header {
-  padding: 1.5rem; /* Padding interno */
+  padding: 1.5rem;
   background: linear-gradient(135deg, var(--uber-green), var(--uber-black));
   text-align: center;
   border-bottom: 3px solid var(--uber-green);
-  color: #ffffff; /* Texto branco para contraste no gradiente */
-  position: relative; /* Para o language-switcher */
+  color: #ffffff;
+  position: relative;
 }
 
 .app-header .logo {
-  width: 70px; /* Um pouco menor */
+  width: 70px;
   height: 70px;
   margin-bottom: 0.75rem;
   border-radius: 50%;
   border: 2px solid var(--uber-green);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  object-fit: cover; /* Garante que a imagem do logo cubra o espaço */
+  object-fit: cover;
 }
 
 .app-header h1 {
-  font-size: 2.2rem; /* Ajuste de tamanho */
+  font-size: 2.2rem;
   margin-bottom: 0.25rem;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .app-header p {
   font-size: 1rem;
-  color: var(--uber-text-secondary); /* Cor mais suave para subtítulo */
+  color: var(--uber-text-secondary);
   margin-top: 0;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
 }
@@ -133,7 +138,7 @@ body {
   padding: 1.5rem 1rem;
   color: var(--uber-text-secondary);
   font-size: 0.85rem;
-  margin-top: auto; /* Empurra o footer para o final se o conteúdo for pouco */
+  margin-top: auto;
   width: 100%;
 }
 .app-footer #appVersion {
@@ -156,12 +161,11 @@ body {
 
 .input-group input[type="text"],
 .input-group input[type="number"],
-.input-group input[type="password"], /* Exemplo para futuros inputs */
+.input-group input[type="password"],
 .input-group select {
-  /* Estilo para selects também */
   width: 100%;
   padding: 0.85rem 1rem;
-  background: var(--uber-gray-dark); /* Fundo mais escuro para contraste */
+  background: var(--uber-gray-dark);
   border: 1px solid var(--uber-gray-light);
   border-radius: var(--border-radius-medium);
   color: var(--uber-text-primary);
@@ -174,20 +178,18 @@ body {
 .input-group select:focus {
   outline: none;
   border-color: var(--uber-green);
-  box-shadow: 0 0 0 3px rgba(0, 193, 101, 0.25); /* Sombra de foco mais proeminente */
+  box-shadow: 0 0 0 3px rgba(0, 193, 101, 0.25);
 }
 
-/* Placeholder customizado */
 .input-group input::placeholder {
   color: var(--uber-text-secondary);
   opacity: 0.7;
 }
 
-/* Botões */
 .uber-button {
-  display: inline-block; /* Para que margin auto funcione se for block */
+  display: inline-block;
   background: var(--uber-green);
-  color: var(--uber-black); /* Texto preto para contraste no verde */
+  color: var(--uber-black);
   border: none;
   padding: 0.85rem 1.75rem;
   border-radius: var(--border-radius-medium);
@@ -198,7 +200,7 @@ body {
   cursor: pointer;
   transition: var(--transition-fast);
   box-shadow: var(--box-shadow-soft);
-  margin: 0.5rem 0; /* Margem padrão */
+  margin: 0.5rem 0;
 }
 
 .uber-button:hover,
@@ -214,7 +216,6 @@ body {
   box-shadow: var(--box-shadow-soft);
 }
 
-/* Botão secundário (contorno) */
 .uber-button.secondary {
   background: transparent;
   color: var(--uber-green);
@@ -223,12 +224,11 @@ body {
 
 .uber-button.secondary:hover,
 .uber-button.secondary:focus {
-  background: rgba(0, 193, 101, 0.1); /* Fundo leve no hover */
+  background: rgba(0, 193, 101, 0.1);
   color: var(--uber-green-dark);
   border-color: var(--uber-green-dark);
 }
 
-/* Botão de perigo/deleção */
 .uber-button.danger {
   background: var(--uber-red);
   color: #ffffff;
@@ -239,49 +239,41 @@ body {
   box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
 }
 
-/* Botão de largura total */
 .uber-button.full-width {
   display: block;
   width: 100%;
 }
 
-/* Grupo de botões */
 .button-group {
   display: flex;
-  gap: 0.75rem; /* Espaço entre botões */
-  flex-wrap: wrap; /* Quebra linha em telas pequenas */
-  justify-content: center; /* Centraliza botões no grupo */
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
   margin-top: 1rem;
 }
 .button-group .uber-button {
-  margin: 0; /* Remove margem individual se estiver no grupo */
-  flex-grow: 1; /* Permite que os botões cresçam para preencher o espaço */
+  margin: 0;
+  flex-grow: 1;
 }
 
 /* ===== SEÇÕES ESPECÍFICAS ===== */
-/* Estilo comum para seções dentro do container */
 .content-section {
   padding: 1.5rem;
-  border-bottom: 1px solid var(--uber-gray-light); /* Divisor sutil */
+  border-bottom: 1px solid var(--uber-gray-light);
 }
 .content-section:last-child {
-  border-bottom: none; /* Remove borda do último item */
+  border-bottom: none;
 }
 
 .content-section h2,
 .content-section h3 {
   color: var(--uber-green);
   margin-bottom: 1.25rem;
-  font-size: 1.5rem; /* Tamanho padrão para títulos de seção */
+  font-size: 1.5rem;
   text-align: center;
 }
 .content-section h3 {
-  font-size: 1.3rem; /* Tamanho um pouco menor para h3 */
-}
-
-/* Seletor de Veículos */
-.vehicle-selector {
-  /* Herda de .content-section */
+  font-size: 1.3rem;
 }
 
 .vehicle-type-buttons {
@@ -294,9 +286,9 @@ body {
 .vehicle-type-buttons .uber-button {
   padding: 0.6rem 1.2rem;
   font-size: 0.9rem;
-  background-color: var(--uber-gray-light); /* Cor base para não selecionado */
+  background-color: var(--uber-gray-light);
   color: var(--uber-text-secondary);
-  border: 2px solid transparent; /* Para manter o tamanho no hover/selected */
+  border: 2px solid transparent;
 }
 
 .vehicle-type-buttons .uber-button.selected {
@@ -312,31 +304,27 @@ body {
 
 .vehicle-cards {
   display: grid;
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(250px, 1fr)
-  ); /* Layout responsivo em grade */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
 .vehicle-card {
-  background: var(--uber-gray-dark); /* Fundo mais escuro para cards */
+  background: var(--uber-gray-dark);
   padding: 1rem;
   border-radius: var(--border-radius-medium);
   border: 1px solid var(--uber-gray-light);
   cursor: pointer;
   transition: var(--transition-medium);
   display: flex;
-  flex-direction: column; /* Empilha conteúdo verticalmente */
+  flex-direction: column;
   justify-content: space-between;
-  align-items: flex-start; /* Alinha itens à esquerda */
-  position: relative; /* Para posicionar o botão de excluir */
+  align-items: flex-start;
+  position: relative;
 }
 
 .vehicle-card:hover,
 .vehicle-card:focus-within {
-  /* Adiciona foco ao card */
   transform: translateY(-3px);
   box-shadow: 0 5px 12px rgba(0, 0, 0, 0.25);
   border-color: var(--uber-green);
@@ -344,7 +332,7 @@ body {
 
 .vehicle-card.active {
   border-color: var(--uber-green);
-  box-shadow: 0 0 0 3px rgba(0, 193, 101, 0.3), var(--box-shadow-soft); /* Destaque mais forte */
+  box-shadow: 0 0 0 3px rgba(0, 193, 101, 0.3), var(--box-shadow-soft);
 }
 
 .vehicle-card h4 {
@@ -368,7 +356,7 @@ body {
   border: none;
   padding: 0.3rem;
   border-radius: 50%;
-  font-size: 1.2rem; /* Tamanho do ícone de 'x' */
+  font-size: 1.2rem;
   line-height: 1;
   width: 30px;
   height: 30px;
@@ -386,26 +374,19 @@ body {
 }
 
 .vehicle-form {
-  background-color: var(--uber-gray-dark); /* Fundo sutilmente diferente */
+  background-color: var(--uber-gray-dark);
   padding: 1.5rem;
   border-radius: var(--border-radius-medium);
   margin-top: 1.5rem;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2); /* Sombra interna */
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-/* Formulário de Cálculo */
-.calculator-form {
-  /* Herda de .content-section */
-}
-
-/* Card de Resultado */
 .result-card {
   background: var(--uber-gray-dark);
   border-radius: var(--border-radius-medium);
   padding: 1.5rem;
   margin-top: 1.5rem;
   box-shadow: var(--box-shadow-soft);
-  /* display: none;  Controlado por JS */
 }
 
 .result-item {
@@ -416,41 +397,29 @@ body {
   border-bottom: 1px solid var(--uber-gray-light);
   font-size: 1rem;
 }
-
 .result-item:last-child {
   border-bottom: none;
 }
-
 .result-item span {
-  /* Label */
   color: var(--uber-text-secondary);
 }
-
 .result-item strong {
-  /* Valor */
   color: var(--uber-text-primary);
   font-weight: 500;
 }
-
 .result-item.total strong {
-  /* Destaque para o total/lucro */
   color: var(--uber-green);
   font-size: 1.2rem;
   font-weight: bold;
 }
 
-/* Seção de Histórico */
 .history-section {
-  /* Herda de .content-section */
 }
-
 .price-list {
-  /* Renomeado para history-list */
   list-style: none;
   padding: 0;
-  margin: 0 0 1rem 0; /* Espaço abaixo da lista */
+  margin: 0 0 1rem 0;
 }
-
 .price-list li {
   background: var(--uber-gray-dark);
   border-radius: var(--border-radius-medium);
@@ -462,33 +431,39 @@ body {
   cursor: pointer;
   transition: var(--transition-fast);
   border: 1px solid var(--uber-gray-light);
+  /* Melhoria para quebra de texto dentro do item da lista de histórico */
+  overflow-wrap: break-word; /* Quebra palavras se necessário */
+  word-break: break-word; /* Ajuda na quebra de palavras longas */
 }
-
 .price-list li:hover,
 .price-list li:focus-within {
-  background-color: var(--uber-gray-medium); /* Um pouco mais claro no hover */
+  background-color: var(--uber-gray-medium);
   border-color: var(--uber-green);
   transform: translateX(3px);
   outline: none;
 }
-
 .price-list li span {
   /* Data */
   font-size: 0.9rem;
   color: var(--uber-text-secondary);
+  margin-right: 0.5rem; /* Espaço para o valor */
+  flex-shrink: 0; /* Evita que a data encolha demais */
 }
 .price-list li strong {
-  /* Custo */
+  /* Custo/Lucro */
   font-size: 1rem;
   color: var(--uber-text-primary);
+  text-align: right;
+  flex-grow: 1; /* Permite que o valor ocupe espaço */
+  /* Para melhor quebra de texto no resumo do histórico */
+  overflow-wrap: break-word;
+  word-break: break-word;
+  min-width: 0; /* Ajuda flexbox a lidar com overflow */
 }
 
-/* Seção de Estatísticas */
 .stats-section {
-  /* Herda de .content-section */
 }
 .stat-item {
-  /* Reutiliza .result-item */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -497,9 +472,8 @@ body {
   font-size: 1rem;
 }
 .stat-item:last-of-type {
-  /* Para o último stat-item antes do gráfico */
   border-bottom: none;
-  margin-bottom: 1.5rem; /* Espaço antes do gráfico */
+  margin-bottom: 1.5rem;
 }
 .stat-item span {
   color: var(--uber-text-secondary);
@@ -508,38 +482,31 @@ body {
   color: var(--uber-text-primary);
   font-weight: 500;
 }
-
 .chart-container {
   margin-top: 1rem;
-  height: 250px; /* Altura aumentada para o gráfico */
+  height: 250px;
   background-color: var(--uber-gray-dark);
   padding: 0.5rem;
   border-radius: var(--border-radius-medium);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Seção de Backup */
 .backup-section {
-  /* Herda de .content-section */
 }
-
 .backup-buttons {
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
-  flex-wrap: wrap; /* Para quebrar em telas menores */
+  flex-wrap: wrap;
 }
-
 .backup-buttons .uber-button {
-  /* Botões de backup */
-  flex: 1 1 150px; /* Flex-grow, flex-shrink, flex-basis */
+  flex: 1 1 150px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem; /* Espaço entre ícone e texto */
-  padding: 0.75rem 1rem; /* Padding ajustado */
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
 }
-
 .backup-info {
   color: var(--uber-text-secondary);
   font-size: 0.85rem;
@@ -547,62 +514,63 @@ body {
   text-align: center;
 }
 
-/* ===== MODAIS (Notificações, Confirmação, Detalhes) ===== */
-/* Overlay comum para todos os modais */
+/* ===== MODAIS ===== */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7); /* Fundo mais escuro */
-  display: flex; /* Alterado para flex para centralizar */
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  opacity: 0; /* Inicialmente invisível */
-  visibility: hidden; /* Inicialmente escondido */
+  opacity: 0;
+  visibility: hidden;
   transition: opacity var(--transition-medium),
-    visibility 0s var(--transition-medium); /* Transição suave */
+    visibility 0s var(--transition-medium);
 }
 .modal-overlay.active {
   opacity: 1;
   visibility: visible;
-  transition-delay: 0s; /* Remove delay ao ativar */
+  transition-delay: 0s;
 }
 
-/* Conteúdo base do modal */
 .modal-content {
   background: var(--uber-gray-medium);
-  padding: 2rem;
-  border-radius: var(--border-radius-large);
+  padding: 1.5rem;
+  border-radius: var(--border-radius-medium);
   width: 90%;
-  max-width: 500px;
+  max-width: 450px;
   position: relative;
   box-shadow: var(--box-shadow-strong);
-  transform: scale(0.95); /* Efeito de entrada */
-  transition: transform var(--transition-medium);
+  transform: translateY(-20px) scale(0.95);
+  transition: transform var(--transition-medium) ease-out,
+    opacity var(--transition-medium) ease-out;
+  opacity: 0;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 .modal-overlay.active .modal-content {
-  transform: scale(1);
+  transform: translateY(0) scale(1);
+  opacity: 1;
 }
-
 .modal-content h3 {
   color: var(--uber-green);
   margin-top: 0;
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
+  margin-bottom: 1.25rem;
+  font-size: 1.4rem;
   text-align: center;
 }
-
 .modal-close-button {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: 0.5rem;
+  right: 0.5rem;
   background: transparent;
   border: none;
   color: var(--uber-text-secondary);
-  font-size: 1.8rem; /* 'x' maior */
+  font-size: 1.8rem;
   font-weight: bold;
   cursor: pointer;
   padding: 0.5rem;
@@ -612,53 +580,49 @@ body {
 .modal-close-button:hover,
 .modal-close-button:focus {
   color: var(--uber-text-primary);
-  transform: rotate(90deg);
+  transform: rotate(90deg) scale(1.1);
   outline: none;
 }
 
-/* Modal de Detalhes (Histórico) */
 .modal-details {
-  display: grid; /* Usar grid para alinhar labels e valores */
-  gap: 0.75rem 1rem; /* Espaçamento entre linhas e colunas */
-  grid-template-columns: auto 1fr; /* Label auto, valor ocupa o resto */
-}
-
-.modal-detail-item {
-  /* Cada par label/valor */
-  /* Não precisa mais de flex, pois o grid cuida disso */
+  display: grid;
+  gap: 0.6rem 1rem;
+  grid-template-columns: auto 1fr;
 }
 .modal-detail-item span {
-  /* Label */
+  /* Label do detalhe */
   color: var(--uber-text-secondary);
   font-weight: 500;
+  padding-right: 0.5em; /* Espaço entre label e valor */
+  white-space: nowrap; /* Evita que a label quebre linha */
 }
 .modal-detail-item strong {
-  /* Valor */
+  /* Valor do detalhe */
   color: var(--uber-text-primary);
-  text-align: right; /* Alinha valores à direita */
+  text-align: right;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  min-width: 0; /* Importante para o grid lidar com overflow */
 }
 
-/* Modal de Confirmação */
 .confirm-modal-actions {
   display: flex;
-  justify-content: flex-end; /* Alinha botões à direita */
+  justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 1.5rem;
 }
 
-/* Notificações (Toast) */
 .notification-area {
-  /* Container para notificações */
   position: fixed;
   top: 1rem;
   right: 1rem;
-  z-index: 2000; /* Acima dos modais */
+  z-index: 2000;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   max-width: 350px;
 }
-
 .notification {
   background-color: var(--uber-gray-medium);
   color: var(--uber-text-primary);
@@ -673,9 +637,7 @@ body {
   transform: translateX(100%);
   animation: slideInNotification 0.3s ease-out forwards,
     fadeOutNotification 0.3s ease-in 4.7s forwards;
-  /* slideIn (0.3s) -> fica visível -> fadeOut (0.3s) após 4.7s = total 5s */
 }
-
 .notification.error {
   border-left-color: var(--uber-red);
 }
@@ -685,14 +647,11 @@ body {
 .notification.info {
   border-left-color: var(--uber-blue);
 }
-
 .notification-message {
   flex-grow: 1;
   font-size: 0.9rem;
 }
-
 .notification-close {
-  /* Botão de fechar notificação */
   background: transparent;
   border: none;
   color: var(--uber-text-secondary);
@@ -706,7 +665,6 @@ body {
 .notification-close:hover {
   color: var(--uber-text-primary);
 }
-
 @keyframes slideInNotification {
   to {
     opacity: 1;
@@ -732,18 +690,17 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  z-index: 9999; /* Acima de tudo */
+  z-index: 9999;
   color: #ffffff;
   text-align: center;
   opacity: 1;
   visibility: visible;
-  transition: opacity 0.5s ease-out 0.5s, visibility 0s 1s; /* Delay para fade-out, depois esconde */
+  transition: opacity 0.5s ease-out 0.5s, visibility 0s 1s;
 }
 .splash-screen.hidden {
   opacity: 0;
   visibility: hidden;
 }
-
 .splash-screen .logo {
   width: 90px;
   height: 90px;
@@ -752,19 +709,16 @@ body {
   border: 3px solid var(--uber-green);
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
 }
-
 .splash-screen h1 {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
   text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
 }
 .splash-screen p {
-  /* Adicionado para mensagem de carregamento */
   font-size: 1rem;
   color: var(--uber-text-secondary);
 }
 
-/* Mensagem de "vazio" para listas */
 .empty-message {
   text-align: center;
   color: var(--uber-text-secondary);
@@ -776,7 +730,6 @@ body {
   margin-top: 1rem;
 }
 .price-list .empty-message-list {
-  /* Para quando a lista de histórico está vazia */
   color: var(--uber-text-secondary);
   padding: 1rem;
   text-align: center;
@@ -787,11 +740,11 @@ body {
 /* ===== MEDIA QUERIES (Responsividade) ===== */
 @media (max-width: 768px) {
   body {
-    padding: 0.5rem; /* Menor padding em telas pequenas */
+    padding: 0.5rem;
   }
   .container {
     margin: 0.5rem auto;
-    border-radius: var(--border-radius-medium); /* Menor radius */
+    border-radius: var(--border-radius-medium);
   }
   .content-section {
     padding: 1rem;
@@ -809,20 +762,19 @@ body {
   .app-header p {
     font-size: 0.9rem;
   }
-
   .input-group input,
   .uber-button {
-    font-size: 0.95rem; /* Fontes um pouco menores em inputs/botões */
+    font-size: 0.95rem;
   }
   .uber-button {
     padding: 0.75rem 1.25rem;
   }
-
   .vehicle-cards {
-    grid-template-columns: 1fr; /* Uma coluna em telas pequenas */
+    grid-template-columns: 1fr;
   }
   .modal-content {
     padding: 1.5rem;
+    max-width: calc(100% - 2rem);
   }
   .modal-content h3 {
     font-size: 1.3rem;
@@ -839,12 +791,12 @@ body {
 
 @media (max-width: 480px) {
   body {
-    padding: 0; /* Sem padding no body, container ocupa tudo */
+    padding: 0;
   }
   .container {
     margin: 0;
-    border-radius: 0; /* Sem radius em telas muito pequenas */
-    min-height: 100vh; /* Ocupa a altura toda */
+    border-radius: 0;
+    min-height: 100vh;
   }
   .app-header .logo {
     width: 50px;
@@ -854,29 +806,39 @@ body {
     font-size: 1.6rem;
   }
   .button-group {
-    flex-direction: column; /* Botões empilhados */
+    flex-direction: column;
   }
   .button-group .uber-button {
-    width: 100%; /* Botões ocupam largura total */
+    width: 100%;
   }
   .backup-buttons {
     flex-direction: column;
   }
-  /* Correção para os botões de backup em telas pequenas */
   .backup-buttons .uber-button {
-    width: 100%; /* Garante que ocupem a largura total */
-    flex-basis: auto; /* Reseta o flex-basis para permitir que a largura seja 100% */
-    margin-bottom: 0.5rem; /* Adiciona um pouco de espaço entre eles quando empilhados */
+    width: 100%;
+    flex-basis: auto;
+    margin-bottom: 0.5rem;
   }
   .backup-buttons .uber-button:last-child {
     margin-bottom: 0;
   }
-
   .notification-area {
     left: 0.5rem;
     right: 0.5rem;
     top: 0.5rem;
     max-width: none;
+  }
+  .modal-content {
+    max-width: calc(100% - 1rem);
+    padding: 1rem;
+  }
+  .price-list li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  .price-list li strong {
+    text-align: left;
   }
 }
 
@@ -884,9 +846,8 @@ body {
 *:focus-visible {
   outline: 3px solid var(--uber-blue);
   outline-offset: 2px;
-  box-shadow: 0 0 0 3px var(--uber-gray-dark), 0 0 0 6px var(--uber-blue); /* Dupla borda para contraste */
+  box-shadow: 0 0 0 3px var(--uber-gray-dark), 0 0 0 6px var(--uber-blue);
 }
-/* Remover outline padrão se focus-visible for suportado e aplicado */
 *:focus:not(:focus-visible) {
   outline: none;
 }

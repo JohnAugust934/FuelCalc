@@ -1,16 +1,16 @@
 // app.js - Lógica Principal do FuelCalc
-// Versão: 1.5.0
+// Versão: 1.5.1
 "use strict";
 
 // ===== CONFIGURAÇÕES E CONSTANTES GLOBAIS =====
-const APP_VERSION = "1.5.0"; // VERSÃO ATUAL DA APLICAÇÃO
+const APP_VERSION = "1.5.1"; // VERSÃO ATUAL DA APLICAÇÃO
 
 const CONFIG = {
-  APP_VERSION, // Adiciona a versão aqui para fácil acesso
+  APP_VERSION,
   STORAGE_KEYS: {
-    VEHICLES: "fuelCalc_vehicles_v1.5", // Versionar chaves de storage pode ajudar em migrações futuras
+    VEHICLES: "fuelCalc_vehicles_v1.5",
     HISTORY: "fuelCalc_history_v1.5",
-    APP_SETTINGS: "fuelCalc_settings_v1.5", // Incluindo idioma
+    APP_SETTINGS: "fuelCalc_settings_v1.5",
   },
   DEFAULT_LANGUAGE: "pt-BR",
   VALIDATION: {
@@ -35,7 +35,6 @@ const CONFIG = {
 // ===== TRADUÇÕES (i18n) =====
 const translations = {
   "pt-BR": {
-    // HTML Elements (data-translate-key)
     appTitle: "FuelCalc: Calculadora de Combustível",
     appDescriptionMeta:
       "Calculadora PWA de gastos com combustível, com estatísticas e gerenciamento de veículos.",
@@ -95,7 +94,6 @@ const translations = {
     areYouSure: "Você tem certeza?",
     closeModalAriaLabel: "Fechar Detalhes",
 
-    // JavaScript Strings
     vehicleSelected: 'Veículo "{name}" selecionado.',
     vehicleSaved: 'Veículo "{name}" salvo com sucesso!',
     vehicleDeleted: 'Veículo "{name}" excluído.',
@@ -137,9 +135,38 @@ const translations = {
     chartDailyExpenseLabel: "Gasto Diário ({type}) (R$)",
     noHistoryForType: "Nenhum histórico para {type}s.",
     noRecordsToDisplay: "Nenhum registro para exibir (verifique 'Ver Mais').",
+    manualOrUnspecified: "Manual/Não especificado",
+    costLabel: "Custo",
+    profitLabel: "Lucro",
+    selectVehicleAriaLabel: "Selecionar veículo {name}, {efficiency} km/L",
+    deleteVehicleAriaLabel: "Excluir veículo {name}",
+    tripDetailsAriaLabel: "Detalhes da viagem de {date}",
+    detailLabelDate: "Data/Hora",
+    detailLabelVehicle: "Veículo",
+    detailLabelType: "Tipo",
+    detailLabelInitialKm: "KM Inicial",
+    detailLabelFinalKm: "KM Final",
+    detailLabelDistance: "Distância",
+    detailLabelEfficiencyUsed: "Eficiência (no cálculo)",
+    detailLabelFuelConsumed: "Combustível Consumido",
+    detailLabelPricePerLiter: "Preço por Litro (na data)",
+    detailLabelTotalFuelCost: "Custo Total Combustível",
+    detailLabelGrossGain: "Ganho Bruto Informado",
+    detailLabelNetProfit: "Lucro Líquido Estimado",
+    vehicleNameLengthError:
+      "Nome do veículo deve ter entre {min} e {max} caracteres.",
+    vehicleEfficiencyError:
+      "Eficiência deve ser um número entre {min} e {max} km/L.",
+    invalidVehicleTypeError:
+      "Tipo de veículo inválido. Selecione 'Carro' ou 'Moto'.",
+    initialKmError: "KM Inicial inválido (entre {min} e {max}).",
+    finalKmError:
+      "KM Final inválido (deve ser maior que KM Inicial e até {max}).",
+    maxTripDistanceError: "Distância da viagem excede o limite de {limit} km.",
+    fuelPriceError: "Preço do combustível inválido (entre R${min} e R${max}).",
+    tripGainError: "Ganho da viagem inválido (entre R$0 e R${max}).",
   },
   en: {
-    // HTML Elements
     appTitle: "FuelCalc: Fuel Calculator",
     appDescriptionMeta:
       "PWA fuel expense calculator with statistics and vehicle management.",
@@ -164,7 +191,7 @@ const translations = {
     initialKmPlaceholder: "Ex: 15000.0",
     finalKmLabel: "Final KM:",
     finalKmPlaceholder: "Ex: 15120.5",
-    fuelPriceLabel: "Price per Liter ($):", // Assuming $ for EN, adjust if needed
+    fuelPriceLabel: "Price per Liter ($):",
     fuelPricePlaceholder: "Ex: 1.50",
     tripGrossGainLabel: "Gross Trip Earnings ($, optional):",
     tripGrossGainPlaceholder: "Ex: 75.50",
@@ -199,7 +226,6 @@ const translations = {
     areYouSure: "Are you sure?",
     closeModalAriaLabel: "Close Details",
 
-    // JavaScript Strings
     vehicleSelected: 'Vehicle "{name}" selected.',
     vehicleSaved: 'Vehicle "{name}" saved successfully!',
     vehicleDeleted: 'Vehicle "{name}" deleted.',
@@ -239,6 +265,36 @@ const translations = {
     chartDailyExpenseLabel: "Daily Expense ({type}) ($)",
     noHistoryForType: "No history for {type}s.",
     noRecordsToDisplay: "No records to display (check 'See More').",
+    manualOrUnspecified: "Manual/Unspecified",
+    costLabel: "Cost",
+    profitLabel: "Profit",
+    selectVehicleAriaLabel: "Select vehicle {name}, {efficiency} km/L",
+    deleteVehicleAriaLabel: "Delete vehicle {name}",
+    tripDetailsAriaLabel: "Trip details from {date}",
+    detailLabelDate: "Date/Time",
+    detailLabelVehicle: "Vehicle",
+    detailLabelType: "Type",
+    detailLabelInitialKm: "Initial KM",
+    detailLabelFinalKm: "Final KM",
+    detailLabelDistance: "Distance",
+    detailLabelEfficiencyUsed: "Efficiency (at calculation)",
+    detailLabelFuelConsumed: "Fuel Consumed",
+    detailLabelPricePerLiter: "Price per Liter (at date)",
+    detailLabelTotalFuelCost: "Total Fuel Cost",
+    detailLabelGrossGain: "Gross Earnings Reported",
+    detailLabelNetProfit: "Estimated Net Profit",
+    vehicleNameLengthError:
+      "Vehicle name must be between {min} and {max} characters.",
+    vehicleEfficiencyError:
+      "Efficiency must be a number between {min} and {max} km/L.",
+    invalidVehicleTypeError:
+      "Invalid vehicle type. Select 'Car' or 'Motorcycle'.",
+    initialKmError: "Initial KM invalid (between {min} and {max}).",
+    finalKmError:
+      "Final KM invalid (must be greater than Initial KM and up to {max}).",
+    maxTripDistanceError: "Trip distance exceeds the limit of {limit} km.",
+    fuelPriceError: "Fuel price invalid (between ${min} and ${max}).", // Ajustar símbolo de moeda se necessário
+    tripGainError: "Trip earnings invalid (between $0 and ${max}).", // Ajustar símbolo de moeda
   },
 };
 
@@ -269,13 +325,16 @@ class Utils {
     };
   }
   static formatCurrency(value, lang = CONFIG.DEFAULT_LANGUAGE) {
-    // Aceita lang para formatação
-    if (isNaN(parseFloat(value))) return lang === "en" ? "$ --" : "R$ --";
+    if (value === null || value === undefined || isNaN(parseFloat(value))) {
+      return lang === "en" ? "$ --" : "R$ --";
+    }
     const currency = lang === "en" ? "USD" : "BRL";
     const locale = lang === "en" ? "en-US" : "pt-BR";
     return parseFloat(value).toLocaleString(locale, {
       style: "currency",
       currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     });
   }
   static formatLocalDate(isoDateString, lang = CONFIG.DEFAULT_LANGUAGE) {
@@ -301,7 +360,7 @@ class LanguageManager {
     this.storageManager = storageManager;
     this.currentLanguage =
       this._loadLanguagePreference() || CONFIG.DEFAULT_LANGUAGE;
-    this.translationData = translations; // Carrega todas as traduções na memória
+    this.translationData = translations;
     this._bindLanguageButtons();
   }
 
@@ -335,14 +394,11 @@ class LanguageManager {
     if (this.translationData[lang]) {
       this.currentLanguage = lang;
       this._saveLanguagePreference(lang);
-      this.applyTranslations();
-      document.documentElement.lang = lang; // Atualiza o lang da tag <html>
-
-      // Atualiza aria-pressed nos botões de idioma
+      this.applyTranslationsToPage(); // Renomeado para clareza
+      document.documentElement.lang = lang;
       document.querySelectorAll(".lang-button").forEach((button) => {
         button.setAttribute("aria-pressed", button.dataset.lang === lang);
       });
-      // Dispara um evento para que outros módulos possam reagir à mudança de idioma
       document.dispatchEvent(
         new CustomEvent("languageChanged", { detail: { lang } })
       );
@@ -355,9 +411,7 @@ class LanguageManager {
     const langTranslations =
       this.translationData[this.currentLanguage] ||
       this.translationData[CONFIG.DEFAULT_LANGUAGE];
-    let translatedString = langTranslations[key] || key; // Retorna a chave se a tradução não for encontrada
-
-    // Substitui placeholders como {name}
+    let translatedString = langTranslations[key] || key; // Retorna a chave se não encontrar
     for (const paramKey in params) {
       translatedString = translatedString.replace(
         new RegExp(`{${paramKey}}`, "g"),
@@ -367,38 +421,26 @@ class LanguageManager {
     return translatedString;
   }
 
-  applyTranslations() {
+  applyTranslationsToPage() {
+    // Renomeado
     document.querySelectorAll("[data-translate-key]").forEach((element) => {
       const key = element.dataset.translateKey;
       const translation = this.get(key);
 
-      if (element.tagName === "INPUT" || element.tagName === "TEXTAREA") {
-        if (element.type !== "submit" && element.type !== "button") {
-          // Não mudar value de botões
-          if (
-            element.placeholder &&
-            element.dataset.translateKeyPlaceholder === key
-          ) {
-            // Chave específica para placeholder
-            element.placeholder = translation;
-          } else if (
-            element.placeholder &&
-            !element.dataset.translateKeyPlaceholder
-          ) {
-            // Chave genérica para placeholder
-            element.placeholder = translation;
-          }
-        }
-      } else if (
-        element.hasAttribute("aria-label") &&
-        element.dataset.translateKeyAriaLabel === key
-      ) {
-        element.setAttribute("aria-label", translation);
+      if (element.hasAttribute("data-translate-key-placeholder")) {
+        element.placeholder = this.get(element.dataset.translateKeyPlaceholder);
+      } else if (element.hasAttribute("data-translate-key-aria-label")) {
+        element.setAttribute(
+          "aria-label",
+          this.get(element.dataset.translateKeyAriaLabel)
+        );
+      } else if (element.hasAttribute("data-translate-key-title")) {
+        // Para o atributo title
+        element.title = this.get(element.dataset.translateKeyTitle);
       } else {
         element.textContent = translation;
       }
     });
-    // Traduz o título da página
     const pageTitleElement = document.querySelector(
       "title[data-translate-key]"
     );
@@ -413,7 +455,6 @@ class LanguageManager {
 // ===== GERENCIADOR DE NOTIFICAÇÕES E MODAIS =====
 class UIManager {
   constructor(languageManager) {
-    // Recebe LanguageManager
     this.langManager = languageManager;
     this.notificationArea = document.getElementById("notificationArea");
     this.detailsModalOverlay = document.getElementById("detailsModalOverlay");
@@ -430,30 +471,27 @@ class UIManager {
     );
     this._bindModalEvents();
     this._resolveConfirm = null;
-    // Ouvir evento de mudança de idioma para re-traduzir modais se estiverem abertos
     document.addEventListener("languageChanged", () =>
       this._retranslateOpenModals()
     );
   }
 
   _retranslateOpenModals() {
-    // Se o modal de detalhes estiver aberto, atualize seu título
     if (
       this.detailsModalOverlay &&
       this.detailsModalOverlay.classList.contains("active")
     ) {
       const titleElement =
         this.detailsModalOverlay.querySelector("#detailsModalTitle");
-      if (titleElement) {
+      if (titleElement)
         titleElement.textContent = this.langManager.get(
           "tripDetailsModalTitle"
         );
-      }
-      // Re-renderizar o conteúdo do modal de detalhes seria mais complexo,
-      // idealmente o conteúdo seria construído com chaves de tradução também.
-      // Por ora, apenas o título.
+      // Re-renderizar o conteúdo do modal de detalhes é mais complexo aqui.
+      // A solução ideal é o HistoryManager reabrir o modal com os dados já traduzidos se o idioma mudar.
+      // Ou, o UIManager poderia armazenar os dados brutos do último modal de detalhes e re-renderizá-lo.
+      // Por agora, apenas o título e botões são atualizados.
     }
-    // Se o modal de confirmação estiver aberto
     if (
       this.confirmModalOverlay &&
       this.confirmModalOverlay.classList.contains("active")
@@ -462,8 +500,7 @@ class UIManager {
         this.confirmModalTitle.textContent = this.langManager.get(
           "confirmActionModalTitle"
         );
-      // A mensagem do confirmModalMessage é dinâmica, então não re-traduzimos aqui,
-      // ela deve ser definida com this.langManager.get() quando o modal é mostrado.
+      // A mensagem do confirmModalMessage é dinâmica, não re-traduzimos aqui.
       if (this.confirmModalCancelBtn)
         this.confirmModalCancelBtn.textContent =
           this.langManager.get("cancelBtn");
@@ -497,10 +534,8 @@ class UIManager {
   }
 
   showNotification(messageKey, type = "info", params = {}) {
-    // Aceita chave e parâmetros
     if (!this.notificationArea) return;
-    const message = this.langManager.get(messageKey, params); // Traduz a mensagem
-
+    const message = this.langManager.get(messageKey, params);
     const notification = document.createElement("div");
     notification.className = `notification ${type}`;
     notification.setAttribute("role", "alert");
@@ -514,7 +549,7 @@ class UIManager {
     closeBtn.setAttribute(
       "aria-label",
       this.langManager.get("closeModalAriaLabel")
-    ); // Traduz aria-label
+    );
     closeBtn.addEventListener("click", () =>
       this._removeNotification(notification)
     );
@@ -550,29 +585,31 @@ class UIManager {
   }
 
   showDetailsModal(titleKey, detailsArray) {
-    // Aceita chave para o título
     if (!this.detailsModalOverlay || !this.detailsModalContent) return;
     const modalTitleElement =
       this.detailsModalOverlay.querySelector("#detailsModalTitle");
     if (modalTitleElement)
-      modalTitleElement.textContent = this.langManager.get(titleKey); // Traduz título
+      modalTitleElement.textContent = this.langManager.get(titleKey);
     this.detailsModalContent.innerHTML = "";
     detailsArray.forEach((detail) => {
       const itemDiv = document.createElement("div");
       itemDiv.className = "modal-detail-item";
       const labelSpan = document.createElement("span");
-      // Assumindo que detail.label é uma chave de tradução ou já está traduzido
       labelSpan.textContent = `${this.langManager.get(
-        detail.label,
+        detail.labelKey,
         detail.labelParams || {}
-      )}:`;
+      )}:`; // Usa detail.labelKey
       const valueStrong = document.createElement("strong");
-      valueStrong.innerHTML = Utils.sanitizeHTML(String(detail.value)); // Valor não é traduzido, é dado
+      // Se o valor também for uma chave de tradução (ex: "N/A"), traduza-o. Caso contrário, use como está.
+      valueStrong.innerHTML = detail.isValueKey
+        ? this.langManager.get(detail.value)
+        : Utils.sanitizeHTML(String(detail.value));
       itemDiv.appendChild(labelSpan);
       itemDiv.appendChild(valueStrong);
       this.detailsModalContent.appendChild(itemDiv);
     });
     this.detailsModalOverlay.style.display = "flex";
+    document.body.classList.add("modal-open"); // Impede scroll do body
     void this.detailsModalOverlay.offsetWidth;
     this.detailsModalOverlay.classList.add("active");
     if (this.closeDetailsModalBtn) this.closeDetailsModalBtn.focus();
@@ -581,6 +618,7 @@ class UIManager {
   hideDetailsModal() {
     if (!this.detailsModalOverlay) return;
     this.detailsModalOverlay.classList.remove("active");
+    document.body.classList.remove("modal-open"); // Permite scroll do body
     this.detailsModalOverlay.addEventListener(
       "transitionend",
       () => {
@@ -596,23 +634,23 @@ class UIManager {
   }
 
   showConfirm(messageKey, titleKey = "confirmActionModalTitle", params = {}) {
-    // Aceita chaves
     return new Promise((resolve) => {
       if (
         !this.confirmModalOverlay ||
         !this.confirmModalTitle ||
         !this.confirmModalMessage
       ) {
-        resolve(window.confirm(this.langManager.get(messageKey, params))); // Traduz fallback
+        resolve(window.confirm(this.langManager.get(messageKey, params)));
         return;
       }
-      this.confirmModalTitle.textContent = this.langManager.get(titleKey); // Traduz título
+      this.confirmModalTitle.textContent = this.langManager.get(titleKey);
       this.confirmModalMessage.textContent = this.langManager.get(
         messageKey,
         params
-      ); // Traduz mensagem
+      );
       this._resolveConfirm = resolve;
       this.confirmModalOverlay.style.display = "flex";
+      document.body.classList.add("modal-open"); // Impede scroll
       void this.confirmModalOverlay.offsetWidth;
       this.confirmModalOverlay.classList.add("active");
       if (this.confirmModalConfirmBtn) this.confirmModalConfirmBtn.focus();
@@ -622,6 +660,7 @@ class UIManager {
   _handleConfirm(confirmed) {
     if (!this.confirmModalOverlay) return;
     this.confirmModalOverlay.classList.remove("active");
+    document.body.classList.remove("modal-open"); // Permite scroll
     this.confirmModalOverlay.addEventListener(
       "transitionend",
       () => {
@@ -653,7 +692,8 @@ class StorageManager {
       return item ? JSON.parse(item) : defaultValue;
     } catch (error) {
       console.error(`Erro ao carregar ${key}:`, error);
-      this.uiManager.showNotification("storageLoadError", "error", { key });
+      if (this.uiManager)
+        this.uiManager.showNotification("storageLoadError", "error", { key });
       localStorage.removeItem(key);
       return defaultValue;
     }
@@ -661,7 +701,8 @@ class StorageManager {
   safeSetItem(key, value) {
     try {
       if (!this._isStorageAvailable()) {
-        this.uiManager.showNotification("storageUnavailableError", "error");
+        if (this.uiManager)
+          this.uiManager.showNotification("storageUnavailableError", "error");
         return false;
       }
       localStorage.setItem(key, JSON.stringify(value));
@@ -672,7 +713,8 @@ class StorageManager {
         error.name === "QuotaExceededError"
           ? "storageQuotaError"
           : "storageSaveError";
-      this.uiManager.showNotification(messageKey, "error", { key });
+      if (this.uiManager)
+        this.uiManager.showNotification(messageKey, "error", { key });
       return false;
     }
   }
@@ -680,9 +722,9 @@ class StorageManager {
     let storage;
     try {
       storage = window.localStorage;
-      const testKey = "__storage_test__";
-      storage.setItem(testKey, testKey);
-      storage.removeItem(testKey);
+      const t = "__storage_test__";
+      storage.setItem(t, t);
+      storage.removeItem(t);
       return true;
     } catch (e) {
       return (
@@ -699,7 +741,7 @@ class StorageManager {
   exportData() {
     const dataToExport = {
       app: "FuelCalc",
-      version: CONFIG.APP_VERSION, // Usa a versão global
+      version: CONFIG.APP_VERSION,
       exportDate: new Date().toISOString(),
       vehicles: this.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []),
       history: this.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY, []),
@@ -720,11 +762,13 @@ class StorageManager {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    this.uiManager.showNotification("exportSuccess", "success");
+    if (this.uiManager)
+      this.uiManager.showNotification("exportSuccess", "success");
   }
   async importData(file) {
     if (!file || file.type !== "application/json") {
-      this.uiManager.showNotification("importErrorFile", "error");
+      if (this.uiManager)
+        this.uiManager.showNotification("importErrorFile", "error");
       return false;
     }
     try {
@@ -732,21 +776,20 @@ class StorageManager {
       const data = JSON.parse(fileContent);
       let itemsImported = false;
       if (typeof data !== "object" || data === null) {
-        this.uiManager.showNotification("importErrorFormat", "error");
+        if (this.uiManager)
+          this.uiManager.showNotification("importErrorFormat", "error");
         return false;
       }
       if (data.vehicles && Array.isArray(data.vehicles)) {
         if (this.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, data.vehicles))
           itemsImported = true;
-      } else if (data.vehicles)
+      } else if (data.vehicles && this.uiManager)
         this.uiManager.showNotification("importErrorVehiclesFormat", "warning");
       if (data.history && Array.isArray(data.history)) {
         if (this.safeSetItem(CONFIG.STORAGE_KEYS.HISTORY, data.history))
           itemsImported = true;
-      } else if (data.history)
+      } else if (data.history && this.uiManager)
         this.uiManager.showNotification("importErrorHistoryFormat", "warning");
-
-      // Importar configurações de idioma, se presentes
       if (data.settings && data.settings.language) {
         const langToSet = translations[data.settings.language]
           ? data.settings.language
@@ -757,28 +800,30 @@ class StorageManager {
         );
         currentSettings.language = langToSet;
         this.safeSetItem(CONFIG.STORAGE_KEYS.APP_SETTINGS, currentSettings);
-        // A linguagem será aplicada na reinicialização ou por um evento
-        itemsImported = true; // Considera como item importado
+        itemsImported = true;
       }
-
       if (itemsImported) {
-        this.uiManager.showNotification("importSuccess", "success");
+        if (this.uiManager)
+          this.uiManager.showNotification("importSuccess", "success");
         return true;
       } else {
-        this.uiManager.showNotification("importNoValidData", "info");
+        if (this.uiManager)
+          this.uiManager.showNotification("importNoValidData", "info");
         return false;
       }
     } catch (error) {
-      console.error("Erro ao importar dados:", error);
-      this.uiManager.showNotification("importErrorProcessing", "error");
+      console.error("Erro ao importar:", error);
+      if (this.uiManager)
+        this.uiManager.showNotification("importErrorProcessing", "error");
       return false;
     }
   }
   clearAllData() {
     let allCleared = true;
-    const keysToClear = Object.values(CONFIG.STORAGE_KEYS); // Limpa todas as chaves configuradas
+    const keysToClear = Object.values(CONFIG.STORAGE_KEYS);
     if (!this._isStorageAvailable()) {
-      this.uiManager.showNotification("storageUnavailableError", "error");
+      if (this.uiManager)
+        this.uiManager.showNotification("storageUnavailableError", "error");
       return false;
     }
     keysToClear.forEach((key) => {
@@ -786,11 +831,11 @@ class StorageManager {
         localStorage.removeItem(key);
       } catch (error) {
         console.error(`Erro ao limpar ${key}:`, error);
-        this.uiManager.showNotification("storageSaveError", "error", { key }); // Reutiliza chave de erro
+        if (this.uiManager)
+          this.uiManager.showNotification("storageSaveError", "error", { key });
         allCleared = false;
       }
     });
-    // Não mostra notificação aqui, AppManager fará isso.
     return allCleared;
   }
 }
@@ -798,7 +843,6 @@ class StorageManager {
 // ===== VALIDADOR DE DADOS DA APLICAÇÃO =====
 class Validator {
   constructor(uiManager, languageManager) {
-    // Recebe LanguageManager
     this.uiManager = uiManager;
     this.langManager = languageManager;
   }
@@ -808,37 +852,33 @@ class Validator {
       Utils.convertCommaToPoint(String(eficiencia))
     );
     const trimmedNome = String(nome).trim();
-
     if (
       trimmedNome.length < CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH ||
       trimmedNome.length > CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH
-    ) {
+    )
       errors.push(
         this.langManager.get("vehicleNameLengthError", {
           min: CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH,
           max: CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH,
         })
       );
-    }
     if (
       !Utils.validateNumber(
         parsedEficiencia,
         CONFIG.VALIDATION.MIN_EFFICIENCY,
         CONFIG.VALIDATION.MAX_EFFICIENCY
       )
-    ) {
+    )
       errors.push(
         this.langManager.get("vehicleEfficiencyError", {
           min: CONFIG.VALIDATION.MIN_EFFICIENCY,
           max: CONFIG.VALIDATION.MAX_EFFICIENCY,
         })
       );
-    }
-    if (!["carro", "moto"].includes(tipo)) {
+    if (!["carro", "moto"].includes(tipo))
       errors.push(this.langManager.get("invalidVehicleTypeError"));
-    }
     const isValid = errors.length === 0;
-    if (!isValid) this.uiManager.showNotification(errors.join("\n"), "error"); // Mostra erros concatenados
+    if (!isValid) this.uiManager.showNotification(errors.join("\n"), "error");
     return {
       isValid,
       errors,
@@ -857,14 +897,13 @@ class Validator {
         CONFIG.VALIDATION.MIN_KM,
         CONFIG.VALIDATION.MAX_KM
       )
-    ) {
+    )
       errors.push(
         this.langManager.get("initialKmError", {
           min: CONFIG.VALIDATION.MIN_KM,
           max: CONFIG.VALIDATION.MAX_KM,
         })
       );
-    }
     data.kmFinal = parseFloat(Utils.convertCommaToPoint(String(kmFinal)));
     if (
       !Utils.validateNumber(
@@ -872,20 +911,19 @@ class Validator {
         data.kmInicial + 0.01,
         CONFIG.VALIDATION.MAX_KM
       )
-    ) {
+    )
       errors.push(
         this.langManager.get("finalKmError", { max: CONFIG.VALIDATION.MAX_KM })
       );
-    } else if (
+    else if (
       data.kmFinal - data.kmInicial >
       CONFIG.VALIDATION.MAX_TRIP_DISTANCE
-    ) {
+    )
       errors.push(
         this.langManager.get("maxTripDistanceError", {
           limit: CONFIG.VALIDATION.MAX_TRIP_DISTANCE,
         })
       );
-    }
     data.kmPorLitro = parseFloat(Utils.convertCommaToPoint(String(kmPorLitro)));
     if (
       !Utils.validateNumber(
@@ -893,14 +931,13 @@ class Validator {
         CONFIG.VALIDATION.MIN_EFFICIENCY,
         CONFIG.VALIDATION.MAX_EFFICIENCY
       )
-    ) {
+    )
       errors.push(
         this.langManager.get("vehicleEfficiencyError", {
           min: CONFIG.VALIDATION.MIN_EFFICIENCY,
           max: CONFIG.VALIDATION.MAX_EFFICIENCY,
         })
       );
-    }
     data.precoCombustivel = parseFloat(
       Utils.convertCommaToPoint(String(precoCombustivel))
     );
@@ -910,14 +947,13 @@ class Validator {
         CONFIG.VALIDATION.MIN_PRICE,
         CONFIG.VALIDATION.MAX_PRICE
       )
-    ) {
+    )
       errors.push(
         this.langManager.get("fuelPriceError", {
           min: CONFIG.VALIDATION.MIN_PRICE.toFixed(2),
           max: CONFIG.VALIDATION.MAX_PRICE.toFixed(2),
         })
       );
-    }
     if (
       ganhoUber !== null &&
       ganhoUber !== undefined &&
@@ -930,13 +966,12 @@ class Validator {
           0,
           CONFIG.VALIDATION.MAX_UBER_GAIN
         )
-      ) {
+      )
         errors.push(
           this.langManager.get("tripGainError", {
             max: CONFIG.VALIDATION.MAX_UBER_GAIN.toFixed(2),
           })
         );
-      }
     } else {
       data.ganhoUber = null;
     }
@@ -946,18 +981,13 @@ class Validator {
   }
 }
 
-// Adicionar chaves de tradução para erros de validação em `translations`
-// Ex: vehicleNameLengthError: "Nome do veículo deve ter entre {min} e {max} caracteres." (pt-BR e en)
-
 // ===== GERENCIADOR DE VEÍCULOS =====
 class VehicleManager {
   constructor(storageManager, uiManager, validator, languageManager) {
-    // Recebe LanguageManager
     this.storageManager = storageManager;
     this.uiManager = uiManager;
     this.validator = validator;
-    this.langManager = languageManager; // Armazena LanguageManager
-
+    this.langManager = languageManager;
     this.currentVehicle = null;
     this.currentVehicleType = "carro";
     this.dom = {
@@ -975,7 +1005,7 @@ class VehicleManager {
     this._bindEvents();
     document.addEventListener("languageChanged", () =>
       this.loadAndRenderVehicles()
-    ); // Re-renderiza na troca de idioma
+    );
   }
   _bindEvents() {
     this.dom.vehicleTypeButtons.forEach((button) =>
@@ -1057,13 +1087,12 @@ class VehicleManager {
         efficiency: vehicle.eficiencia,
       })
     );
-
     if (this.currentVehicle && this.currentVehicle.id === vehicle.id)
       card.classList.add("active");
     const title = document.createElement("h4");
     title.textContent = vehicleNameSanitized;
     const efficiencySpan = document.createElement("span");
-    efficiencySpan.textContent = `${vehicle.eficiencia} km/L`; // Unidade não traduzida por ser técnica
+    efficiencySpan.textContent = `${vehicle.eficiencia} km/L`;
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "delete-button";
     deleteBtn.innerHTML = "&times;";
@@ -1075,12 +1104,12 @@ class VehicleManager {
     );
     deleteBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      const confirmed = await this.uiManager.showConfirm(
+      const c = await this.uiManager.showConfirm(
         this.langManager.get("confirmDeleteVehicle", {
           name: vehicleNameSanitized,
         })
       );
-      if (confirmed) this.deleteVehicle(vehicle.id);
+      if (c) this.deleteVehicle(vehicle.id);
     });
     card.appendChild(title);
     card.appendChild(efficiencySpan);
@@ -1106,11 +1135,8 @@ class VehicleManager {
         this.dom.mainFormEfficiencyInput.value = vehicle.eficiencia;
       this.dom.vehicleListContainer
         .querySelectorAll(".vehicle-card")
-        .forEach((cardEl) =>
-          cardEl.classList.toggle(
-            "active",
-            cardEl.dataset.vehicleId === vehicleId
-          )
+        .forEach((c) =>
+          c.classList.toggle("active", c.dataset.vehicleId === vehicleId)
         );
       this.uiManager.showNotification("vehicleSelected", "info", {
         name: Utils.sanitizeHTML(vehicle.nome),
@@ -1202,11 +1228,10 @@ class VehicleManager {
         vehicles.filter((v) => v.tipo === this.currentVehicleType).length ===
           0 &&
         this.dom.mainFormEfficiencyInput
-      ) {
+      )
         this.dom.mainFormEfficiencyInput.placeholder = this.langManager.get(
           "tripEfficiencyPlaceholder"
         );
-      }
     }
   }
   getCurrentVehicleName() {
@@ -1234,13 +1259,11 @@ class FuelCalculator {
     vehicleManager,
     languageManager
   ) {
-    // Recebe LanguageManager
     this.storageManager = storageManager;
     this.uiManager = uiManager;
     this.validator = validator;
     this.vehicleManager = vehicleManager;
-    this.langManager = languageManager; // Armazena LanguageManager
-
+    this.langManager = languageManager;
     this.dom = {
       form: document.getElementById("fuelForm"),
       kmInicialInput: document.getElementById("kmInicial"),
@@ -1259,45 +1282,42 @@ class FuelCalculator {
       this._updateResultCardCurrency()
     );
   }
-
   _updateResultCardCurrency() {
-    // Se o card de resultado estiver visível, atualiza a formatação da moeda
     if (this.dom.resultCard && this.dom.resultCard.style.display === "block") {
-      // Re-busca os valores numéricos (se armazenados) ou re-formata os textContents
-      // Aqui, vamos assumir que os valores numéricos brutos não são facilmente acessíveis
-      // e que uma re-exibição completa seria mais segura se os dados da última viagem fossem mantidos.
-      // Por simplicidade, se o card está visível, o usuário provavelmente acabou de calcular.
-      // Uma solução mais robusta seria armazenar o último resultado e re-formatá-lo.
-      // Por enquanto, vamos apenas alertar que a formatação pode precisar de um novo cálculo para atualizar.
-      // Ou, se os valores já estão no DOM, tentar reformatá-los.
       if (
-        this.dom.custoResult.textContent !== "R$ --" &&
-        this.dom.custoResult.textContent !== "$ --"
+        this.dom.custoResult.textContent !==
+          this.langManager.get("currencyPlaceholder") &&
+        this.dom.custoResult.textContent !==
+          this.langManager.get("currencyPlaceholder", {}, "en")
       ) {
+        // Usar chave para placeholder
         const custoText = this.dom.custoResult.textContent
-          .replace(/[R$\s]/g, "")
-          .replace(",", ".");
-        this.dom.custoResult.textContent = Utils.formatCurrency(
-          parseFloat(custoText),
-          this.langManager.currentLanguage
-        );
+          .replace(/[R$\sA-Z]/gi, "")
+          .replace(",", "."); // Remove símbolos de moeda e letras
+        if (!isNaN(parseFloat(custoText)))
+          this.dom.custoResult.textContent = Utils.formatCurrency(
+            parseFloat(custoText),
+            this.langManager.currentLanguage
+          );
       }
       if (
-        this.dom.lucroResult.textContent !== "R$ --" &&
-        this.dom.lucroResult.textContent !== "$ --" &&
+        this.dom.lucroResult.textContent !==
+          this.langManager.get("currencyPlaceholder") &&
+        this.dom.lucroResult.textContent !==
+          this.langManager.get("currencyPlaceholder", {}, "en") &&
         this.dom.lucroResult.textContent !== "N/A"
       ) {
         const lucroText = this.dom.lucroResult.textContent
-          .replace(/[R$\s]/g, "")
+          .replace(/[R$\sA-Z]/gi, "")
           .replace(",", ".");
-        this.dom.lucroResult.textContent = Utils.formatCurrency(
-          parseFloat(lucroText),
-          this.langManager.currentLanguage
-        );
+        if (!isNaN(parseFloat(lucroText)))
+          this.dom.lucroResult.textContent = Utils.formatCurrency(
+            parseFloat(lucroText),
+            this.langManager.currentLanguage
+          );
       }
     }
   }
-
   _bindEvents() {
     if (this.dom.form)
       this.dom.form.addEventListener("submit", (e) => {
@@ -1320,7 +1340,6 @@ class FuelCalculator {
     const litrosConsumidos = distancia / kmPorLitro;
     const custoTotal = litrosConsumidos * precoCombustivel;
     const lucroLiquido = ganhoUber !== null ? ganhoUber - custoTotal : null;
-
     if (this.dom.distanciaResult)
       this.dom.distanciaResult.textContent = `${distancia.toFixed(1)} km`;
     if (this.dom.litrosResult)
@@ -1371,7 +1390,7 @@ class FuelCalculator {
       veiculoId: currentVehicle ? currentVehicle.id : null,
       veiculoNome: currentVehicle
         ? currentVehicle.nome
-        : this.langManager.get("manualOrUnspecified"), // Traduzir
+        : this.langManager.get("manualOrUnspecified"),
       kmInicial: tripData.kmInicial,
       kmFinal: tripData.kmFinal,
       distancia: tripData.distancia.toFixed(1),
@@ -1414,12 +1433,10 @@ class FuelCalculator {
 // ===== GERENCIADOR DE HISTÓRICO DE VIAGENS =====
 class HistoryManager {
   constructor(storageManager, uiManager, vehicleManager, languageManager) {
-    // Recebe LanguageManager
     this.storageManager = storageManager;
     this.uiManager = uiManager;
     this.vehicleManager = vehicleManager;
-    this.langManager = languageManager; // Armazena LanguageManager
-
+    this.langManager = languageManager;
     this.isFullHistoryVisible = false;
     this.dom = {
       historySection: document.getElementById("historySection"),
@@ -1486,18 +1503,15 @@ class HistoryManager {
         ? "vehicleTypeCar"
         : "vehicleTypeMotorcycle"
     );
-
-    if (itemsToRender.length === 0 && filteredHistory.length > 0) {
+    if (itemsToRender.length === 0 && filteredHistory.length > 0)
       this.dom.historyList.innerHTML = `<li class="empty-message-list">${this.langManager.get(
         "noRecordsToDisplay"
       )}</li>`;
-    } else if (itemsToRender.length === 0) {
+    else if (itemsToRender.length === 0)
       this.dom.historyList.innerHTML = `<li class="empty-message-list">${this.langManager.get(
         "noHistoryForType",
         { type: vehicleTypeTranslated.toLowerCase() }
       )}</li>`;
-    }
-
     itemsToRender.forEach((record) =>
       this.dom.historyList.appendChild(this._createHistoryItemElement(record))
     );
@@ -1526,11 +1540,11 @@ class HistoryManager {
     li.setAttribute(
       "aria-label",
       this.langManager.get("tripDetailsAriaLabel", { date: formattedDate })
-    ); // Precisa de nova chave
+    );
     li.dataset.recordId = record.id;
     const dateSpan = document.createElement("span");
     dateSpan.textContent = formattedDate;
-    const costStrong = document.createElement("strong");
+    const summaryStrong = document.createElement("strong"); // Renomeado para clareza
     let summaryText = `${this.langManager.get(
       "costLabel"
     )}: ${Utils.formatCurrency(
@@ -1545,9 +1559,9 @@ class HistoryManager {
         this.langManager.currentLanguage
       )}`;
     }
-    costStrong.textContent = summaryText;
+    summaryStrong.textContent = summaryText;
     li.appendChild(dateSpan);
-    li.appendChild(costStrong);
+    li.appendChild(summaryStrong);
     li.addEventListener("click", () => this._showRecordDetails(record.id));
     li.addEventListener("keypress", (e) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -1570,45 +1584,45 @@ class HistoryManager {
     const currentLang = this.langManager.currentLanguage;
     const details = [
       {
-        label: "detailLabelDate",
+        labelKey: "detailLabelDate",
         value: Utils.formatLocalDate(record.dataISO, currentLang),
       },
-      { label: "detailLabelVehicle", value: record.veiculoNome },
+      { labelKey: "detailLabelVehicle", value: record.veiculoNome }, // Nome do veículo já está sanitizado ao salvar
       {
-        label: "detailLabelType",
+        labelKey: "detailLabelType",
         value: this.langManager.get(
           record.tipoVeiculo === "carro"
             ? "vehicleTypeCar"
             : "vehicleTypeMotorcycle"
         ),
       },
-      { label: "detailLabelInitialKm", value: `${record.kmInicial} km` },
-      { label: "detailLabelFinalKm", value: `${record.kmFinal} km` },
-      { label: "detailLabelDistance", value: `${record.distancia} km` },
+      { labelKey: "detailLabelInitialKm", value: `${record.kmInicial} km` },
+      { labelKey: "detailLabelFinalKm", value: `${record.kmFinal} km` },
+      { labelKey: "detailLabelDistance", value: `${record.distancia} km` },
       {
-        label: "detailLabelEfficiencyUsed",
+        labelKey: "detailLabelEfficiencyUsed",
         value: `${record.kmPorLitroUtilizado} km/L`,
       },
       {
-        label: "detailLabelFuelConsumed",
+        labelKey: "detailLabelFuelConsumed",
         value: `${record.litrosConsumidos} L`,
       },
       {
-        label: "detailLabelPricePerLiter",
+        labelKey: "detailLabelPricePerLiter",
         value: Utils.formatCurrency(record.precoPorLitro, currentLang),
       },
       {
-        label: "detailLabelTotalFuelCost",
+        labelKey: "detailLabelTotalFuelCost",
         value: Utils.formatCurrency(record.custoTotalCombustivel, currentLang),
       },
     ];
     if (record.ganhoBrutoInformado !== null) {
       details.push({
-        label: "detailLabelGrossGain",
+        labelKey: "detailLabelGrossGain",
         value: Utils.formatCurrency(record.ganhoBrutoInformado, currentLang),
       });
       details.push({
-        label: "detailLabelNetProfit",
+        labelKey: "detailLabelNetProfit",
         value: Utils.formatCurrency(record.lucroLiquidoViagem, currentLang),
       });
     }
@@ -1651,12 +1665,10 @@ class HistoryManager {
 // ===== GERENCIADOR DE ESTATÍSTICAS =====
 class StatisticsManager {
   constructor(storageManager, uiManager, vehicleManager, languageManager) {
-    // Recebe LanguageManager
     this.storageManager = storageManager;
     this.uiManager = uiManager;
     this.vehicleManager = vehicleManager;
-    this.langManager = languageManager; // Armazena LanguageManager
-
+    this.langManager = languageManager;
     this.chartInstance = null;
     this.debouncedUpdate = Utils.debounce(
       () => this.updateStatistics(),
@@ -1768,7 +1780,6 @@ class StatisticsManager {
     const chartLabel = this.langManager.get("chartDailyExpenseLabel", {
       type: vehicleTypeTranslated,
     });
-
     const textColor = "#e0e0e0";
     const gridColor = "#444444";
     const uberGreen = "#00c165";
@@ -1841,7 +1852,7 @@ class StatisticsManager {
       this.chartInstance.data.datasets[0].data = data;
       this.chartInstance.data.datasets[0].label = chartLabel;
       this.chartInstance.options.scales.y.ticks.callback = (value) =>
-        Utils.formatCurrency(value, this.langManager.currentLanguage); // Atualiza callback de formatação
+        Utils.formatCurrency(value, this.langManager.currentLanguage);
       this.chartInstance.options.plugins.tooltip.callbacks.label = (context) =>
         `${context.dataset.label || ""}: ${Utils.formatCurrency(
           context.parsed.y,
@@ -1856,7 +1867,7 @@ class StatisticsManager {
         );
       } catch (error) {
         console.error("Erro Chart:", error);
-        this.uiManager.showNotification("genericError", "error"); // Usar chave de tradução
+        this.uiManager.showNotification("genericError", "error");
         this.chartInstance = null;
       }
     }
@@ -1869,12 +1880,10 @@ class StatisticsManager {
 // ===== GERENCIADOR PRINCIPAL DA APLICAÇÃO (AppManager) =====
 class AppManager {
   constructor() {
-    // LanguageManager precisa ser instanciado primeiro se outros dependem dele no construtor
     this.storageManager = new StorageManager(null); // UIManager será injetado depois
     this.languageManager = new LanguageManager(this.storageManager);
     this.uiManager = new UIManager(this.languageManager);
-    this.storageManager.uiManager = this.uiManager; // Injeta UIManager no StorageManager agora que está disponível
-
+    this.storageManager.uiManager = this.uiManager; // Injeta UIManager
     this.validator = new Validator(this.uiManager, this.languageManager);
     this.vehicleManager = new VehicleManager(
       this.storageManager,
@@ -1901,36 +1910,29 @@ class AppManager {
       this.vehicleManager,
       this.languageManager
     );
-
     this.dom = { appVersionSpan: document.getElementById("appVersion") };
     this._init();
   }
   _init() {
     this._displayAppVersion();
-    this.languageManager.setLanguage(this.languageManager.currentLanguage); // Aplica idioma inicial
+    this.languageManager.setLanguage(this.languageManager.currentLanguage);
     this._registerServiceWorker();
     this._bindGlobalAppEvents();
-    this._initializeAppState(); // Isso já deve chamar os renders necessários
+    // _initializeAppState não é mais necessário aqui, pois setLanguage e os construtores dos módulos cuidam disso.
     this._hideSplashScreen();
   }
-
   _displayAppVersion() {
-    if (this.dom.appVersionSpan) {
+    if (this.dom.appVersionSpan)
       this.dom.appVersionSpan.textContent = CONFIG.APP_VERSION;
-    }
   }
-
   _registerServiceWorker() {
-    if ("serviceWorker" in navigator) {
+    if ("serviceWorker" in navigator)
       window.addEventListener("load", () => {
         navigator.serviceWorker
           .register("./sw.js")
-          .then((registration) =>
-            console.log("SW FuelCalc registrado. Escopo:", registration.scope)
-          )
-          .catch((error) => console.error("Falha SW FuelCalc:", error));
+          .then((reg) => console.log("SW FuelCalc OK. Escopo:", reg.scope))
+          .catch((err) => console.error("Falha SW FuelCalc:", err));
       });
-    }
   }
   _bindGlobalAppEvents() {
     const exportBtn = document.getElementById("exportDataBtn");
@@ -1947,19 +1949,18 @@ class AppManager {
         if (file) {
           const success = await this.storageManager.importData(file);
           if (success) {
-            // Após importação bem-sucedida, recarregar o idioma e re-renderizar tudo
             const newLang =
               this.languageManager._loadLanguagePreference() ||
               CONFIG.DEFAULT_LANGUAGE;
-            this.languageManager.setLanguage(newLang); // Isso já chama applyTranslations e dispara 'languageChanged'
-
-            // Os listeners de 'languageChanged' nos outros módulos devem cuidar da re-renderização.
-            // Para garantir, podemos forçar uma atualização dos módulos que dependem de dados.
+            this.languageManager.setLanguage(newLang); // Isso dispara 'languageChanged'
+            // Os listeners de 'languageChanged' devem atualizar os módulos.
+            // Forçar atualização explícita dos dados após a mudança de idioma ter sido aplicada.
             this.vehicleManager.selectVehicleType(
               this.vehicleManager.currentVehicleType
-            ); // Re-seleciona para atualizar listas
-            this.historyManager.renderHistory(); // Garante que o histórico seja atualizado com o novo idioma e dados
-            this.statisticsManager.updateStatistics(); // Garante que as estatísticas sejam atualizadas
+            );
+            // As chamadas abaixo podem ser redundantes se 'languageChanged' e 'vehicleTypeChanged' já atualizam tudo.
+            // this.historyManager.renderHistory();
+            // this.statisticsManager.updateStatistics();
           }
           importFileInput.value = "";
         }
@@ -1968,18 +1969,23 @@ class AppManager {
     const clearAllDataBtn = document.getElementById("clearAllDataBtn");
     if (clearAllDataBtn) {
       clearAllDataBtn.addEventListener("click", async () => {
-        const confirmed1 = await this.uiManager.showConfirm(
+        const c1 = await this.uiManager.showConfirm(
           "confirmClearAllData",
           "clearAllDataBtn"
-        ); // Usa chaves
-        if (confirmed1) {
-          const confirmed2 = await this.uiManager.showConfirm(
-            "confirmFinalClearAllData",
-            "clearAllDataBtn"
-          );
-          if (confirmed2) this._performClearAllData();
-          else this.uiManager.showNotification("clearAllDataCancelled", "info");
-        } else this.uiManager.showNotification("clearAllDataCancelled", "info");
+        );
+        if (!c1) {
+          this.uiManager.showNotification("clearAllDataCancelled", "info");
+          return;
+        }
+        const c2 = await this.uiManager.showConfirm(
+          "confirmFinalClearAllData",
+          "clearAllDataBtn"
+        );
+        if (!c2) {
+          this.uiManager.showNotification("clearAllDataCancelled", "info");
+          return;
+        }
+        this._performClearAllData();
       });
     }
     document.addEventListener("keydown", (e) => {
@@ -1988,9 +1994,8 @@ class AppManager {
         if (
           this.uiManager.confirmModalOverlay &&
           this.uiManager.confirmModalOverlay.classList.contains("active")
-        ) {
+        )
           this.uiManager._handleConfirm(false);
-        }
       }
     });
   }
@@ -2001,27 +2006,20 @@ class AppManager {
       this.fuelCalculator.resetState();
       this.historyManager.resetState();
       this.statisticsManager.resetState();
-      // A linguagem deve ser resetada para o padrão se as configurações foram limpas
-      this.languageManager.setLanguage(CONFIG.DEFAULT_LANGUAGE);
+      this.languageManager.setLanguage(CONFIG.DEFAULT_LANGUAGE); // Reseta para o idioma padrão
       document.dispatchEvent(new CustomEvent("allDataCleared"));
       this.uiManager.showNotification("allDataClearedSuccess", "success");
-    } else {
-      this.uiManager.showNotification("allDataClearError", "error");
-    }
-  }
-  _initializeAppState() {
-    // A linguagem já é aplicada no _init() através do LanguageManager
-    // this.vehicleManager.selectVehicleType("carro"); // Isso já é feito no resetState do vehicleManager se necessário, ou no init do langManager
+    } else this.uiManager.showNotification("allDataClearError", "error");
   }
   _hideSplashScreen() {
-    const splashScreen = document.getElementById("splash-screen");
-    if (splashScreen) {
-      splashScreen.classList.add("hidden");
-      splashScreen.addEventListener(
+    const s = document.getElementById("splash-screen");
+    if (s) {
+      s.classList.add("hidden");
+      s.addEventListener(
         "transitionend",
         () => {
-          if (splashScreen.classList.contains("hidden")) {
-            /* splashScreen.remove(); */
+          if (s.classList.contains("hidden")) {
+            /* s.remove(); */
           }
         },
         { once: true }
@@ -2031,8 +2029,6 @@ class AppManager {
 }
 
 // ===== INICIALIZAÇÃO DA APLICAÇÃO =====
-if (document.readyState === "loading") {
+if (document.readyState === "loading")
   document.addEventListener("DOMContentLoaded", () => new AppManager());
-} else {
-  new AppManager();
-}
+else new AppManager();
