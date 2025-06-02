@@ -87,9 +87,9 @@ Acesse a aplicação diretamente através do link do GitHub Pages:
 6.  **Instalar como App (PWA):**
     * Em navegadores compatíveis (Chrome, Edge, Firefox em Android), procure pelo ícone de instalação na barra de endereço ou no menu para adicionar o FuelCalc à sua tela inicial e usá-lo como um aplicativo nativo.
 
-## 📂 Estrutura do Projeto Atualizada
+## 📂 Estrutura do Projeto
 
-
+```
 FuelCalc/
 ├── js/                             # Pasta principal para código JavaScript modularizado
 │   ├── main.js                     # Ponto de entrada da aplicação (carrega AppManager)
@@ -119,7 +119,7 @@ FuelCalc/
 ├── manifest.json                   # Web App Manifest para PWA
 ├── sw.js                           # Service Worker para PWA (cache e offline)
 └── README.md                       # Este ficheiro
-
+```
 
 ## 🤝 Como Contribuir
 
