@@ -220,12 +220,9 @@ document.addEventListener("DOMContentLoaded", () => {
           const pk = el.dataset.translateKeyPlaceholder;
           const ak = el.dataset.translateKeyAriaLabel;
           const tk = el.dataset.translateKeyTitle;
-
-          // Special handling for buttons with icons to preserve the icon
           if (k && el.tagName === "BUTTON") {
             const icon = el.querySelector("svg");
             const textSpan = el.querySelector("span");
-
             if (textSpan) {
               textSpan.textContent = this.get(k);
             } else if (!icon) {
@@ -234,7 +231,6 @@ document.addEventListener("DOMContentLoaded", () => {
           } else if (k) {
             el.textContent = this.get(k);
           }
-
           if (pk) el.placeholder = this.get(pk);
           if (ak) el.setAttribute("aria-label", this.get(ak));
           if (tk) el.title = this.get(tk);
@@ -1802,6 +1798,7 @@ document.addEventListener("DOMContentLoaded", () => {
       this.themeManager.init();
       this.languageManager.setLanguage(this.languageManager.currentLanguage);
       this.inputFormatter.initialize();
+      this._bindGlobalAppEvents();
       this._handleViewport();
       window.addEventListener(
         "resize",
@@ -1814,12 +1811,9 @@ document.addEventListener("DOMContentLoaded", () => {
       this.dom.body.classList.toggle("desktop-view", isDesktop);
       if (isDesktop) {
         this._setupDesktopNotice();
-      } else {
-        if (!this.eventsBound) {
-          this._registerServiceWorker();
-          this._bindGlobalAppEvents();
-          this.eventsBound = true;
-        }
+      } else if (!this.eventsBound) {
+        this._registerServiceWorker();
+        this.eventsBound = true;
       }
     }
     _setupDesktopNotice() {

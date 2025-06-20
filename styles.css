@@ -78,6 +78,9 @@ body.modal-open {
 body.desktop-view .container {
   display: none !important;
 }
+body:not(.desktop-view) #desktop-notice-overlay {
+  display: none !important;
+}
 
 .app-header {
   display: flex;
@@ -86,15 +89,13 @@ body.desktop-view .container {
   padding: 1rem;
   border-bottom: 1px solid var(--c-border);
 }
-
 .header-controls {
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 0.5rem;
-  order: -1; /* Move os controles para cima */
+  order: -1;
 }
-
 .app-header-content {
   display: flex;
   flex-direction: column;
@@ -102,7 +103,6 @@ body.desktop-view .container {
   text-align: center;
   gap: 0.25rem;
 }
-
 .app-header .logo {
   width: 50px;
   height: 50px;
@@ -186,6 +186,12 @@ body.desktop-view .container {
   flex-direction: column;
   gap: 0.75rem;
   margin-top: 1rem;
+}
+.backup-buttons {
+  flex-direction: row;
+}
+.backup-buttons .btn {
+  flex-grow: 1;
 }
 
 .content-section {
@@ -493,13 +499,15 @@ body.desktop-view .container {
   pointer-events: auto;
   opacity: 0;
   transform: translateY(150%);
-  animation: slideInNotification 0.4s ease-out forwards;
+  transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
 }
-.notification.persistent {
-  animation: slideInNotification 0.4s ease-out forwards !important;
+body:not(.fade-out-active) .notification {
+  transform: translateY(0);
+  opacity: 1;
 }
 .notification.fade-out {
-  animation: fadeOutNotification 0.4s ease-in forwards !important;
+  transform: translateY(150%);
+  opacity: 0;
 }
 .notification.info {
   border-left-color: var(--c-accent);
@@ -537,19 +545,6 @@ body.desktop-view .container {
 .notification-actions {
   display: flex;
   gap: 0.5rem;
-}
-
-@keyframes slideInNotification {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@keyframes fadeOutNotification {
-  to {
-    opacity: 0;
-    transform: translateY(150%);
-  }
 }
 
 .splash-screen {
