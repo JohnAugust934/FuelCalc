@@ -1,4 +1,4 @@
-/* styles.css - FuelCalc */
+/* styles.css - FuelCalc v1.5.6 */
 
 /* ===== VARIÁVEIS GLOBAIS E RESET ===== */
 :root {
@@ -30,6 +30,8 @@
   padding: 0;
   box-sizing: border-box;
 }
+
+/* ===== ESTILOS GLOBAIS DO BODY ===== */
 body {
   font-family: var(--font-primary);
   background-color: var(--uber-gray-dark);
@@ -84,6 +86,8 @@ body.modal-open {
   margin-top: 0;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
 }
+
+/* ===== CONTROLES DO CABEÇALHO (IDIOMA, AJUDA) ===== */
 .header-controls {
   position: absolute;
   top: 10px;
@@ -142,6 +146,8 @@ body.modal-open {
   transform: scale(1.1);
   outline: none;
 }
+
+/* ===== RODAPÉ ===== */
 .app-footer {
   text-align: center;
   padding: 1.5rem 1rem;
@@ -155,7 +161,7 @@ body.modal-open {
   color: var(--uber-text-primary);
 }
 
-/* ===== COMPONENTES GERAIS ===== */
+/* ===== COMPONENTES GERAIS (FORMULÁRIOS, BOTÕES) ===== */
 .input-group {
   margin-bottom: 1.25rem;
 }
@@ -253,53 +259,14 @@ body.modal-open {
   margin: 0;
   flex-grow: 1;
 }
-
-/* ===== COMPONENTE HÍBRIDO DE EFICIÊNCIA ===== */
-.hybrid-input-container {
-  position: relative;
-  display: flex;
-}
 .uber-select {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
   cursor: pointer;
 }
-.hybrid-input-container::after {
-  content: "▼";
-  position: absolute;
-  top: 50%;
-  right: 1rem;
-  transform: translateY(-50%);
-  font-size: 0.8rem;
-  color: var(--uber-text-secondary);
-  pointer-events: none;
-}
-.hybrid-input-container.manual-mode #tripEfficiencySelector,
-.hybrid-input-container.no-vehicles #tripEfficiencySelector {
-  display: none;
-}
-.hybrid-input-container.manual-mode #tripEfficiencyInput,
-.hybrid-input-container.no-vehicles #tripEfficiencyInput {
-  display: block;
-}
-.hybrid-input-container:not(.manual-mode):not(.no-vehicles)
-  #tripEfficiencyInput {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  flex-grow: 1;
-  width: auto;
-}
-.hybrid-input-container:not(.manual-mode):not(.no-vehicles)
-  #tripEfficiencySelector {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-  border-right: none;
-  flex-grow: 2;
-  width: 65%;
-}
 
-/* ===== SEÇÕES ESPECÍFICAS ===== */
+/* ===== SEÇÕES DE CONTEÚDO ===== */
 .content-section {
   padding: 1.5rem;
   border-bottom: 1px solid var(--uber-gray-light);
@@ -340,6 +307,54 @@ body.modal-open {
   background-color: var(--uber-gray-medium);
   color: var(--uber-text-primary);
 }
+
+/* ===== COMPONENTE HÍBRIDO DE EFICIÊNCIA ===== */
+.hybrid-input-container {
+  position: relative;
+  display: flex;
+}
+.hybrid-input-container::after {
+  content: "▼";
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: var(--uber-text-secondary);
+  pointer-events: none;
+}
+.hybrid-input-container.no-vehicles #tripEfficiencySelector {
+  display: none;
+}
+.hybrid-input-container.no-vehicles #tripEfficiencyInput {
+  display: block;
+}
+.hybrid-input-container.manual-mode #tripEfficiencySelector {
+  display: none;
+}
+.hybrid-input-container.manual-mode #tripEfficiencyInput {
+  display: block;
+}
+.hybrid-input-container:not(.manual-mode):not(.no-vehicles)
+  #tripEfficiencyInput {
+  display: block;
+  border-left: none;
+  background: var(--uber-gray-medium);
+  color: var(--uber-text-secondary);
+  width: 35%;
+  flex-shrink: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.hybrid-input-container:not(.manual-mode):not(.no-vehicles)
+  #tripEfficiencySelector {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  flex-grow: 1;
+  width: 65%;
+}
+
+/* ===== CARDS E FORMULÁRIOS DE VEÍCULOS ===== */
 .vehicle-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -404,12 +419,15 @@ body.modal-open {
   outline: none;
 }
 .vehicle-form {
+  display: none;
   background-color: var(--uber-gray-dark);
   padding: 1.5rem;
   border-radius: var(--border-radius-medium);
   margin-top: 1.5rem;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
 }
+
+/* ===== RESULTADOS, HISTÓRICO E ESTATÍSTICAS ===== */
 .result-card {
   background: var(--uber-gray-dark);
   border-radius: var(--border-radius-medium);
@@ -528,6 +546,8 @@ body.modal-open {
   margin: 0;
   text-align: center;
 }
+
+/* ===== MODAIS ===== */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -620,6 +640,8 @@ body.modal-open {
   gap: 0.75rem;
   margin-top: 1.5rem;
 }
+
+/* ===== NOTIFICAÇÕES (TOASTS) ===== */
 .notification-area {
   position: fixed;
   top: 1rem;
@@ -684,6 +706,8 @@ body.modal-open {
     transform: translateX(100%);
   }
 }
+
+/* ===== TELAS ESPECIAIS (SPLASH, DESKTOP NOTICE) ===== */
 .splash-screen {
   position: fixed;
   top: 0;
@@ -722,23 +746,6 @@ body.modal-open {
 .splash-screen p {
   font-size: 1rem;
   color: var(--uber-text-secondary);
-}
-.empty-message {
-  text-align: center;
-  color: var(--uber-text-secondary);
-  padding: 2rem 1rem;
-  font-style: italic;
-  font-size: 0.95rem;
-  border: 1px dashed var(--uber-gray-light);
-  border-radius: var(--border-radius-medium);
-  margin-top: 1rem;
-}
-.price-list .empty-message-list {
-  color: var(--uber-text-secondary);
-  padding: 1rem;
-  text-align: center;
-  font-style: italic;
-  list-style-type: none;
 }
 .desktop-notice-overlay {
   position: fixed;
@@ -813,6 +820,25 @@ body.modal-open {
 .app-content-hidden {
   display: none !important;
 }
+.empty-message {
+  text-align: center;
+  color: var(--uber-text-secondary);
+  padding: 2rem 1rem;
+  font-style: italic;
+  font-size: 0.95rem;
+  border: 1px dashed var(--uber-gray-light);
+  border-radius: var(--border-radius-medium);
+  margin-top: 1rem;
+}
+.price-list .empty-message-list {
+  color: var(--uber-text-secondary);
+  padding: 1rem;
+  text-align: center;
+  font-style: italic;
+  list-style-type: none;
+}
+
+/* ===== MODAL DE AJUDA ===== */
 .help-modal-content {
   max-width: 600px;
 }
@@ -844,6 +870,8 @@ body.modal-open {
   font-size: 0.95rem;
   line-height: 1.5;
 }
+
+/* ===== MEDIA QUERIES (Responsividade) ===== */
 @media (max-width: 768px) {
   body {
     padding: 0.5rem;
@@ -958,6 +986,8 @@ body.modal-open {
     padding: 10px;
   }
 }
+
+/* ===== ACESSIBILIDADE ===== */
 *:focus-visible {
   outline: 3px solid var(--uber-blue);
   outline-offset: 2px;
