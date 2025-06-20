@@ -1,10 +1,10 @@
 // app.js - Lógica Principal do FuelCalc
-// Versão: 1.5.5 (Feedback de erro inline)
+// Versão: 1.5.6 (Correção do modal de ajuda)
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===== CONFIGURAÇÕES E CONSTANTES GLOBAIS =====
-  const APP_VERSION = "1.5.5";
+  const APP_VERSION = "1.5.6";
   const CONFIG = {
     APP_VERSION,
     STORAGE_KEYS: {
@@ -33,7 +33,6 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ===== INÍCIO DAS CLASSES DA APLICAÇÃO =====
-  // A ordem é importante: classes sem dependências ou com poucas vêm primeiro.
 
   class Utils {
     static sanitizeHTML(str) {
@@ -177,11 +176,13 @@ document.addEventListener("DOMContentLoaded", () => {
     constructor(languageManager) {
       this.langManager = languageManager;
       this.notificationArea = document.getElementById("notificationArea");
+      // Modals
       this.detailsModalOverlay = document.getElementById("detailsModalOverlay");
       this.detailsModalContent = document.getElementById("detailsModalContent");
       this.closeDetailsModalBtn = document.getElementById(
         "closeDetailsModalBtn"
       );
+
       this.confirmModalOverlay = document.getElementById("confirmModalOverlay");
       this.confirmModalTitle = document.getElementById("confirmModalTitle");
       this.confirmModalMessage = document.getElementById("confirmModalMessage");
@@ -191,20 +192,33 @@ document.addEventListener("DOMContentLoaded", () => {
       this.confirmModalCancelBtn = document.getElementById(
         "confirmModalCancelBtn"
       );
+
+      this.helpModalOverlay = document.getElementById("helpModalOverlay");
+      this.closeHelpModalBtn = document.getElementById("closeHelpModalBtn");
+
       this._resolveConfirm = null;
       this._bindModalEvents();
       document.addEventListener("languageChanged", () =>
         this._retranslateOpenModals()
       );
     }
+
     _retranslateOpenModals() {
-      if (
-        this.detailsModalOverlay &&
-        this.detailsModalOverlay.classList.contains("active")
-      ) {
-        const t = this.detailsModalOverlay.querySelector("#detailsModalTitle");
-        if (t) t.textContent = this.langManager.get("tripDetailsModalTitle");
-      }
+      const retranslate = (overlay, titleKey, titleId) => {
+        if (overlay && overlay.classList.contains("active")) {
+          const titleElement = overlay.querySelector(titleId);
+          if (titleElement)
+            titleElement.textContent = this.langManager.get(titleKey);
+        }
+      };
+
+      retranslate(
+        this.detailsModalOverlay,
+        "tripDetailsModalTitle",
+        "#detailsModalTitle"
+      );
+      retranslate(this.helpModalOverlay, "helpModalTitle", "#helpModalTitle");
+
       if (
         this.confirmModalOverlay &&
         this.confirmModalOverlay.classList.contains("active")
@@ -221,15 +235,22 @@ document.addEventListener("DOMContentLoaded", () => {
             this.langManager.get("confirmBtn");
       }
     }
+
     _bindModalEvents() {
-      if (this.closeDetailsModalBtn)
-        this.closeDetailsModalBtn.addEventListener("click", () =>
-          this.hideDetailsModal()
-        );
-      if (this.detailsModalOverlay)
-        this.detailsModalOverlay.addEventListener("click", (e) => {
-          if (e.target === this.detailsModalOverlay) this.hideDetailsModal();
-        });
+      // Generic close logic
+      const setupModal = (overlay, closeBtn) => {
+        if (closeBtn)
+          closeBtn.addEventListener("click", () => this._hideModal(overlay));
+        if (overlay)
+          overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) this._hideModal(overlay);
+          });
+      };
+
+      setupModal(this.detailsModalOverlay, this.closeDetailsModalBtn);
+      setupModal(this.helpModalOverlay, this.closeHelpModalBtn);
+
+      // Confirm modal has special logic
       if (this.confirmModalCancelBtn)
         this.confirmModalCancelBtn.addEventListener("click", () =>
           this._handleConfirm(false)
@@ -243,6 +264,36 @@ document.addEventListener("DOMContentLoaded", () => {
           if (e.target === this.confirmModalOverlay) this._handleConfirm(false);
         });
     }
+
+    _showModal(overlay) {
+      if (!overlay) return;
+      overlay.style.display = "flex";
+      document.body.classList.add("modal-open");
+      void overlay.offsetWidth; // Force reflow for transition
+      overlay.classList.add("active");
+      const closeButton = overlay.querySelector(".modal-close-button");
+      if (closeButton) closeButton.focus();
+    }
+
+    _hideModal(overlay) {
+      if (!overlay || !overlay.classList.contains("active")) return;
+      overlay.classList.remove("active");
+      document.body.classList.remove("modal-open");
+      const onTransitionEnd = () => {
+        if (!overlay.classList.contains("active")) {
+          overlay.style.display = "none";
+        }
+        overlay.removeEventListener("transitionend", onTransitionEnd);
+      };
+      overlay.addEventListener("transitionend", onTransitionEnd);
+      // Fallback timeout in case transitionend doesn't fire
+      setTimeout(() => {
+        if (!overlay.classList.contains("active")) {
+          overlay.style.display = "none";
+        }
+      }, 350);
+    }
+
     showNotification(key, type = "info", params = {}) {
       if (!this.notificationArea) return;
       const msg = this.langManager.get(key, params);
@@ -272,6 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
         CONFIG.NOTIFICATION_TIMEOUT
       );
     }
+
     _removeNotification(n) {
       if (n && n.parentNode) {
         n.style.opacity = "0";
@@ -315,7 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     clearAllInlineErrors(formElement) {
       if (!formElement) return;
-      const fields = formElement.querySelectorAll("input, select, textarea");
+      const fields = formElement.querySelectorAll("input.has-error");
       fields.forEach((field) => this.clearInlineError(field));
     }
 
@@ -341,29 +393,21 @@ document.addEventListener("DOMContentLoaded", () => {
         i.appendChild(v);
         this.detailsModalContent.appendChild(i);
       });
-      this.detailsModalOverlay.style.display = "flex";
-      document.body.classList.add("modal-open");
-      void this.detailsModalOverlay.offsetWidth;
-      this.detailsModalOverlay.classList.add("active");
-      if (this.closeDetailsModalBtn) this.closeDetailsModalBtn.focus();
+      this._showModal(this.detailsModalOverlay);
     }
+
     hideDetailsModal() {
-      if (!this.detailsModalOverlay) return;
-      this.detailsModalOverlay.classList.remove("active");
-      document.body.classList.remove("modal-open");
-      this.detailsModalOverlay.addEventListener(
-        "transitionend",
-        () => {
-          if (!this.detailsModalOverlay.classList.contains("active"))
-            this.detailsModalOverlay.style.display = "none";
-        },
-        { once: true }
-      );
-      setTimeout(() => {
-        if (!this.detailsModalOverlay.classList.contains("active"))
-          this.detailsModalOverlay.style.display = "none";
-      }, 350);
+      this._hideModal(this.detailsModalOverlay);
     }
+
+    showHelpModal() {
+      this._showModal(this.helpModalOverlay);
+    }
+
+    hideHelpModal() {
+      this._hideModal(this.helpModalOverlay);
+    }
+
     showConfirm(key, titleKey = "confirmActionModalTitle", params = {}) {
       return new Promise((resolve) => {
         if (!this.confirmModalOverlay) {
@@ -376,35 +420,21 @@ document.addEventListener("DOMContentLoaded", () => {
           params
         );
         this._resolveConfirm = resolve;
-        this.confirmModalOverlay.style.display = "flex";
-        document.body.classList.add("modal-open");
-        void this.confirmModalOverlay.offsetWidth;
-        this.confirmModalOverlay.classList.add("active");
+        this._showModal(this.confirmModalOverlay);
         if (this.confirmModalConfirmBtn) this.confirmModalConfirmBtn.focus();
       });
     }
+
     _handleConfirm(confirmed) {
       if (!this.confirmModalOverlay) return;
-      this.confirmModalOverlay.classList.remove("active");
-      document.body.classList.remove("modal-open");
-      this.confirmModalOverlay.addEventListener(
-        "transitionend",
-        () => {
-          if (!this.confirmModalOverlay.classList.contains("active"))
-            this.confirmModalOverlay.style.display = "none";
-        },
-        { once: true }
-      );
-      setTimeout(() => {
-        if (!this.confirmModalOverlay.classList.contains("active"))
-          this.confirmModalOverlay.style.display = "none";
-      }, 350);
+      this._hideModal(this.confirmModalOverlay);
       if (this._resolveConfirm) {
         this._resolveConfirm(confirmed);
         this._resolveConfirm = null;
       }
     }
   }
+
   class StorageManager {
     constructor() {
       this.uiManager = null;
@@ -571,6 +601,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return c;
     }
   }
+
   class Validator {
     constructor(uiManager, languageManager) {
       this.uiManager = uiManager;
@@ -618,7 +649,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (!["carro", "moto"].includes(type)) {
-        // This is a programmatic error, but we keep the validation
         console.error("Tipo de veículo inválido fornecido:", type);
         isValid = false;
       }
@@ -672,7 +702,6 @@ document.addEventListener("DOMContentLoaded", () => {
         )
       ) {
         if (isValid) {
-          // Only show this error if initial KM was valid
           this.uiManager.displayInlineError(
             inputs.kmFinalInput,
             this.langManager.get("finalKmError", {
@@ -800,6 +829,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   }
+
   class VehicleManager {
     constructor(sm, um, v, lm) {
       this.storageManager = sm;
@@ -1065,6 +1095,7 @@ document.addEventListener("DOMContentLoaded", () => {
       this.selectVehicleType("carro");
     }
   }
+
   class FuelCalculator {
     constructor(sm, um, v, vm, lm) {
       this.storageManager = sm;
@@ -1241,6 +1272,7 @@ document.addEventListener("DOMContentLoaded", () => {
         this.dom.kmPorLitroInput.value = "";
     }
   }
+
   class HistoryManager {
     constructor(sm, um, vm, lm) {
       this.storageManager = sm;
@@ -1460,6 +1492,7 @@ document.addEventListener("DOMContentLoaded", () => {
       this.renderHistory();
     }
   }
+
   class StatisticsManager {
     constructor(sm, um, vm, lm) {
       this.storageManager = sm;
@@ -1668,6 +1701,7 @@ document.addEventListener("DOMContentLoaded", () => {
       this.updateStatistics();
     }
   }
+
   class AppManager {
     constructor() {
       this.storageManager = new StorageManager();
@@ -1707,6 +1741,7 @@ document.addEventListener("DOMContentLoaded", () => {
         desktopNoticeOverlay: document.getElementById("desktop-notice-overlay"),
         qrCodeCanvas: document.getElementById("qrCodeCanvas"),
         pageUrlLink: document.getElementById("pageUrlLink"),
+        helpButton: document.getElementById("helpButton"),
       };
       this._init();
     }
@@ -1786,6 +1821,7 @@ document.addEventListener("DOMContentLoaded", () => {
         exportBtn.addEventListener("click", () =>
           this.storageManager.exportData()
         );
+
       const importBtn = document.getElementById("importDataBtn");
       const importFileInput = document.getElementById("importFileInput");
       if (importBtn && importFileInput) {
@@ -1807,6 +1843,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         });
       }
+
       const clearAllDataBtn = document.getElementById("clearAllDataBtn");
       if (clearAllDataBtn) {
         clearAllDataBtn.addEventListener("click", async () => {
@@ -1829,9 +1866,17 @@ document.addEventListener("DOMContentLoaded", () => {
           this._performClearAllData();
         });
       }
+
+      if (this.dom.helpButton) {
+        this.dom.helpButton.addEventListener("click", () =>
+          this.uiManager.showHelpModal()
+        );
+      }
+
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           this.uiManager.hideDetailsModal();
+          this.uiManager.hideHelpModal();
           if (
             this.uiManager.confirmModalOverlay &&
             this.uiManager.confirmModalOverlay.classList.contains("active")
@@ -1876,7 +1921,6 @@ document.addEventListener("DOMContentLoaded", () => {
     new AppManager();
   } catch (e) {
     console.error("Erro fatal ao inicializar a aplicação:", e);
-    // Exibe uma mensagem de erro na tela de splash se a aplicação falhar em carregar.
     const splash = document.getElementById("splash-screen");
     if (splash) {
       splash.innerHTML = `<div style="padding: 2rem; color: #ffcdd2;"><h1>Erro Crítico</h1><p>A aplicação não pôde ser iniciada. Por favor, tente recarregar a página ou limpar o cache do navegador.</p><p style="font-size: 0.8rem; margin-top: 1rem;">Erro: ${e.message}</p></div>`;
