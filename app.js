@@ -1,10 +1,10 @@
 // app.js - Lógica Principal do FuelCalc
-// Versão: 1.5.6 (Correção do modal de ajuda)
+// Versão: 1.5.8 (DOM Centralizado e Delegação de Eventos)
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===== CONFIGURAÇÕES E CONSTANTES GLOBAIS =====
-  const APP_VERSION = "1.5.6";
+  const APP_VERSION = "1.5.8";
   const CONFIG = {
     APP_VERSION,
     STORAGE_KEYS: {
@@ -30,6 +30,72 @@ document.addEventListener("DOMContentLoaded", () => {
     DEBOUNCE_DELAY: 350,
     NOTIFICATION_TIMEOUT: 4000,
     CHART_MAX_DAYS: 30,
+  };
+
+  // Objeto centralizado para referências do DOM
+  const DOM = {
+    appVersionSpan: document.getElementById("appVersion"),
+    currentYearSpan: document.getElementById("currentYear"),
+    appContainer: document.getElementById("appContainer"),
+    desktopNoticeOverlay: document.getElementById("desktop-notice-overlay"),
+    qrCodeCanvas: document.getElementById("qrCodeCanvas"),
+    pageUrlLink: document.getElementById("pageUrlLink"),
+    helpButton: document.getElementById("helpButton"),
+    exportBtn: document.getElementById("exportDataBtn"),
+    importBtn: document.getElementById("importDataBtn"),
+    importFileInput: document.getElementById("importFileInput"),
+    clearAllDataBtn: document.getElementById("clearAllDataBtn"),
+    langButtons: document.querySelectorAll(".lang-button"),
+
+    // Modals
+    detailsModalOverlay: document.getElementById("detailsModalOverlay"),
+    detailsModalContent: document.getElementById("detailsModalContent"),
+    closeDetailsModalBtn: document.getElementById("closeDetailsModalBtn"),
+    confirmModalOverlay: document.getElementById("confirmModalOverlay"),
+    confirmModalTitle: document.getElementById("confirmModalTitle"),
+    confirmModalMessage: document.getElementById("confirmModalMessage"),
+    confirmModalConfirmBtn: document.getElementById("confirmModalConfirmBtn"),
+    confirmModalCancelBtn: document.getElementById("confirmModalCancelBtn"),
+    helpModalOverlay: document.getElementById("helpModalOverlay"),
+    closeHelpModalBtn: document.getElementById("closeHelpModalBtn"),
+    notificationArea: document.getElementById("notificationArea"),
+
+    // Gerenciador de Veículos
+    vehicleTypeButtons: document.querySelectorAll("[data-vehicle-type]"),
+    vehicleListContainer: document.getElementById("vehicleList"),
+    addVehicleBtn: document.getElementById("addVehicleBtn"),
+    vehicleForm: document.getElementById("vehicleForm"),
+    vehicleTypeInput: document.getElementById("vehicleType"),
+    vehicleNameInput: document.getElementById("vehicleName"),
+    vehicleEfficiencyInput: document.getElementById("vehicleEfficiency"),
+    cancelVehicleBtn: document.getElementById("cancelVehicleBtn"),
+
+    // Calculadora
+    fuelForm: document.getElementById("fuelForm"),
+    kmInicialInput: document.getElementById("kmInicial"),
+    kmFinalInput: document.getElementById("kmFinal"),
+    kmPorLitroInput: document.getElementById("kmPorLitro"),
+    precoCombustivelInput: document.getElementById("precoCombustivel"),
+    ganhoUberInput: document.getElementById("ganhoUber"),
+    resultCard: document.getElementById("resultCard"),
+    distanciaResult: document.getElementById("distanciaResult"),
+    litrosResult: document.getElementById("litrosResult"),
+    custoResult: document.getElementById("custoResult"),
+    lucroResult: document.getElementById("lucroResult"),
+
+    // Histórico
+    historySection: document.getElementById("historySection"),
+    historyList: document.getElementById("historyList"),
+    seeMoreBtn: document.getElementById("seeMoreHistoryBtn"),
+    minimizeBtn: document.getElementById("minimizeHistoryBtn"),
+    clearHistoryBtn: document.getElementById("clearHistoryBtn"),
+
+    // Estatísticas
+    statsSection: document.getElementById("statsSection"),
+    totalKmStat: document.getElementById("totalKmStat"),
+    totalGastoStat: document.getElementById("totalGastoStat"),
+    mediaConsumoStat: document.getElementById("mediaConsumoStat"),
+    chartCanvas: document.getElementById("fuelChartCanvas"),
   };
 
   // ===== INÍCIO DAS CLASSES DA APLICAÇÃO =====
@@ -97,8 +163,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   class LanguageManager {
-    constructor(storageManager) {
+    constructor(storageManager, dom) {
       this.storageManager = storageManager;
+      this.dom = dom;
       this.currentLanguage =
         this._loadLanguagePreference() || CONFIG.DEFAULT_LANGUAGE;
       this.translationData = translations;
@@ -120,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
       this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.APP_SETTINGS, s);
     }
     _bindLanguageButtons() {
-      document.querySelectorAll(".lang-button").forEach((b) => {
+      this.dom.langButtons.forEach((b) => {
         b.addEventListener("click", (e) =>
           this.setLanguage(e.currentTarget.dataset.lang)
         );
@@ -132,11 +199,9 @@ document.addEventListener("DOMContentLoaded", () => {
         this._saveLanguagePreference(lang);
         this.applyTranslationsToPage();
         document.documentElement.lang = lang;
-        document
-          .querySelectorAll(".lang-button")
-          .forEach((b) =>
-            b.setAttribute("aria-pressed", b.dataset.lang === lang)
-          );
+        this.dom.langButtons.forEach((b) =>
+          b.setAttribute("aria-pressed", b.dataset.lang === lang)
+        );
         document.dispatchEvent(
           new CustomEvent("languageChanged", { detail: { lang } })
         );
@@ -173,29 +238,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   class UIManager {
-    constructor(languageManager) {
+    constructor(languageManager, dom) {
       this.langManager = languageManager;
-      this.notificationArea = document.getElementById("notificationArea");
-      // Modals
-      this.detailsModalOverlay = document.getElementById("detailsModalOverlay");
-      this.detailsModalContent = document.getElementById("detailsModalContent");
-      this.closeDetailsModalBtn = document.getElementById(
-        "closeDetailsModalBtn"
-      );
-
-      this.confirmModalOverlay = document.getElementById("confirmModalOverlay");
-      this.confirmModalTitle = document.getElementById("confirmModalTitle");
-      this.confirmModalMessage = document.getElementById("confirmModalMessage");
-      this.confirmModalConfirmBtn = document.getElementById(
-        "confirmModalConfirmBtn"
-      );
-      this.confirmModalCancelBtn = document.getElementById(
-        "confirmModalCancelBtn"
-      );
-
-      this.helpModalOverlay = document.getElementById("helpModalOverlay");
-      this.closeHelpModalBtn = document.getElementById("closeHelpModalBtn");
-
+      this.dom = dom;
       this._resolveConfirm = null;
       this._bindModalEvents();
       document.addEventListener("languageChanged", () =>
@@ -213,31 +258,34 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       retranslate(
-        this.detailsModalOverlay,
+        this.dom.detailsModalOverlay,
         "tripDetailsModalTitle",
         "#detailsModalTitle"
       );
-      retranslate(this.helpModalOverlay, "helpModalTitle", "#helpModalTitle");
+      retranslate(
+        this.dom.helpModalOverlay,
+        "helpModalTitle",
+        "#helpModalTitle"
+      );
 
       if (
-        this.confirmModalOverlay &&
-        this.confirmModalOverlay.classList.contains("active")
+        this.dom.confirmModalOverlay &&
+        this.dom.confirmModalOverlay.classList.contains("active")
       ) {
-        if (this.confirmModalTitle)
-          this.confirmModalTitle.textContent = this.langManager.get(
+        if (this.dom.confirmModalTitle)
+          this.dom.confirmModalTitle.textContent = this.langManager.get(
             "confirmActionModalTitle"
           );
-        if (this.confirmModalCancelBtn)
-          this.confirmModalCancelBtn.textContent =
+        if (this.dom.confirmModalCancelBtn)
+          this.dom.confirmModalCancelBtn.textContent =
             this.langManager.get("cancelBtn");
-        if (this.confirmModalConfirmBtn)
-          this.confirmModalConfirmBtn.textContent =
+        if (this.dom.confirmModalConfirmBtn)
+          this.dom.confirmModalConfirmBtn.textContent =
             this.langManager.get("confirmBtn");
       }
     }
 
     _bindModalEvents() {
-      // Generic close logic
       const setupModal = (overlay, closeBtn) => {
         if (closeBtn)
           closeBtn.addEventListener("click", () => this._hideModal(overlay));
@@ -247,21 +295,21 @@ document.addEventListener("DOMContentLoaded", () => {
           });
       };
 
-      setupModal(this.detailsModalOverlay, this.closeDetailsModalBtn);
-      setupModal(this.helpModalOverlay, this.closeHelpModalBtn);
+      setupModal(this.dom.detailsModalOverlay, this.dom.closeDetailsModalBtn);
+      setupModal(this.dom.helpModalOverlay, this.dom.closeHelpModalBtn);
 
-      // Confirm modal has special logic
-      if (this.confirmModalCancelBtn)
-        this.confirmModalCancelBtn.addEventListener("click", () =>
+      if (this.dom.confirmModalCancelBtn)
+        this.dom.confirmModalCancelBtn.addEventListener("click", () =>
           this._handleConfirm(false)
         );
-      if (this.confirmModalConfirmBtn)
-        this.confirmModalConfirmBtn.addEventListener("click", () =>
+      if (this.dom.confirmModalConfirmBtn)
+        this.dom.confirmModalConfirmBtn.addEventListener("click", () =>
           this._handleConfirm(true)
         );
-      if (this.confirmModalOverlay)
-        this.confirmModalOverlay.addEventListener("click", (e) => {
-          if (e.target === this.confirmModalOverlay) this._handleConfirm(false);
+      if (this.dom.confirmModalOverlay)
+        this.dom.confirmModalOverlay.addEventListener("click", (e) => {
+          if (e.target === this.dom.confirmModalOverlay)
+            this._handleConfirm(false);
         });
     }
 
@@ -269,7 +317,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!overlay) return;
       overlay.style.display = "flex";
       document.body.classList.add("modal-open");
-      void overlay.offsetWidth; // Force reflow for transition
+      void overlay.offsetWidth;
       overlay.classList.add("active");
       const closeButton = overlay.querySelector(".modal-close-button");
       if (closeButton) closeButton.focus();
@@ -286,7 +334,6 @@ document.addEventListener("DOMContentLoaded", () => {
         overlay.removeEventListener("transitionend", onTransitionEnd);
       };
       overlay.addEventListener("transitionend", onTransitionEnd);
-      // Fallback timeout in case transitionend doesn't fire
       setTimeout(() => {
         if (!overlay.classList.contains("active")) {
           overlay.style.display = "none";
@@ -295,15 +342,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     showNotification(key, type = "info", params = {}) {
-      if (!this.notificationArea) return;
+      if (!this.dom.notificationArea) return;
       const msg = this.langManager.get(key, params);
       const n = document.createElement("div");
       n.className = `notification ${type}`;
       n.setAttribute("role", "alert");
       n.setAttribute("aria-live", "assertive");
+
+      const content = document.createElement("div");
+      content.className = "notification-content";
+
       const ms = document.createElement("span");
       ms.className = "notification-message";
       ms.textContent = msg;
+      content.appendChild(ms);
+
+      n.appendChild(content);
+
       const cb = document.createElement("button");
       cb.innerHTML = "&times;";
       cb.className = "notification-close";
@@ -312,32 +367,65 @@ document.addEventListener("DOMContentLoaded", () => {
         this.langManager.get("closeModalAriaLabel")
       );
       cb.addEventListener("click", () => this._removeNotification(n));
-      n.appendChild(ms);
       n.appendChild(cb);
-      this.notificationArea.appendChild(n);
+
+      this.dom.notificationArea.appendChild(n);
       void n.offsetWidth;
-      n.style.opacity = "1";
-      n.style.transform = "translateX(0)";
-      setTimeout(
-        () => this._removeNotification(n),
-        CONFIG.NOTIFICATION_TIMEOUT
-      );
+
+      setTimeout(() => {
+        n.classList.add("fade-out");
+        this._removeNotification(n, CONFIG.NOTIFICATION_TIMEOUT);
+      }, CONFIG.NOTIFICATION_TIMEOUT);
+
+      return n;
     }
 
-    _removeNotification(n) {
+    showUpdateNotification(onUpdate) {
+      if (!this.dom.notificationArea) return;
+      const n = document.createElement("div");
+      n.className = "notification info persistent";
+      n.setAttribute("role", "alert");
+      n.setAttribute("aria-live", "assertive");
+
+      const content = document.createElement("div");
+      content.className = "notification-content";
+
+      const ms = document.createElement("span");
+      ms.className = "notification-message";
+      ms.textContent = this.langManager.get("updateAvailable");
+      content.appendChild(ms);
+
+      const actions = document.createElement("div");
+      actions.className = "notification-actions";
+      const updateBtn = document.createElement("button");
+      updateBtn.className = "update-btn";
+      updateBtn.textContent = this.langManager.get("updateBtn");
+      updateBtn.onclick = () => {
+        onUpdate();
+        this._removeNotification(n);
+      };
+      actions.appendChild(updateBtn);
+      content.appendChild(actions);
+
+      n.appendChild(content);
+      this.dom.notificationArea.appendChild(n);
+    }
+
+    _removeNotification(n, delay = 0) {
       if (n && n.parentNode) {
-        n.style.opacity = "0";
-        n.style.transform = "translateX(100%)";
-        n.addEventListener(
-          "transitionend",
-          () => {
-            if (n.parentNode) n.parentNode.removeChild(n);
-          },
-          { once: true }
-        );
         setTimeout(() => {
-          if (n.parentNode) n.parentNode.removeChild(n);
-        }, 350);
+          n.classList.add("fade-out");
+          n.addEventListener(
+            "transitionend",
+            () => {
+              if (n.parentNode) n.parentNode.removeChild(n);
+            },
+            { once: true }
+          );
+          setTimeout(() => {
+            if (n.parentNode) n.parentNode.removeChild(n);
+          }, 500);
+        }, delay);
       }
     }
 
@@ -372,10 +460,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     showDetailsModal(key, details) {
-      if (!this.detailsModalOverlay || !this.detailsModalContent) return;
-      const t = this.detailsModalOverlay.querySelector("#detailsModalTitle");
+      if (!this.dom.detailsModalOverlay || !this.dom.detailsModalContent)
+        return;
+      const t =
+        this.dom.detailsModalOverlay.querySelector("#detailsModalTitle");
       if (t) t.textContent = this.langManager.get(key);
-      this.detailsModalContent.innerHTML = "";
+      this.dom.detailsModalContent.innerHTML = "";
       details.forEach((d) => {
         const i = document.createElement("div");
         i.className = "modal-detail-item";
@@ -391,43 +481,44 @@ document.addEventListener("DOMContentLoaded", () => {
         v.innerHTML = Utils.sanitizeHTML(dv);
         i.appendChild(l);
         i.appendChild(v);
-        this.detailsModalContent.appendChild(i);
+        this.dom.detailsModalContent.appendChild(i);
       });
-      this._showModal(this.detailsModalOverlay);
+      this._showModal(this.dom.detailsModalOverlay);
     }
 
     hideDetailsModal() {
-      this._hideModal(this.detailsModalOverlay);
+      this._hideModal(this.dom.detailsModalOverlay);
     }
 
     showHelpModal() {
-      this._showModal(this.helpModalOverlay);
+      this._showModal(this.dom.helpModalOverlay);
     }
 
     hideHelpModal() {
-      this._hideModal(this.helpModalOverlay);
+      this._hideModal(this.dom.helpModalOverlay);
     }
 
     showConfirm(key, titleKey = "confirmActionModalTitle", params = {}) {
       return new Promise((resolve) => {
-        if (!this.confirmModalOverlay) {
+        if (!this.dom.confirmModalOverlay) {
           resolve(window.confirm(this.langManager.get(key, params)));
           return;
         }
-        this.confirmModalTitle.textContent = this.langManager.get(titleKey);
-        this.confirmModalMessage.textContent = this.langManager.get(
+        this.dom.confirmModalTitle.textContent = this.langManager.get(titleKey);
+        this.dom.confirmModalMessage.textContent = this.langManager.get(
           key,
           params
         );
         this._resolveConfirm = resolve;
-        this._showModal(this.confirmModalOverlay);
-        if (this.confirmModalConfirmBtn) this.confirmModalConfirmBtn.focus();
+        this._showModal(this.dom.confirmModalOverlay);
+        if (this.dom.confirmModalConfirmBtn)
+          this.dom.confirmModalConfirmBtn.focus();
       });
     }
 
     _handleConfirm(confirmed) {
-      if (!this.confirmModalOverlay) return;
-      this._hideModal(this.confirmModalOverlay);
+      if (!this.dom.confirmModalOverlay) return;
+      this._hideModal(this.dom.confirmModalOverlay);
       if (this._resolveConfirm) {
         this._resolveConfirm(confirmed);
         this._resolveConfirm = null;
@@ -436,8 +527,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   class StorageManager {
-    constructor() {
-      this.uiManager = null;
+    constructor(uiManager) {
+      this.uiManager = uiManager;
     }
     safeGetItem(key, defaultValue = []) {
       try {
@@ -510,10 +601,10 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const u = URL.createObjectURL(b);
       const a = document.createElement("a");
-      a.href = u;
       a.download = `fuelcalc_backup_${CONFIG.APP_VERSION}_${
         new Date().toISOString().split("T")[0]
       }.json`;
+      a.href = u;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -831,30 +922,45 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   class VehicleManager {
-    constructor(sm, um, v, lm) {
+    constructor(sm, um, v, lm, dom) {
       this.storageManager = sm;
       this.uiManager = um;
       this.validator = v;
       this.langManager = lm;
+      this.dom = dom;
       this.currentVehicle = null;
       this.currentVehicleType = "carro";
-      this.dom = {
-        vehicleTypeButtons: document.querySelectorAll("[data-vehicle-type]"),
-        vehicleListContainer: document.getElementById("vehicleList"),
-        addVehicleBtn: document.getElementById("addVehicleBtn"),
-        vehicleForm: document.getElementById("vehicleForm"),
-        vehicleTypeInput: document.getElementById("vehicleType"),
-        vehicleNameInput: document.getElementById("vehicleName"),
-        vehicleEfficiencyInput: document.getElementById("vehicleEfficiency"),
-        saveVehicleBtn: document.getElementById("saveVehicleBtn"),
-        cancelVehicleBtn: document.getElementById("cancelVehicleBtn"),
-        mainFormEfficiencyInput: document.getElementById("kmPorLitro"),
-      };
       this._bindEvents();
       document.addEventListener("languageChanged", () =>
         this.loadAndRenderVehicles()
       );
     }
+
+    _handleVehicleListClick(event) {
+      const target = event.target;
+      const vehicleCard = target.closest(".vehicle-card");
+      const deleteButton = target.closest(".delete-button");
+
+      if (deleteButton && vehicleCard) {
+        event.stopPropagation();
+        const vehicleId = vehicleCard.dataset.vehicleId;
+        const vehicleName = vehicleCard.querySelector("h4").textContent;
+
+        this.uiManager
+          .showConfirm(
+            this.langManager.get("confirmDeleteVehicle", { name: vehicleName })
+          )
+          .then((confirmed) => {
+            if (confirmed) this.deleteVehicle(vehicleId);
+          });
+        return;
+      }
+
+      if (vehicleCard) {
+        this.selectVehicle(vehicleCard.dataset.vehicleId);
+      }
+    }
+
     _bindEvents() {
       this.dom.vehicleTypeButtons.forEach((b) =>
         b.addEventListener("click", (e) =>
@@ -874,7 +980,25 @@ document.addEventListener("DOMContentLoaded", () => {
         this.dom.cancelVehicleBtn.addEventListener("click", () =>
           this.hideVehicleForm()
         );
+
+      // Event Delegation
+      if (this.dom.vehicleListContainer) {
+        this.dom.vehicleListContainer.addEventListener(
+          "click",
+          this._handleVehicleListClick.bind(this)
+        );
+        this.dom.vehicleListContainer.addEventListener("keypress", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            const vehicleCard = e.target.closest(".vehicle-card");
+            if (vehicleCard) {
+              e.preventDefault();
+              this._handleVehicleListClick(e);
+            }
+          }
+        });
+      }
     }
+
     selectVehicleType(type) {
       if (type !== "carro" && type !== "moto") return;
       this.currentVehicleType = type;
@@ -883,12 +1007,11 @@ document.addEventListener("DOMContentLoaded", () => {
         b.setAttribute("aria-pressed", String(b.dataset.vehicleType === type));
       });
       this.currentVehicle = null;
-      if (this.dom.mainFormEfficiencyInput) {
-        this.dom.mainFormEfficiencyInput.value = "";
-        this.dom.mainFormEfficiencyInput.placeholder = this.langManager.get(
-          "tripEfficiencyPlaceholder"
-        );
-      }
+      this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
+      this.dom.kmPorLitroInput.value = "";
+      this.dom.kmPorLitroInput.placeholder = this.langManager.get(
+        "tripEfficiencyPlaceholder"
+      );
       this.loadAndRenderVehicles();
       document.dispatchEvent(
         new CustomEvent("vehicleTypeChanged", { detail: { type } })
@@ -947,23 +1070,10 @@ document.addEventListener("DOMContentLoaded", () => {
         "aria-label",
         this.langManager.get("deleteVehicleAriaLabel", { name: vs })
       );
-      db.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        const conf = await this.uiManager.showConfirm(
-          this.langManager.get("confirmDeleteVehicle", { name: vs })
-        );
-        if (conf) this.deleteVehicle(v.id);
-      });
+
       c.appendChild(t);
       c.appendChild(es);
       c.appendChild(db);
-      c.addEventListener("click", () => this.selectVehicle(v.id));
-      c.addEventListener("keypress", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          this.selectVehicle(v.id);
-        }
-      });
       return c;
     }
     selectVehicle(id) {
@@ -974,8 +1084,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const v = av.find((v) => v.id === id);
       if (v) {
         this.currentVehicle = v;
-        if (this.dom.mainFormEfficiencyInput)
-          this.dom.mainFormEfficiencyInput.value = v.eficiencia;
+        this.dom.kmPorLitroInput.value = v.eficiencia;
+        this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
+
         this.dom.vehicleListContainer
           .querySelectorAll(".vehicle-card")
           .forEach((c) =>
@@ -987,13 +1098,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     showVehicleForm() {
-      if (
-        !this.dom.vehicleForm ||
-        !this.dom.vehicleTypeInput ||
-        !this.dom.vehicleNameInput ||
-        !this.dom.vehicleEfficiencyInput
-      )
-        return;
       this.uiManager.clearAllInlineErrors(this.dom.vehicleForm);
       this.dom.vehicleTypeInput.value = this.currentVehicleType;
       this.dom.vehicleNameInput.value = "";
@@ -1006,10 +1110,8 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
     hideVehicleForm() {
-      if (this.dom.vehicleForm) {
-        this.uiManager.clearAllInlineErrors(this.dom.vehicleForm);
-        this.dom.vehicleForm.style.display = "none";
-      }
+      this.uiManager.clearAllInlineErrors(this.dom.vehicleForm);
+      this.dom.vehicleForm.style.display = "none";
     }
     saveVehicle() {
       const validationInputs = {
@@ -1068,15 +1170,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         if (this.currentVehicle && this.currentVehicle.id === id) {
           this.currentVehicle = null;
-          if (this.dom.mainFormEfficiencyInput)
-            this.dom.mainFormEfficiencyInput.value = "";
+          this.dom.kmPorLitroInput.value = "";
         }
         this.loadAndRenderVehicles();
-        if (
-          v.filter((vh) => vh.tipo === this.currentVehicleType).length === 0 &&
-          this.dom.mainFormEfficiencyInput
-        )
-          this.dom.mainFormEfficiencyInput.placeholder = this.langManager.get(
+        if (v.filter((vh) => vh.tipo === this.currentVehicleType).length === 0)
+          this.dom.kmPorLitroInput.placeholder = this.langManager.get(
             "tripEfficiencyPlaceholder"
           );
       }
@@ -1086,55 +1184,34 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     resetState() {
       this.currentVehicle = null;
-      if (this.dom.mainFormEfficiencyInput) {
-        this.dom.mainFormEfficiencyInput.value = "";
-        this.dom.mainFormEfficiencyInput.placeholder = this.langManager.get(
-          "tripEfficiencyPlaceholder"
-        );
-      }
+      this.dom.kmPorLitroInput.value = "";
+      this.dom.kmPorLitroInput.placeholder = this.langManager.get(
+        "tripEfficiencyPlaceholder"
+      );
       this.selectVehicleType("carro");
     }
   }
 
   class FuelCalculator {
-    constructor(sm, um, v, vm, lm) {
+    constructor(sm, um, v, vm, lm, dom) {
       this.storageManager = sm;
       this.uiManager = um;
       this.validator = v;
       this.vehicleManager = vm;
       this.langManager = lm;
-      this.dom = {
-        form: document.getElementById("fuelForm"),
-        kmInicialInput: document.getElementById("kmInicial"),
-        kmFinalInput: document.getElementById("kmFinal"),
-        kmPorLitroInput: document.getElementById("kmPorLitro"),
-        precoCombustivelInput: document.getElementById("precoCombustivel"),
-        ganhoUberInput: document.getElementById("ganhoUber"),
-        resultCard: document.getElementById("resultCard"),
-        distanciaResult: document.getElementById("distanciaResult"),
-        litrosResult: document.getElementById("litrosResult"),
-        custoResult: document.getElementById("custoResult"),
-        lucroResult: document.getElementById("lucroResult"),
-      };
+      this.dom = dom;
       this._bindEvents();
       document.addEventListener("languageChanged", () =>
         this._updateResultCardCurrency()
       );
     }
     _updateResultCardCurrency() {
-      if (
-        this.dom.resultCard &&
-        this.dom.resultCard.style.display === "block"
-      ) {
-        if (
-          this.dom.custoResult.textContent !==
-            this.langManager.get("currencyPlaceholder") &&
-          this.dom.custoResult.textContent !==
-            this.langManager.get("currencyPlaceholder", {}, "en")
-        ) {
-          const ct = this.dom.custoResult.textContent
-            .replace(/[R$\sA-Z]/gi, "")
-            .replace(",", ".");
+      if (this.dom.resultCard.style.display === "block") {
+        const custoText = this.dom.custoResult.textContent;
+        const lucroText = this.dom.lucroResult.textContent;
+
+        if (custoText !== this.langManager.get("currencyPlaceholder")) {
+          const ct = custoText.replace(/[R$\sA-Z]/gi, "").replace(",", ".");
           if (!isNaN(parseFloat(ct)))
             this.dom.custoResult.textContent = Utils.formatCurrency(
               parseFloat(ct),
@@ -1142,15 +1219,10 @@ document.addEventListener("DOMContentLoaded", () => {
             );
         }
         if (
-          this.dom.lucroResult.textContent !==
-            this.langManager.get("currencyPlaceholder") &&
-          this.dom.lucroResult.textContent !==
-            this.langManager.get("currencyPlaceholder", {}, "en") &&
-          this.dom.lucroResult.textContent !== "N/A"
+          lucroText !== this.langManager.get("currencyPlaceholder") &&
+          lucroText !== "N/A"
         ) {
-          const lt = this.dom.lucroResult.textContent
-            .replace(/[R$\sA-Z]/gi, "")
-            .replace(",", ".");
+          const lt = lucroText.replace(/[R$\sA-Z]/gi, "").replace(",", ".");
           if (!isNaN(parseFloat(lt)))
             this.dom.lucroResult.textContent = Utils.formatCurrency(
               parseFloat(lt),
@@ -1160,8 +1232,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     _bindEvents() {
-      if (this.dom.form)
-        this.dom.form.addEventListener("submit", (e) => {
+      if (this.dom.fuelForm)
+        this.dom.fuelForm.addEventListener("submit", (e) => {
           e.preventDefault();
           this.calculateAndDisplayTrip();
         });
@@ -1184,35 +1256,32 @@ document.addEventListener("DOMContentLoaded", () => {
       const lc = d / kmPorLitro;
       const ct = lc * precoCombustivel;
       const ll = ganhoUber !== null ? ganhoUber - ct : null;
-      if (this.dom.distanciaResult)
-        this.dom.distanciaResult.textContent = `${d.toFixed(1)} km`;
-      if (this.dom.litrosResult)
-        this.dom.litrosResult.textContent = `${lc.toFixed(1)} L`;
-      if (this.dom.custoResult)
-        this.dom.custoResult.textContent = Utils.formatCurrency(
-          ct,
+
+      this.dom.distanciaResult.textContent = `${d.toFixed(1)} km`;
+      this.dom.litrosResult.textContent = `${lc.toFixed(1)} L`;
+      this.dom.custoResult.textContent = Utils.formatCurrency(
+        ct,
+        this.langManager.currentLanguage
+      );
+
+      const li = this.dom.lucroResult.closest(".result-item");
+      if (ll !== null) {
+        this.dom.lucroResult.textContent = Utils.formatCurrency(
+          ll,
           this.langManager.currentLanguage
         );
-      if (this.dom.lucroResult) {
-        const li = this.dom.lucroResult.closest(".result-item");
-        if (ll !== null) {
-          this.dom.lucroResult.textContent = Utils.formatCurrency(
-            ll,
-            this.langManager.currentLanguage
-          );
-          if (li) li.style.display = "";
-        } else {
-          this.dom.lucroResult.textContent = "N/A";
-          if (li) li.style.display = "none";
-        }
+        if (li) li.style.display = "";
+      } else {
+        this.dom.lucroResult.textContent = "N/A";
+        if (li) li.style.display = "none";
       }
-      if (this.dom.resultCard) {
-        this.dom.resultCard.style.display = "block";
-        this.dom.resultCard.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }
+
+      this.dom.resultCard.style.display = "block";
+      this.dom.resultCard.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+
       this._saveTripToHistory({
         kmInicial,
         kmFinal,
@@ -1256,39 +1325,39 @@ document.addEventListener("DOMContentLoaded", () => {
       this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.HISTORY, h);
     }
     _clearTripForm() {
-      if (this.dom.form) {
-        this.dom.kmInicialInput.value = "";
-        this.dom.kmFinalInput.value = "";
-        if (!this.vehicleManager.currentVehicle)
-          this.dom.kmPorLitroInput.value = "";
-        this.dom.precoCombustivelInput.value = "";
-        this.dom.ganhoUberInput.value = "";
-      }
+      this.dom.kmInicialInput.value = "";
+      this.dom.kmFinalInput.value = "";
+      if (!this.vehicleManager.currentVehicle)
+        this.dom.kmPorLitroInput.value = "";
+      this.dom.precoCombustivelInput.value = "";
+      this.dom.ganhoUberInput.value = "";
     }
     resetState() {
       this._clearTripForm();
-      if (this.dom.resultCard) this.dom.resultCard.style.display = "none";
-      if (this.dom.kmPorLitroInput && !this.vehicleManager.currentVehicle)
+      this.dom.resultCard.style.display = "none";
+      if (!this.vehicleManager.currentVehicle)
         this.dom.kmPorLitroInput.value = "";
     }
   }
 
   class HistoryManager {
-    constructor(sm, um, vm, lm) {
+    constructor(sm, um, vm, lm, dom) {
       this.storageManager = sm;
       this.uiManager = um;
       this.vehicleManager = vm;
       this.langManager = lm;
+      this.dom = dom;
       this.isFullHistoryVisible = false;
-      this.dom = {
-        historySection: document.getElementById("historySection"),
-        historyList: document.getElementById("historyList"),
-        seeMoreBtn: document.getElementById("seeMoreHistoryBtn"),
-        minimizeBtn: document.getElementById("minimizeHistoryBtn"),
-        clearHistoryBtn: document.getElementById("clearHistoryBtn"),
-      };
       this._bindEvents();
     }
+    _handleHistoryListInteraction(event) {
+      const listItem = event.target.closest("li[data-record-id]");
+      if (listItem) {
+        event.preventDefault();
+        this._showRecordDetails(listItem.dataset.recordId);
+      }
+    }
+
     _bindEvents() {
       if (this.dom.seeMoreBtn)
         this.dom.seeMoreBtn.addEventListener("click", () =>
@@ -1313,6 +1382,20 @@ document.addEventListener("DOMContentLoaded", () => {
           if (c) this.clearHistoryForCurrentType();
         });
       }
+
+      // Event Delegation
+      if (this.dom.historyList) {
+        this.dom.historyList.addEventListener(
+          "click",
+          this._handleHistoryListInteraction.bind(this)
+        );
+        this.dom.historyList.addEventListener("keypress", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            this._handleHistoryListInteraction(e);
+          }
+        });
+      }
+
       document.addEventListener("languageChanged", () => this.renderHistory());
       document.addEventListener("vehicleTypeChanged", () => {
         this.isFullHistoryVisible = false;
@@ -1326,7 +1409,6 @@ document.addEventListener("DOMContentLoaded", () => {
       this.renderHistory();
     }
     renderHistory() {
-      if (!this.dom.historyList || !this.dom.historySection) return;
       const ah = this.storageManager.safeGetItem(
         CONFIG.STORAGE_KEYS.HISTORY,
         []
@@ -1403,13 +1485,6 @@ document.addEventListener("DOMContentLoaded", () => {
       ss.textContent = st;
       li.appendChild(ds);
       li.appendChild(ss);
-      li.addEventListener("click", () => this._showRecordDetails(r.id));
-      li.addEventListener("keypress", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          this._showRecordDetails(r.id);
-        }
-      });
       return li;
     }
     _showRecordDetails(id) {
@@ -1494,23 +1569,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   class StatisticsManager {
-    constructor(sm, um, vm, lm) {
+    constructor(sm, um, vm, lm, dom) {
       this.storageManager = sm;
       this.uiManager = um;
       this.vehicleManager = vm;
       this.langManager = lm;
+      this.dom = dom;
       this.chartInstance = null;
       this.debouncedUpdate = Utils.debounce(
         () => this.updateStatistics(),
         CONFIG.DEBOUNCE_DELAY
       );
-      this.dom = {
-        statsSection: document.getElementById("statsSection"),
-        totalKmStat: document.getElementById("totalKmStat"),
-        totalGastoStat: document.getElementById("totalGastoStat"),
-        mediaConsumoStat: document.getElementById("mediaConsumoStat"),
-        chartCanvas: document.getElementById("fuelChartCanvas"),
-      };
       this._bindEvents();
     }
     _bindEvents() {
@@ -1553,15 +1622,13 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       const tl = hd.reduce((s, i) => s + parseFloat(i.litrosConsumidos), 0);
       const mc = tl > 0 ? tk / tl : 0;
-      if (this.dom.totalKmStat)
-        this.dom.totalKmStat.textContent = `${tk.toFixed(1)} km`;
-      if (this.dom.totalGastoStat)
-        this.dom.totalGastoStat.textContent = Utils.formatCurrency(
-          tg,
-          this.langManager.currentLanguage
-        );
-      if (this.dom.mediaConsumoStat)
-        this.dom.mediaConsumoStat.textContent = `${mc.toFixed(1)} km/L`;
+
+      this.dom.totalKmStat.textContent = `${tk.toFixed(1)} km`;
+      this.dom.totalGastoStat.textContent = Utils.formatCurrency(
+        tg,
+        this.langManager.currentLanguage
+      );
+      this.dom.mediaConsumoStat.textContent = `${mc.toFixed(1)} km/L`;
     }
     _prepareChartData(hd) {
       const dc = {};
@@ -1703,50 +1770,50 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   class AppManager {
-    constructor() {
-      this.storageManager = new StorageManager();
-      this.languageManager = new LanguageManager(this.storageManager);
-      this.uiManager = new UIManager(this.languageManager);
-      this.storageManager.uiManager = this.uiManager;
+    constructor(dom) {
+      this.dom = dom;
+      this.uiManager = new UIManager(null, this.dom); // languageManager will be set after init
+      this.storageManager = new StorageManager(this.uiManager);
+      this.languageManager = new LanguageManager(this.storageManager, this.dom);
+      this.uiManager.langManager = this.languageManager; // Inject back
+
       this.validator = new Validator(this.uiManager, this.languageManager);
       this.inputFormatter = new InputFormatter();
+
       this.vehicleManager = new VehicleManager(
         this.storageManager,
         this.uiManager,
         this.validator,
-        this.languageManager
+        this.languageManager,
+        this.dom
       );
       this.fuelCalculator = new FuelCalculator(
         this.storageManager,
         this.uiManager,
         this.validator,
         this.vehicleManager,
-        this.languageManager
+        this.languageManager,
+        this.dom
       );
       this.historyManager = new HistoryManager(
         this.storageManager,
         this.uiManager,
         this.vehicleManager,
-        this.languageManager
+        this.languageManager,
+        this.dom
       );
       this.statisticsManager = new StatisticsManager(
         this.storageManager,
         this.uiManager,
         this.vehicleManager,
-        this.languageManager
+        this.languageManager,
+        this.dom
       );
-      this.dom = {
-        appVersionSpan: document.getElementById("appVersion"),
-        appContainer: document.getElementById("appContainer"),
-        desktopNoticeOverlay: document.getElementById("desktop-notice-overlay"),
-        qrCodeCanvas: document.getElementById("qrCodeCanvas"),
-        pageUrlLink: document.getElementById("pageUrlLink"),
-        helpButton: document.getElementById("helpButton"),
-      };
+
       this._init();
     }
     _init() {
-      this._displayAppVersion();
+      this._displayAppInfo();
       this.languageManager.setLanguage(this.languageManager.currentLanguage);
       this.inputFormatter.initialize();
       if (this._isDesktop()) {
@@ -1801,32 +1868,56 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
     }
-    _displayAppVersion() {
+    _displayAppInfo() {
       if (this.dom.appVersionSpan)
         this.dom.appVersionSpan.textContent = CONFIG.APP_VERSION;
+      if (this.dom.currentYearSpan)
+        this.dom.currentYearSpan.textContent = new Date().getFullYear();
     }
     _registerServiceWorker() {
       if ("serviceWorker" in navigator && !this._isDesktop()) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker
-            .register("./sw.js")
-            .then((reg) => console.log("SW FuelCalc OK. Escopo:", reg.scope))
-            .catch((err) => console.error("Falha SW FuelCalc:", err));
+        navigator.serviceWorker
+          .register("./sw.js")
+          .then((reg) => {
+            console.log("SW FuelCalc OK. Escopo:", reg.scope);
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              if (installingWorker) {
+                installingWorker.onstatechange = () => {
+                  if (
+                    installingWorker.state === "installed" &&
+                    navigator.serviceWorker.controller
+                  ) {
+                    this.uiManager.showUpdateNotification(() => {
+                      installingWorker.postMessage({ type: "SKIP_WAITING" });
+                    });
+                  }
+                };
+              }
+            };
+          })
+          .catch((err) => console.error("Falha SW FuelCalc:", err));
+
+        let refreshing;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (!refreshing) {
+            window.location.reload();
+            refreshing = true;
+          }
         });
       }
     }
     _bindGlobalAppEvents() {
-      const exportBtn = document.getElementById("exportDataBtn");
-      if (exportBtn)
-        exportBtn.addEventListener("click", () =>
+      if (this.dom.exportBtn)
+        this.dom.exportBtn.addEventListener("click", () =>
           this.storageManager.exportData()
         );
 
-      const importBtn = document.getElementById("importDataBtn");
-      const importFileInput = document.getElementById("importFileInput");
-      if (importBtn && importFileInput) {
-        importBtn.addEventListener("click", () => importFileInput.click());
-        importFileInput.addEventListener("change", async (e) => {
+      if (this.dom.importBtn && this.dom.importFileInput) {
+        this.dom.importBtn.addEventListener("click", () =>
+          this.dom.importFileInput.click()
+        );
+        this.dom.importFileInput.addEventListener("change", async (e) => {
           const file = e.target.files[0];
           if (file) {
             const success = await this.storageManager.importData(file);
@@ -1839,14 +1930,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 this.vehicleManager.currentVehicleType
               );
             }
-            importFileInput.value = "";
+            this.dom.importFileInput.value = "";
           }
         });
       }
 
-      const clearAllDataBtn = document.getElementById("clearAllDataBtn");
-      if (clearAllDataBtn) {
-        clearAllDataBtn.addEventListener("click", async () => {
+      if (this.dom.clearAllDataBtn) {
+        this.dom.clearAllDataBtn.addEventListener("click", async () => {
           const c1 = await this.uiManager.showConfirm(
             "confirmClearAllData",
             "clearAllDataBtn"
@@ -1906,7 +1996,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "transitionend",
             () => {
               if (s.classList.contains("hidden")) {
-                /* s.remove(); */
+                s.style.display = "none";
               }
             },
             { once: true }
@@ -1918,7 +2008,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Inicia a aplicação.
   try {
-    new AppManager();
+    new AppManager(DOM);
   } catch (e) {
     console.error("Erro fatal ao inicializar a aplicação:", e);
     const splash = document.getElementById("splash-screen");

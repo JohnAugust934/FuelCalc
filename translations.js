@@ -158,6 +158,8 @@ const translations = {
     desktopScanQrMessage:
       "Escaneie o QR Code abaixo com seu dispositivo móvel:",
     desktopOrVisit: "Ou visite:",
+    updateAvailable: "Nova versão disponível!",
+    updateBtn: "Atualizar",
   },
   en: {
     initialKmNotIntegerError: "Initial KM must be an integer.",
@@ -309,5 +311,7 @@ const translations = {
       "This application is designed for a mobile experience. To use FuelCalc, please access it via your smartphone or tablet.",
     desktopScanQrMessage: "Scan the QR Code below with your mobile device:",
     desktopOrVisit: "Or visit:",
+    updateAvailable: "New version available!",
+    updateBtn: "Update",
   },
 };
