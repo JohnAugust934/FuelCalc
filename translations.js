@@ -49,8 +49,8 @@ const translations = {
     avgConsumptionStatLabel: "Média de Consumo Geral:",
     fuelChartAriaLabel: "Gráfico de gastos diários com combustível",
     backupRestoreTitle: "Backup e Restauração de Dados",
-    exportDataBtn: "📤 Exportar Dados",
-    importDataBtn: "📥 Importar Dados",
+    exportDataBtn: "Exportar Dados",
+    importDataBtn: "Importar Dados",
     backupInfoText:
       "Exporte seus dados para um arquivo de backup ou importe de um arquivo salvo anteriormente.",
     clearAllDataBtn: "⚠️ Limpar Todos os Dados da Aplicação",
@@ -158,6 +158,11 @@ const translations = {
     desktopScanQrMessage:
       "Escaneie o QR Code abaixo com seu dispositivo móvel:",
     desktopOrVisit: "Ou visite:",
+    updateAvailable: "Nova versão disponível!",
+    updateBtn: "Atualizar",
+    themeLight: "Tema Claro",
+    themeDark: "Tema Escuro",
+    themeSystem: "Usar Tema do Sistema",
   },
   en: {
     initialKmNotIntegerError: "Initial KM must be an integer.",
@@ -220,8 +225,8 @@ const translations = {
     avgConsumptionStatLabel: "Overall Average Consumption:",
     fuelChartAriaLabel: "Chart of daily fuel expenses",
     backupRestoreTitle: "Data Backup and Restore",
-    exportDataBtn: "📤 Export Data",
-    importDataBtn: "📥 Import Data",
+    exportDataBtn: "Export Data",
+    importDataBtn: "Import Data",
     backupInfoText:
       "Export your data to a backup file or import from a previously saved file.",
     clearAllDataBtn: "⚠️ Clear All Application Data",
@@ -309,5 +314,10 @@ const translations = {
       "This application is designed for a mobile experience. To use FuelCalc, please access it via your smartphone or tablet.",
     desktopScanQrMessage: "Scan the QR Code below with your mobile device:",
     desktopOrVisit: "Or visit:",
+    updateAvailable: "New version available!",
+    updateBtn: "Update",
+    themeLight: "Light Theme",
+    themeDark: "Dark Theme",
+    themeSystem: "Use System Theme",
   },
 };

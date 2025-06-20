@@ -1,7 +1,8 @@
 // sw.js - Service Worker para FuelCalc
 const CACHE_NAME_PREFIX = "fuelcalc-cache";
-const CACHE_VERSION = "v1.5.4";
-const CACHE_NAME = `${CACHE_NAME_PREFIX}-${CACHE_VERSION}`;
+const CACHE_VERSION = "v1.5.7"; // Incremented version
+const STATIC_CACHE_NAME = `${CACHE_NAME_PREFIX}-static-${CACHE_VERSION}`;
+const DYNAMIC_CACHE_NAME = `${CACHE_NAME_PREFIX}-dynamic-${CACHE_VERSION}`;
 const BASE_PATH = "/FuelCalc";
 
 const APP_SHELL_ASSETS = [
@@ -26,10 +27,10 @@ const APP_SHELL_ASSETS = [
 ];
 
 self.addEventListener("install", (e) => {
-  console.log(`[SW] Evento: install (Versão do Cache: ${CACHE_NAME})`);
+  console.log(`[SW] Evento: install (Versão do Cache: ${STATIC_CACHE_NAME})`);
   e.waitUntil(
     caches
-      .open(CACHE_NAME)
+      .open(STATIC_CACHE_NAME)
       .then((c) => {
         console.log("[SW] A fazer cache do App Shell:", APP_SHELL_ASSETS);
         return c.addAll(APP_SHELL_ASSETS);
@@ -38,23 +39,28 @@ self.addEventListener("install", (e) => {
         console.log("[SW] App Shell cacheado com sucesso.");
         return self.skipWaiting();
       })
-      .catch((e) => {
+      .catch((err) => {
         console.error(
           "[SW] Falha ao fazer cache do App Shell durante a instalação:",
-          e
+          err
         );
       })
   );
 });
+
 self.addEventListener("activate", (e) => {
-  console.log(`[SW] Evento: activate (Versão do Cache Ativo: ${CACHE_NAME})`);
+  console.log(`[SW] Evento: activate (Versão Ativa: ${CACHE_VERSION})`);
   e.waitUntil(
     caches
       .keys()
       .then((c) => {
         return Promise.all(
           c.map((n) => {
-            if (n.startsWith(CACHE_NAME_PREFIX) && n !== CACHE_NAME) {
+            if (
+              n.startsWith(CACHE_NAME_PREFIX) &&
+              n !== STATIC_CACHE_NAME &&
+              n !== DYNAMIC_CACHE_NAME
+            ) {
               console.log("[SW] A eliminar cache antigo:", n);
               return caches.delete(n);
             }
@@ -66,49 +72,61 @@ self.addEventListener("activate", (e) => {
         console.log("[SW] Caches antigos limpos com sucesso.");
         return self.clients.claim();
       })
-      .catch((e) => {
+      .catch((err) => {
         console.error(
           "[SW] Erro durante a ativação ou limpeza de caches antigos:",
-          e
+          err
         );
       })
   );
 });
+
 self.addEventListener("fetch", (e) => {
-  if (
-    e.request.method !== "GET" ||
-    e.request.url.startsWith("chrome-extension://")
-  ) {
-    return;
+  const url = new URL(e.request.url);
+  const isExternal = url.hostname !== self.location.hostname;
+
+  // Estratégia Stale-While-Revalidate para recursos externos (fontes, CDNs)
+  if (isExternal) {
+    e.respondWith(
+      caches.open(DYNAMIC_CACHE_NAME).then(async (cache) => {
+        const cachedResponse = await cache.match(e.request);
+        const fetchedResponsePromise = fetch(e.request)
+          .then((networkResponse) => {
+            cache.put(e.request, networkResponse.clone());
+            return networkResponse;
+          })
+          .catch((err) => {
+            console.error("[SW] Erro ao buscar recurso externo na rede:", err);
+          });
+        return cachedResponse || fetchedResponsePromise;
+      })
+    );
   }
-  e.respondWith(
-    caches.match(e.request).then((r) => {
-      if (r) {
-        return r;
-      }
-      const f = e.request.clone();
-      return fetch(f)
-        .then((n) => {
-          if (n && n.status === 200 && n.type === "basic") {
-            const t = n.clone();
-            caches.open(CACHE_NAME).then((c) => {
-              c.put(e.request, t);
-            });
-          }
-          return n;
-        })
-        .catch((o) => {
-          console.error(
-            "[SW] Erro ao buscar na rede:",
-            o,
-            "URL:",
-            e.request.url
-          );
-          throw o;
-        });
-    })
-  );
+  // Estratégia Cache-First para recursos locais (App Shell)
+  else {
+    e.respondWith(
+      caches.match(e.request).then((cachedResponse) => {
+        return (
+          cachedResponse ||
+          fetch(e.request)
+            .then((networkResponse) => {
+              // Opcional: Adicionar novos recursos locais ao cache dinâmico se não estiverem no estático.
+              // Isso pode ser útil, mas por enquanto, focamos no App Shell estático.
+              return networkResponse;
+            })
+            .catch(() => {
+              // Fallback para uma página offline pode ser adicionado aqui se necessário.
+              console.error(
+                "[SW] Falha ao buscar recurso local na rede e não encontrado em cache:",
+                e.request.url
+              );
+            })
+        );
+      })
+    );
+  }
 });
+
 self.addEventListener("message", (e) => {
   if (e.data && e.data.type === "SKIP_WAITING") {
     self.skipWaiting();

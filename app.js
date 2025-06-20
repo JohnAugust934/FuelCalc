@@ -1,10 +1,10 @@
 // app.js - Lógica Principal do FuelCalc
-// Versão: 1.5.4 (Melhorias de Foco e Input)
+// Versão: 1.6.0 (Refatoração de UI e Responsividade Mobile-Only)
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===== CONFIGURAÇÕES E CONSTANTES GLOBAIS =====
-  const APP_VERSION = "1.5.4";
+  const APP_VERSION = "1.6.0";
   const CONFIG = {
     APP_VERSION,
     STORAGE_KEYS: {
@@ -13,6 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
       APP_SETTINGS: `fuelCalc_settings_v1.5`,
     },
     DEFAULT_LANGUAGE: "pt-BR",
+    DEFAULT_THEME: "system",
+    MAX_MOBILE_WIDTH: 450,
     VALIDATION: {
       MIN_EFFICIENCY: 1,
       MAX_EFFICIENCY: 70,
@@ -27,14 +29,70 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     HISTORY_DISPLAY_COUNT: 3,
     HISTORY_LIMIT: 50,
-    DEBOUNCE_DELAY: 350,
+    DEBOUNCE_DELAY: 150,
     NOTIFICATION_TIMEOUT: 4000,
     CHART_MAX_DAYS: 30,
   };
 
-  // ===== INÍCIO DAS CLASSES DA APLICAÇÃO =====
-  // A ordem é importante: classes sem dependências ou com poucas vêm primeiro.
+  const DOM = {
+    html: document.documentElement,
+    body: document.body,
+    appVersionSpan: document.getElementById("appVersion"),
+    currentYearSpan: document.getElementById("currentYear"),
+    appContainer: document.getElementById("appContainer"),
+    desktopNoticeOverlay: document.getElementById("desktop-notice-overlay"),
+    qrCodeCanvas: document.getElementById("qrCodeCanvas"),
+    pageUrlLink: document.getElementById("pageUrlLink"),
+    helpButton: document.getElementById("helpButton"),
+    exportBtn: document.getElementById("exportDataBtn"),
+    importBtn: document.getElementById("importDataBtn"),
+    importFileInput: document.getElementById("importFileInput"),
+    clearAllDataBtn: document.getElementById("clearAllDataBtn"),
+    langButtons: document.querySelectorAll(".lang-button"),
+    themeButtons: document.querySelectorAll(".theme-button"),
+    detailsModalOverlay: document.getElementById("detailsModalOverlay"),
+    detailsModalContent: document.getElementById("detailsModalContent"),
+    closeDetailsModalBtn: document.getElementById("closeDetailsModalBtn"),
+    confirmModalOverlay: document.getElementById("confirmModalOverlay"),
+    confirmModalTitle: document.getElementById("confirmModalTitle"),
+    confirmModalMessage: document.getElementById("confirmModalMessage"),
+    confirmModalConfirmBtn: document.getElementById("confirmModalConfirmBtn"),
+    confirmModalCancelBtn: document.getElementById("confirmModalCancelBtn"),
+    helpModalOverlay: document.getElementById("helpModalOverlay"),
+    closeHelpModalBtn: document.getElementById("closeHelpModalBtn"),
+    notificationArea: document.getElementById("notificationArea"),
+    vehicleTypeButtons: document.querySelectorAll("[data-vehicle-type]"),
+    vehicleListContainer: document.getElementById("vehicleList"),
+    addVehicleBtn: document.getElementById("addVehicleBtn"),
+    vehicleForm: document.getElementById("vehicleForm"),
+    vehicleTypeInput: document.getElementById("vehicleType"),
+    vehicleNameInput: document.getElementById("vehicleName"),
+    vehicleEfficiencyInput: document.getElementById("vehicleEfficiency"),
+    cancelVehicleBtn: document.getElementById("cancelVehicleBtn"),
+    fuelForm: document.getElementById("fuelForm"),
+    kmInicialInput: document.getElementById("kmInicial"),
+    kmFinalInput: document.getElementById("kmFinal"),
+    kmPorLitroInput: document.getElementById("kmPorLitro"),
+    precoCombustivelInput: document.getElementById("precoCombustivel"),
+    ganhoUberInput: document.getElementById("ganhoUber"),
+    resultCard: document.getElementById("resultCard"),
+    distanciaResult: document.getElementById("distanciaResult"),
+    litrosResult: document.getElementById("litrosResult"),
+    custoResult: document.getElementById("custoResult"),
+    lucroResult: document.getElementById("lucroResult"),
+    historySection: document.getElementById("historySection"),
+    historyList: document.getElementById("historyList"),
+    seeMoreBtn: document.getElementById("seeMoreHistoryBtn"),
+    minimizeBtn: document.getElementById("minimizeHistoryBtn"),
+    clearHistoryBtn: document.getElementById("clearHistoryBtn"),
+    statsSection: document.getElementById("statsSection"),
+    totalKmStat: document.getElementById("totalKmStat"),
+    totalGastoStat: document.getElementById("totalGastoStat"),
+    mediaConsumoStat: document.getElementById("mediaConsumoStat"),
+    chartCanvas: document.getElementById("fuelChartCanvas"),
+  };
 
+  // ===== INÍCIO DAS CLASSES DA APLICAÇÃO =====
   class Utils {
     static sanitizeHTML(str) {
       if (typeof str !== "string") return "";
@@ -98,8 +156,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   class LanguageManager {
-    constructor(storageManager) {
+    constructor(storageManager, dom) {
       this.storageManager = storageManager;
+      this.dom = dom;
       this.currentLanguage =
         this._loadLanguagePreference() || CONFIG.DEFAULT_LANGUAGE;
       this.translationData = translations;
@@ -121,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
       this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.APP_SETTINGS, s);
     }
     _bindLanguageButtons() {
-      document.querySelectorAll(".lang-button").forEach((b) => {
+      this.dom.langButtons.forEach((b) => {
         b.addEventListener("click", (e) =>
           this.setLanguage(e.currentTarget.dataset.lang)
         );
@@ -133,11 +192,9 @@ document.addEventListener("DOMContentLoaded", () => {
         this._saveLanguagePreference(lang);
         this.applyTranslationsToPage();
         document.documentElement.lang = lang;
-        document
-          .querySelectorAll(".lang-button")
-          .forEach((b) =>
-            b.setAttribute("aria-pressed", b.dataset.lang === lang)
-          );
+        this.dom.langButtons.forEach((b) =>
+          b.setAttribute("aria-pressed", b.dataset.lang === lang)
+        );
         document.dispatchEvent(
           new CustomEvent("languageChanged", { detail: { lang } })
         );
@@ -163,7 +220,17 @@ document.addEventListener("DOMContentLoaded", () => {
           const pk = el.dataset.translateKeyPlaceholder;
           const ak = el.dataset.translateKeyAriaLabel;
           const tk = el.dataset.translateKeyTitle;
-          if (k) el.textContent = this.get(k);
+          if (k && el.tagName === "BUTTON") {
+            const icon = el.querySelector("svg");
+            const textSpan = el.querySelector("span");
+            if (textSpan) {
+              textSpan.textContent = this.get(k);
+            } else if (!icon) {
+              el.textContent = this.get(k);
+            }
+          } else if (k) {
+            el.textContent = this.get(k);
+          }
           if (pk) el.placeholder = this.get(pk);
           if (ak) el.setAttribute("aria-label", this.get(ak));
           if (tk) el.title = this.get(tk);
@@ -173,24 +240,64 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  class ThemeManager {
+    constructor(storageManager, dom) {
+      this.storageManager = storageManager;
+      this.dom = dom;
+      this.systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    }
+    init() {
+      this.dom.themeButtons.forEach((button) => {
+        button.addEventListener("click", () =>
+          this.setTheme(button.dataset.themeToggle)
+        );
+      });
+      this.systemThemeQuery.addEventListener("change", () => this.applyTheme());
+      this.applyTheme();
+    }
+    _getPreference() {
+      const settings = this.storageManager.safeGetItem(
+        CONFIG.STORAGE_KEYS.APP_SETTINGS,
+        {}
+      );
+      return settings.theme || CONFIG.DEFAULT_THEME;
+    }
+    _savePreference(theme) {
+      const settings = this.storageManager.safeGetItem(
+        CONFIG.STORAGE_KEYS.APP_SETTINGS,
+        {}
+      );
+      settings.theme = theme;
+      this.storageManager.safeSetItem(
+        CONFIG.STORAGE_KEYS.APP_SETTINGS,
+        settings
+      );
+    }
+    setTheme(theme) {
+      this._savePreference(theme);
+      this.applyTheme();
+    }
+    applyTheme() {
+      const preference = this._getPreference();
+      let effectiveTheme = preference;
+      if (preference === "system") {
+        effectiveTheme = this.systemThemeQuery.matches ? "dark" : "light";
+      }
+      this.dom.html.setAttribute("data-theme", effectiveTheme);
+      this.dom.themeButtons.forEach((button) => {
+        button.classList.toggle(
+          "active",
+          button.dataset.themeToggle === preference
+        );
+      });
+      document.dispatchEvent(new CustomEvent("themeChanged"));
+    }
+  }
+
   class UIManager {
-    constructor(languageManager) {
+    constructor(languageManager, dom) {
       this.langManager = languageManager;
-      this.notificationArea = document.getElementById("notificationArea");
-      this.detailsModalOverlay = document.getElementById("detailsModalOverlay");
-      this.detailsModalContent = document.getElementById("detailsModalContent");
-      this.closeDetailsModalBtn = document.getElementById(
-        "closeDetailsModalBtn"
-      );
-      this.confirmModalOverlay = document.getElementById("confirmModalOverlay");
-      this.confirmModalTitle = document.getElementById("confirmModalTitle");
-      this.confirmModalMessage = document.getElementById("confirmModalMessage");
-      this.confirmModalConfirmBtn = document.getElementById(
-        "confirmModalConfirmBtn"
-      );
-      this.confirmModalCancelBtn = document.getElementById(
-        "confirmModalCancelBtn"
-      );
+      this.dom = dom;
       this._resolveConfirm = null;
       this._bindModalEvents();
       document.addEventListener("languageChanged", () =>
@@ -198,61 +305,105 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     }
     _retranslateOpenModals() {
+      const retranslate = (overlay, titleKey, titleId) => {
+        if (overlay && overlay.classList.contains("active")) {
+          const titleElement = overlay.querySelector(titleId);
+          if (titleElement)
+            titleElement.textContent = this.langManager.get(titleKey);
+        }
+      };
+      retranslate(
+        this.dom.detailsModalOverlay,
+        "tripDetailsModalTitle",
+        "#detailsModalTitle"
+      );
+      retranslate(
+        this.dom.helpModalOverlay,
+        "helpModalTitle",
+        "#helpModalTitle"
+      );
       if (
-        this.detailsModalOverlay &&
-        this.detailsModalOverlay.classList.contains("active")
+        this.dom.confirmModalOverlay &&
+        this.dom.confirmModalOverlay.classList.contains("active")
       ) {
-        const t = this.detailsModalOverlay.querySelector("#detailsModalTitle");
-        if (t) t.textContent = this.langManager.get("tripDetailsModalTitle");
-      }
-      if (
-        this.confirmModalOverlay &&
-        this.confirmModalOverlay.classList.contains("active")
-      ) {
-        if (this.confirmModalTitle)
-          this.confirmModalTitle.textContent = this.langManager.get(
+        if (this.dom.confirmModalTitle)
+          this.dom.confirmModalTitle.textContent = this.langManager.get(
             "confirmActionModalTitle"
           );
-        if (this.confirmModalCancelBtn)
-          this.confirmModalCancelBtn.textContent =
+        if (this.dom.confirmModalCancelBtn)
+          this.dom.confirmModalCancelBtn.textContent =
             this.langManager.get("cancelBtn");
-        if (this.confirmModalConfirmBtn)
-          this.confirmModalConfirmBtn.textContent =
+        if (this.dom.confirmModalConfirmBtn)
+          this.dom.confirmModalConfirmBtn.textContent =
             this.langManager.get("confirmBtn");
       }
     }
     _bindModalEvents() {
-      if (this.closeDetailsModalBtn)
-        this.closeDetailsModalBtn.addEventListener("click", () =>
-          this.hideDetailsModal()
-        );
-      if (this.detailsModalOverlay)
-        this.detailsModalOverlay.addEventListener("click", (e) => {
-          if (e.target === this.detailsModalOverlay) this.hideDetailsModal();
-        });
-      if (this.confirmModalCancelBtn)
-        this.confirmModalCancelBtn.addEventListener("click", () =>
+      const setupModal = (overlay, closeBtn) => {
+        if (closeBtn)
+          closeBtn.addEventListener("click", () => this._hideModal(overlay));
+        if (overlay)
+          overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) this._hideModal(overlay);
+          });
+      };
+      setupModal(this.dom.detailsModalOverlay, this.dom.closeDetailsModalBtn);
+      setupModal(this.dom.helpModalOverlay, this.dom.closeHelpModalBtn);
+      if (this.dom.confirmModalCancelBtn)
+        this.dom.confirmModalCancelBtn.addEventListener("click", () =>
           this._handleConfirm(false)
         );
-      if (this.confirmModalConfirmBtn)
-        this.confirmModalConfirmBtn.addEventListener("click", () =>
+      if (this.dom.confirmModalConfirmBtn)
+        this.dom.confirmModalConfirmBtn.addEventListener("click", () =>
           this._handleConfirm(true)
         );
-      if (this.confirmModalOverlay)
-        this.confirmModalOverlay.addEventListener("click", (e) => {
-          if (e.target === this.confirmModalOverlay) this._handleConfirm(false);
+      if (this.dom.confirmModalOverlay)
+        this.dom.confirmModalOverlay.addEventListener("click", (e) => {
+          if (e.target === this.dom.confirmModalOverlay)
+            this._handleConfirm(false);
         });
     }
+    _showModal(overlay) {
+      if (!overlay) return;
+      overlay.style.display = "flex";
+      document.body.classList.add("modal-open");
+      void overlay.offsetWidth;
+      overlay.classList.add("active");
+      const closeButton = overlay.querySelector(".modal-close-button");
+      if (closeButton) closeButton.focus();
+    }
+    _hideModal(overlay) {
+      if (!overlay || !overlay.classList.contains("active")) return;
+      overlay.classList.remove("active");
+      document.body.classList.remove("modal-open");
+      const onTransitionEnd = () => {
+        if (!overlay.classList.contains("active")) {
+          overlay.style.display = "none";
+        }
+        overlay.removeEventListener("transitionend", onTransitionEnd);
+      };
+      overlay.addEventListener("transitionend", onTransitionEnd);
+      setTimeout(() => {
+        if (!overlay.classList.contains("active")) {
+          overlay.style.display = "none";
+        }
+      }, 350);
+    }
     showNotification(key, type = "info", params = {}) {
-      if (!this.notificationArea) return;
+      if (!this.dom.notificationArea) return;
+      document.body.classList.remove("fade-out-active");
       const msg = this.langManager.get(key, params);
       const n = document.createElement("div");
       n.className = `notification ${type}`;
       n.setAttribute("role", "alert");
       n.setAttribute("aria-live", "assertive");
+      const content = document.createElement("div");
+      content.className = "notification-content";
       const ms = document.createElement("span");
       ms.className = "notification-message";
       ms.textContent = msg;
+      content.appendChild(ms);
+      n.appendChild(content);
       const cb = document.createElement("button");
       cb.innerHTML = "&times;";
       cb.className = "notification-close";
@@ -260,39 +411,92 @@ document.addEventListener("DOMContentLoaded", () => {
         "aria-label",
         this.langManager.get("closeModalAriaLabel")
       );
-      cb.addEventListener("click", () => this._removeNotification(n));
-      n.appendChild(ms);
+      cb.addEventListener("click", () => this._removeNotification(n, 0));
       n.appendChild(cb);
-      this.notificationArea.appendChild(n);
-      void n.offsetWidth;
-      n.style.opacity = "1";
-      n.style.transform = "translateX(0)";
+      this.dom.notificationArea.appendChild(n);
       setTimeout(
-        () => this._removeNotification(n),
-        CONFIG.NOTIFICATION_TIMEOUT
+        () => this._removeNotification(n, CONFIG.NOTIFICATION_TIMEOUT),
+        50
       );
+      return n;
     }
-    _removeNotification(n) {
+    showUpdateNotification(onUpdate) {
+      if (!this.dom.notificationArea) return;
+      document.body.classList.remove("fade-out-active");
+      const n = document.createElement("div");
+      n.className = "notification info persistent";
+      n.setAttribute("role", "alert");
+      n.setAttribute("aria-live", "assertive");
+      const content = document.createElement("div");
+      content.className = "notification-content";
+      const ms = document.createElement("span");
+      ms.className = "notification-message";
+      ms.textContent = this.langManager.get("updateAvailable");
+      content.appendChild(ms);
+      const actions = document.createElement("div");
+      actions.className = "notification-actions";
+      const updateBtn = document.createElement("button");
+      updateBtn.className = "btn update-btn";
+      updateBtn.textContent = this.langManager.get("updateBtn");
+      updateBtn.onclick = () => {
+        onUpdate();
+        this._removeNotification(n);
+      };
+      actions.appendChild(updateBtn);
+      content.appendChild(actions);
+      n.appendChild(content);
+      this.dom.notificationArea.appendChild(n);
+    }
+    _removeNotification(n, delay = 0) {
       if (n && n.parentNode) {
-        n.style.opacity = "0";
-        n.style.transform = "translateX(100%)";
-        n.addEventListener(
-          "transitionend",
-          () => {
-            if (n.parentNode) n.parentNode.removeChild(n);
-          },
-          { once: true }
-        );
         setTimeout(() => {
-          if (n.parentNode) n.parentNode.removeChild(n);
-        }, 350);
+          document.body.classList.add("fade-out-active");
+          n.classList.add("fade-out");
+          const onEnd = () => {
+            if (n.parentNode) n.parentNode.removeChild(n);
+            if (this.dom.notificationArea.childElementCount === 0) {
+              document.body.classList.remove("fade-out-active");
+            }
+            n.removeEventListener("transitionend", onEnd);
+          };
+          n.addEventListener("transitionend", onEnd);
+        }, delay);
       }
     }
+    displayInlineError(field, message) {
+      if (!field) return;
+      field.classList.add("has-error");
+      const errorContainer = field.nextElementSibling;
+      if (
+        errorContainer &&
+        errorContainer.classList.contains("error-message")
+      ) {
+        errorContainer.textContent = message;
+      }
+    }
+    clearInlineError(field) {
+      if (!field) return;
+      field.classList.remove("has-error");
+      const errorContainer = field.nextElementSibling;
+      if (
+        errorContainer &&
+        errorContainer.classList.contains("error-message")
+      ) {
+        errorContainer.textContent = "";
+      }
+    }
+    clearAllInlineErrors(formElement) {
+      if (!formElement) return;
+      const fields = formElement.querySelectorAll("input.has-error");
+      fields.forEach((field) => this.clearInlineError(field));
+    }
     showDetailsModal(key, details) {
-      if (!this.detailsModalOverlay || !this.detailsModalContent) return;
-      const t = this.detailsModalOverlay.querySelector("#detailsModalTitle");
+      if (!this.dom.detailsModalOverlay || !this.dom.detailsModalContent)
+        return;
+      const t =
+        this.dom.detailsModalOverlay.querySelector("#detailsModalTitle");
       if (t) t.textContent = this.langManager.get(key);
-      this.detailsModalContent.innerHTML = "";
+      this.dom.detailsModalContent.innerHTML = "";
       details.forEach((d) => {
         const i = document.createElement("div");
         i.className = "modal-detail-item";
@@ -308,83 +512,64 @@ document.addEventListener("DOMContentLoaded", () => {
         v.innerHTML = Utils.sanitizeHTML(dv);
         i.appendChild(l);
         i.appendChild(v);
-        this.detailsModalContent.appendChild(i);
+        this.dom.detailsModalContent.appendChild(i);
       });
-      this.detailsModalOverlay.style.display = "flex";
-      document.body.classList.add("modal-open");
-      void this.detailsModalOverlay.offsetWidth;
-      this.detailsModalOverlay.classList.add("active");
-      if (this.closeDetailsModalBtn) this.closeDetailsModalBtn.focus();
+      this._showModal(this.dom.detailsModalOverlay);
     }
     hideDetailsModal() {
-      if (!this.detailsModalOverlay) return;
-      this.detailsModalOverlay.classList.remove("active");
-      document.body.classList.remove("modal-open");
-      this.detailsModalOverlay.addEventListener(
-        "transitionend",
-        () => {
-          if (!this.detailsModalOverlay.classList.contains("active"))
-            this.detailsModalOverlay.style.display = "none";
-        },
-        { once: true }
-      );
-      setTimeout(() => {
-        if (!this.detailsModalOverlay.classList.contains("active"))
-          this.detailsModalOverlay.style.display = "none";
-      }, 350);
+      this._hideModal(this.dom.detailsModalOverlay);
+    }
+    showHelpModal() {
+      this._showModal(this.dom.helpModalOverlay);
+    }
+    hideHelpModal() {
+      this._hideModal(this.dom.helpModalOverlay);
     }
     showConfirm(key, titleKey = "confirmActionModalTitle", params = {}) {
       return new Promise((resolve) => {
-        if (!this.confirmModalOverlay) {
+        if (!this.dom.confirmModalOverlay) {
           resolve(window.confirm(this.langManager.get(key, params)));
           return;
         }
-        this.confirmModalTitle.textContent = this.langManager.get(titleKey);
-        this.confirmModalMessage.textContent = this.langManager.get(
+        this.dom.confirmModalTitle.textContent = this.langManager.get(titleKey);
+        this.dom.confirmModalMessage.textContent = this.langManager.get(
           key,
           params
         );
         this._resolveConfirm = resolve;
-        this.confirmModalOverlay.style.display = "flex";
-        document.body.classList.add("modal-open");
-        void this.confirmModalOverlay.offsetWidth;
-        this.confirmModalOverlay.classList.add("active");
-        if (this.confirmModalConfirmBtn) this.confirmModalConfirmBtn.focus();
+        this._showModal(this.dom.confirmModalOverlay);
+        if (this.dom.confirmModalConfirmBtn)
+          this.dom.confirmModalConfirmBtn.focus();
       });
     }
     _handleConfirm(confirmed) {
-      if (!this.confirmModalOverlay) return;
-      this.confirmModalOverlay.classList.remove("active");
-      document.body.classList.remove("modal-open");
-      this.confirmModalOverlay.addEventListener(
-        "transitionend",
-        () => {
-          if (!this.confirmModalOverlay.classList.contains("active"))
-            this.confirmModalOverlay.style.display = "none";
-        },
-        { once: true }
-      );
-      setTimeout(() => {
-        if (!this.confirmModalOverlay.classList.contains("active"))
-          this.confirmModalOverlay.style.display = "none";
-      }, 350);
+      if (!this.dom.confirmModalOverlay) return;
+      this._hideModal(this.dom.confirmModalOverlay);
       if (this._resolveConfirm) {
         this._resolveConfirm(confirmed);
         this._resolveConfirm = null;
       }
     }
   }
+
   class StorageManager {
-    constructor() {
-      this.uiManager = null;
+    constructor(uiManager) {
+      this.uiManager = uiManager;
     }
-    safeGetItem(key, defaultValue = []) {
+    safeGetItem(key, defaultValue = {}) {
       try {
-        if (!this._isStorageAvailable()) {
+        if (!this._isStorageAvailable()) return defaultValue;
+        const i = localStorage.getItem(key);
+        if (i === null) {
+          if (
+            key === CONFIG.STORAGE_KEYS.VEHICLES ||
+            key === CONFIG.STORAGE_KEYS.HISTORY
+          ) {
+            return [];
+          }
           return defaultValue;
         }
-        const i = localStorage.getItem(key);
-        return i ? JSON.parse(i) : defaultValue;
+        return JSON.parse(i);
       } catch (e) {
         console.error(`Erro ao carregar ${key}:`, e);
         if (this.uiManager)
@@ -440,19 +625,17 @@ document.addEventListener("DOMContentLoaded", () => {
         exportDate: new Date().toISOString(),
         vehicles: this.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []),
         history: this.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY, []),
-        settings: this.safeGetItem(CONFIG.STORAGE_KEYS.APP_SETTINGS, {
-          language: CONFIG.DEFAULT_LANGUAGE,
-        }),
+        settings: this.safeGetItem(CONFIG.STORAGE_KEYS.APP_SETTINGS, {}),
       };
       const b = new Blob([JSON.stringify(d, null, 2)], {
         type: "application/json",
       });
       const u = URL.createObjectURL(b);
       const a = document.createElement("a");
-      a.href = u;
       a.download = `fuelcalc_backup_${CONFIG.APP_VERSION}_${
         new Date().toISOString().split("T")[0]
       }.json`;
+      a.href = u;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -494,11 +677,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (d.settings && typeof d.settings === "object") {
           const cs = this.safeGetItem(CONFIG.STORAGE_KEYS.APP_SETTINGS, {});
           const ns = { ...cs, ...d.settings };
-          if (d.settings.language && translations[d.settings.language]) {
-            ns.language = d.settings.language;
-          } else if (d.settings.language) {
-            ns.language = cs.language || CONFIG.DEFAULT_LANGUAGE;
-          }
           if (this.safeSetItem(CONFIG.STORAGE_KEYS.APP_SETTINGS, ns)) i = true;
         }
         if (i) {
@@ -540,134 +718,191 @@ document.addEventListener("DOMContentLoaded", () => {
       return c;
     }
   }
+
   class Validator {
     constructor(uiManager, languageManager) {
       this.uiManager = uiManager;
       this.langManager = languageManager;
     }
-    validateVehicle(nome, eficiencia, tipo) {
-      const e = [];
-      const pe = parseFloat(Utils.convertCommaToPoint(String(eficiencia)));
-      const tn = String(nome).trim();
+
+    validateVehicle({ nameInput, efficiencyInput, type }) {
+      this.uiManager.clearAllInlineErrors(nameInput.form);
+      let isValid = true;
+      const nome = nameInput.value.trim();
+      const eficiencia = parseFloat(
+        Utils.convertCommaToPoint(String(efficiencyInput.value))
+      );
       if (
-        tn.length < CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH ||
-        tn.length > CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH
-      )
-        e.push(
+        nome.length < CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH ||
+        nome.length > CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH
+      ) {
+        this.uiManager.displayInlineError(
+          nameInput,
           this.langManager.get("vehicleNameLengthError", {
             min: CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH,
             max: CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH,
           })
         );
+        isValid = false;
+      }
       if (
         !Utils.validateNumber(
-          pe,
+          eficiencia,
           CONFIG.VALIDATION.MIN_EFFICIENCY,
           CONFIG.VALIDATION.MAX_EFFICIENCY
         )
-      )
-        e.push(
+      ) {
+        this.uiManager.displayInlineError(
+          efficiencyInput,
           this.langManager.get("vehicleEfficiencyError", {
             min: CONFIG.VALIDATION.MIN_EFFICIENCY,
             max: CONFIG.VALIDATION.MAX_EFFICIENCY,
           })
         );
-      if (!["carro", "moto"].includes(tipo))
-        e.push(this.langManager.get("invalidVehicleTypeError"));
-      const i = e.length === 0;
-      if (!i) this.uiManager.showNotification(e.join("\n"), "error");
+        isValid = false;
+      }
+      if (!["carro", "moto"].includes(type)) {
+        console.error("Tipo de veículo inválido fornecido:", type);
+        isValid = false;
+      }
       return {
-        isValid: i,
-        errors: e,
-        data: i ? { nome: tn, eficiencia: pe, tipo } : null,
+        isValid,
+        data: isValid ? { nome, eficiencia, tipo: type } : null,
       };
     }
-    validateTrip(ki, kf, kpl, pc, gu) {
-      const e = [];
+
+    validateTrip(inputs) {
+      this.uiManager.clearAllInlineErrors(inputs.kmInicialInput.form);
+      let isValid = true;
       const d = {};
-      d.kmInicial = parseFloat(Utils.convertCommaToPoint(String(ki)));
+      d.kmInicial = parseFloat(
+        Utils.convertCommaToPoint(String(inputs.kmInicialInput.value))
+      );
       if (
         !Utils.validateNumber(
           d.kmInicial,
           CONFIG.VALIDATION.MIN_KM,
           CONFIG.VALIDATION.MAX_KM
         )
-      )
-        e.push(
+      ) {
+        this.uiManager.displayInlineError(
+          inputs.kmInicialInput,
           this.langManager.get("initialKmError", {
             min: CONFIG.VALIDATION.MIN_KM,
             max: CONFIG.VALIDATION.MAX_KM,
           })
         );
-      else if (!Number.isInteger(d.kmInicial))
-        e.push(this.langManager.get("initialKmNotIntegerError"));
-      d.kmFinal = parseFloat(Utils.convertCommaToPoint(String(kf)));
+        isValid = false;
+      } else if (!Number.isInteger(d.kmInicial)) {
+        this.uiManager.displayInlineError(
+          inputs.kmInicialInput,
+          this.langManager.get("initialKmNotIntegerError")
+        );
+        isValid = false;
+      }
+      d.kmFinal = parseFloat(
+        Utils.convertCommaToPoint(String(inputs.kmFinalInput.value))
+      );
       if (
+        !isValid ||
         !Utils.validateNumber(
           d.kmFinal,
           d.kmInicial + 1,
           CONFIG.VALIDATION.MAX_KM
         )
-      )
-        e.push(
-          this.langManager.get("finalKmError", {
-            max: CONFIG.VALIDATION.MAX_KM,
-          })
+      ) {
+        if (isValid) {
+          this.uiManager.displayInlineError(
+            inputs.kmFinalInput,
+            this.langManager.get("finalKmError", {
+              max: CONFIG.VALIDATION.MAX_KM,
+            })
+          );
+        }
+        isValid = false;
+      } else if (!Number.isInteger(d.kmFinal)) {
+        this.uiManager.displayInlineError(
+          inputs.kmFinalInput,
+          this.langManager.get("finalKmNotIntegerError")
         );
-      else if (!Number.isInteger(d.kmFinal))
-        e.push(this.langManager.get("finalKmNotIntegerError"));
-      else if (d.kmFinal - d.kmInicial > CONFIG.VALIDATION.MAX_TRIP_DISTANCE)
-        e.push(
+        isValid = false;
+      } else if (
+        d.kmFinal - d.kmInicial >
+        CONFIG.VALIDATION.MAX_TRIP_DISTANCE
+      ) {
+        this.uiManager.displayInlineError(
+          inputs.kmFinalInput,
           this.langManager.get("maxTripDistanceError", {
             limit: CONFIG.VALIDATION.MAX_TRIP_DISTANCE,
           })
         );
-      d.kmPorLitro = parseFloat(Utils.convertCommaToPoint(String(kpl)));
+        isValid = false;
+      }
+      d.kmPorLitro = parseFloat(
+        Utils.convertCommaToPoint(String(inputs.kmPorLitroInput.value))
+      );
       if (
         !Utils.validateNumber(
           d.kmPorLitro,
           CONFIG.VALIDATION.MIN_EFFICIENCY,
           CONFIG.VALIDATION.MAX_EFFICIENCY
         )
-      )
-        e.push(
+      ) {
+        this.uiManager.displayInlineError(
+          inputs.kmPorLitroInput,
           this.langManager.get("vehicleEfficiencyError", {
             min: CONFIG.VALIDATION.MIN_EFFICIENCY,
             max: CONFIG.VALIDATION.MAX_EFFICIENCY,
           })
         );
-      d.precoCombustivel = parseFloat(Utils.convertCommaToPoint(String(pc)));
+        isValid = false;
+      }
+      d.precoCombustivel = parseFloat(
+        Utils.convertCommaToPoint(String(inputs.precoCombustivelInput.value))
+      );
       if (
         !Utils.validateNumber(
           d.precoCombustivel,
           CONFIG.VALIDATION.MIN_PRICE,
           CONFIG.VALIDATION.MAX_PRICE
         )
-      )
-        e.push(
+      ) {
+        this.uiManager.displayInlineError(
+          inputs.precoCombustivelInput,
           this.langManager.get("fuelPriceError", {
             min: CONFIG.VALIDATION.MIN_PRICE.toFixed(2),
             max: CONFIG.VALIDATION.MAX_PRICE.toFixed(2),
           })
         );
-      if (gu !== null && gu !== undefined && String(gu).trim() !== "") {
-        d.ganhoUber = parseFloat(Utils.convertCommaToPoint(String(gu)));
+        isValid = false;
+      }
+      const ganhoUberValue = inputs.ganhoUberInput.value;
+      if (
+        ganhoUberValue !== null &&
+        ganhoUberValue !== undefined &&
+        String(ganhoUberValue).trim() !== ""
+      ) {
+        d.ganhoUber = parseFloat(
+          Utils.convertCommaToPoint(String(ganhoUberValue))
+        );
         if (
           !Utils.validateNumber(d.ganhoUber, 0, CONFIG.VALIDATION.MAX_UBER_GAIN)
-        )
-          e.push(
+        ) {
+          this.uiManager.displayInlineError(
+            inputs.ganhoUberInput,
             this.langManager.get("tripGainError", {
               max: CONFIG.VALIDATION.MAX_UBER_GAIN.toFixed(2),
             })
           );
+          isValid = false;
+        }
       } else {
         d.ganhoUber = null;
       }
-      const i = e.length === 0;
-      if (!i) this.uiManager.showNotification(e.join("\n"), "error");
-      return { isValid: i, errors: e, data: i ? d : null };
+      return { isValid, data: isValid ? d : null };
     }
   }
+
   class InputFormatter {
     constructor() {
       this.decimalInputs = document.querySelectorAll(
@@ -680,7 +915,6 @@ document.addEventListener("DOMContentLoaded", () => {
     initialize() {
       this.decimalInputs.forEach((i) => this._formatDecimal(i));
       this.integerInputs.forEach((i) => this._formatInteger(i));
-      console.log("Formatadores de input inicializados.");
     }
     _formatDecimal(el) {
       el.addEventListener("input", (e) => {
@@ -700,30 +934,41 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   }
+
   class VehicleManager {
-    constructor(sm, um, v, lm) {
+    constructor(sm, um, v, lm, dom) {
       this.storageManager = sm;
       this.uiManager = um;
       this.validator = v;
       this.langManager = lm;
+      this.dom = dom;
       this.currentVehicle = null;
       this.currentVehicleType = "carro";
-      this.dom = {
-        vehicleTypeButtons: document.querySelectorAll("[data-vehicle-type]"),
-        vehicleListContainer: document.getElementById("vehicleList"),
-        addVehicleBtn: document.getElementById("addVehicleBtn"),
-        vehicleForm: document.getElementById("vehicleForm"),
-        vehicleTypeInput: document.getElementById("vehicleType"),
-        vehicleNameInput: document.getElementById("vehicleName"),
-        vehicleEfficiencyInput: document.getElementById("vehicleEfficiency"),
-        saveVehicleBtn: document.getElementById("saveVehicleBtn"),
-        cancelVehicleBtn: document.getElementById("cancelVehicleBtn"),
-        mainFormEfficiencyInput: document.getElementById("kmPorLitro"),
-      };
       this._bindEvents();
       document.addEventListener("languageChanged", () =>
         this.loadAndRenderVehicles()
       );
+    }
+    _handleVehicleListClick(event) {
+      const target = event.target;
+      const vehicleCard = target.closest(".vehicle-card");
+      const deleteButton = target.closest(".delete-button");
+      if (deleteButton && vehicleCard) {
+        event.stopPropagation();
+        const vehicleId = vehicleCard.dataset.vehicleId;
+        const vehicleName = vehicleCard.querySelector("h4").textContent;
+        this.uiManager
+          .showConfirm(
+            this.langManager.get("confirmDeleteVehicle", { name: vehicleName })
+          )
+          .then((confirmed) => {
+            if (confirmed) this.deleteVehicle(vehicleId);
+          });
+        return;
+      }
+      if (vehicleCard) {
+        this.selectVehicle(vehicleCard.dataset.vehicleId);
+      }
     }
     _bindEvents() {
       this.dom.vehicleTypeButtons.forEach((b) =>
@@ -744,6 +989,21 @@ document.addEventListener("DOMContentLoaded", () => {
         this.dom.cancelVehicleBtn.addEventListener("click", () =>
           this.hideVehicleForm()
         );
+      if (this.dom.vehicleListContainer) {
+        this.dom.vehicleListContainer.addEventListener(
+          "click",
+          this._handleVehicleListClick.bind(this)
+        );
+        this.dom.vehicleListContainer.addEventListener("keypress", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            const vehicleCard = e.target.closest(".vehicle-card");
+            if (vehicleCard) {
+              e.preventDefault();
+              this._handleVehicleListClick(e);
+            }
+          }
+        });
+      }
     }
     selectVehicleType(type) {
       if (type !== "carro" && type !== "moto") return;
@@ -753,12 +1013,11 @@ document.addEventListener("DOMContentLoaded", () => {
         b.setAttribute("aria-pressed", String(b.dataset.vehicleType === type));
       });
       this.currentVehicle = null;
-      if (this.dom.mainFormEfficiencyInput) {
-        this.dom.mainFormEfficiencyInput.value = "";
-        this.dom.mainFormEfficiencyInput.placeholder = this.langManager.get(
-          "tripEfficiencyPlaceholder"
-        );
-      }
+      this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
+      this.dom.kmPorLitroInput.value = "";
+      this.dom.kmPorLitroInput.placeholder = this.langManager.get(
+        "tripEfficiencyPlaceholder"
+      );
       this.loadAndRenderVehicles();
       document.dispatchEvent(
         new CustomEvent("vehicleTypeChanged", { detail: { type } })
@@ -817,23 +1076,9 @@ document.addEventListener("DOMContentLoaded", () => {
         "aria-label",
         this.langManager.get("deleteVehicleAriaLabel", { name: vs })
       );
-      db.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        const conf = await this.uiManager.showConfirm(
-          this.langManager.get("confirmDeleteVehicle", { name: vs })
-        );
-        if (conf) this.deleteVehicle(v.id);
-      });
       c.appendChild(t);
       c.appendChild(es);
       c.appendChild(db);
-      c.addEventListener("click", () => this.selectVehicle(v.id));
-      c.addEventListener("keypress", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          this.selectVehicle(v.id);
-        }
-      });
       return c;
     }
     selectVehicle(id) {
@@ -844,8 +1089,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const v = av.find((v) => v.id === id);
       if (v) {
         this.currentVehicle = v;
-        if (this.dom.mainFormEfficiencyInput)
-          this.dom.mainFormEfficiencyInput.value = v.eficiencia;
+        this.dom.kmPorLitroInput.value = v.eficiencia;
+        this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
         this.dom.vehicleListContainer
           .querySelectorAll(".vehicle-card")
           .forEach((c) =>
@@ -857,13 +1102,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     showVehicleForm() {
-      if (
-        !this.dom.vehicleForm ||
-        !this.dom.vehicleTypeInput ||
-        !this.dom.vehicleNameInput ||
-        !this.dom.vehicleEfficiencyInput
-      )
-        return;
+      this.uiManager.clearAllInlineErrors(this.dom.vehicleForm);
       this.dom.vehicleTypeInput.value = this.currentVehicleType;
       this.dom.vehicleNameInput.value = "";
       this.dom.vehicleEfficiencyInput.value = "";
@@ -875,14 +1114,16 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
     hideVehicleForm() {
-      if (this.dom.vehicleForm) this.dom.vehicleForm.style.display = "none";
+      this.uiManager.clearAllInlineErrors(this.dom.vehicleForm);
+      this.dom.vehicleForm.style.display = "none";
     }
     saveVehicle() {
-      const vr = this.validator.validateVehicle(
-        this.dom.vehicleNameInput.value,
-        this.dom.vehicleEfficiencyInput.value,
-        this.dom.vehicleTypeInput.value
-      );
+      const validationInputs = {
+        nameInput: this.dom.vehicleNameInput,
+        efficiencyInput: this.dom.vehicleEfficiencyInput,
+        type: this.dom.vehicleTypeInput.value,
+      };
+      const vr = this.validator.validateVehicle(validationInputs);
       if (!vr.isValid) return;
       const { nome, eficiencia, tipo } = vr.data;
       const nv = {
@@ -931,15 +1172,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         if (this.currentVehicle && this.currentVehicle.id === id) {
           this.currentVehicle = null;
-          if (this.dom.mainFormEfficiencyInput)
-            this.dom.mainFormEfficiencyInput.value = "";
+          this.dom.kmPorLitroInput.value = "";
         }
         this.loadAndRenderVehicles();
-        if (
-          v.filter((vh) => vh.tipo === this.currentVehicleType).length === 0 &&
-          this.dom.mainFormEfficiencyInput
-        )
-          this.dom.mainFormEfficiencyInput.placeholder = this.langManager.get(
+        if (v.filter((vh) => vh.tipo === this.currentVehicleType).length === 0)
+          this.dom.kmPorLitroInput.placeholder = this.langManager.get(
             "tripEfficiencyPlaceholder"
           );
       }
@@ -949,54 +1186,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     resetState() {
       this.currentVehicle = null;
-      if (this.dom.mainFormEfficiencyInput) {
-        this.dom.mainFormEfficiencyInput.value = "";
-        this.dom.mainFormEfficiencyInput.placeholder = this.langManager.get(
-          "tripEfficiencyPlaceholder"
-        );
-      }
+      this.dom.kmPorLitroInput.value = "";
+      this.dom.kmPorLitroInput.placeholder = this.langManager.get(
+        "tripEfficiencyPlaceholder"
+      );
       this.selectVehicleType("carro");
     }
   }
+
   class FuelCalculator {
-    constructor(sm, um, v, vm, lm) {
+    constructor(sm, um, v, vm, lm, dom) {
       this.storageManager = sm;
       this.uiManager = um;
       this.validator = v;
       this.vehicleManager = vm;
       this.langManager = lm;
-      this.dom = {
-        form: document.getElementById("fuelForm"),
-        kmInicialInput: document.getElementById("kmInicial"),
-        kmFinalInput: document.getElementById("kmFinal"),
-        kmPorLitroInput: document.getElementById("kmPorLitro"),
-        precoCombustivelInput: document.getElementById("precoCombustivel"),
-        ganhoUberInput: document.getElementById("ganhoUber"),
-        resultCard: document.getElementById("resultCard"),
-        distanciaResult: document.getElementById("distanciaResult"),
-        litrosResult: document.getElementById("litrosResult"),
-        custoResult: document.getElementById("custoResult"),
-        lucroResult: document.getElementById("lucroResult"),
-      };
+      this.dom = dom;
       this._bindEvents();
       document.addEventListener("languageChanged", () =>
         this._updateResultCardCurrency()
       );
     }
     _updateResultCardCurrency() {
-      if (
-        this.dom.resultCard &&
-        this.dom.resultCard.style.display === "block"
-      ) {
-        if (
-          this.dom.custoResult.textContent !==
-            this.langManager.get("currencyPlaceholder") &&
-          this.dom.custoResult.textContent !==
-            this.langManager.get("currencyPlaceholder", {}, "en")
-        ) {
-          const ct = this.dom.custoResult.textContent
-            .replace(/[R$\sA-Z]/gi, "")
-            .replace(",", ".");
+      if (this.dom.resultCard.style.display === "block") {
+        const custoText = this.dom.custoResult.textContent;
+        const lucroText = this.dom.lucroResult.textContent;
+        if (custoText !== this.langManager.get("currencyPlaceholder")) {
+          const ct = custoText.replace(/[R$\sA-Z]/gi, "").replace(",", ".");
           if (!isNaN(parseFloat(ct)))
             this.dom.custoResult.textContent = Utils.formatCurrency(
               parseFloat(ct),
@@ -1004,15 +1220,10 @@ document.addEventListener("DOMContentLoaded", () => {
             );
         }
         if (
-          this.dom.lucroResult.textContent !==
-            this.langManager.get("currencyPlaceholder") &&
-          this.dom.lucroResult.textContent !==
-            this.langManager.get("currencyPlaceholder", {}, "en") &&
-          this.dom.lucroResult.textContent !== "N/A"
+          lucroText !== this.langManager.get("currencyPlaceholder") &&
+          lucroText !== "N/A"
         ) {
-          const lt = this.dom.lucroResult.textContent
-            .replace(/[R$\sA-Z]/gi, "")
-            .replace(",", ".");
+          const lt = lucroText.replace(/[R$\sA-Z]/gi, "").replace(",", ".");
           if (!isNaN(parseFloat(lt)))
             this.dom.lucroResult.textContent = Utils.formatCurrency(
               parseFloat(lt),
@@ -1022,20 +1233,21 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     _bindEvents() {
-      if (this.dom.form)
-        this.dom.form.addEventListener("submit", (e) => {
+      if (this.dom.fuelForm)
+        this.dom.fuelForm.addEventListener("submit", (e) => {
           e.preventDefault();
           this.calculateAndDisplayTrip();
         });
     }
     calculateAndDisplayTrip() {
-      const vr = this.validator.validateTrip(
-        this.dom.kmInicialInput.value,
-        this.dom.kmFinalInput.value,
-        this.dom.kmPorLitroInput.value,
-        this.dom.precoCombustivelInput.value,
-        this.dom.ganhoUberInput.value
-      );
+      const validationInputs = {
+        kmInicialInput: this.dom.kmInicialInput,
+        kmFinalInput: this.dom.kmFinalInput,
+        kmPorLitroInput: this.dom.kmPorLitroInput,
+        precoCombustivelInput: this.dom.precoCombustivelInput,
+        ganhoUberInput: this.dom.ganhoUberInput,
+      };
+      const vr = this.validator.validateTrip(validationInputs);
       if (!vr.isValid) return;
       const { kmInicial, kmFinal, kmPorLitro, precoCombustivel, ganhoUber } =
         vr.data;
@@ -1043,35 +1255,28 @@ document.addEventListener("DOMContentLoaded", () => {
       const lc = d / kmPorLitro;
       const ct = lc * precoCombustivel;
       const ll = ganhoUber !== null ? ganhoUber - ct : null;
-      if (this.dom.distanciaResult)
-        this.dom.distanciaResult.textContent = `${d.toFixed(1)} km`;
-      if (this.dom.litrosResult)
-        this.dom.litrosResult.textContent = `${lc.toFixed(1)} L`;
-      if (this.dom.custoResult)
-        this.dom.custoResult.textContent = Utils.formatCurrency(
-          ct,
+      this.dom.distanciaResult.textContent = `${d.toFixed(1)} km`;
+      this.dom.litrosResult.textContent = `${lc.toFixed(1)} L`;
+      this.dom.custoResult.textContent = Utils.formatCurrency(
+        ct,
+        this.langManager.currentLanguage
+      );
+      const li = this.dom.lucroResult.closest(".result-item");
+      if (ll !== null) {
+        this.dom.lucroResult.textContent = Utils.formatCurrency(
+          ll,
           this.langManager.currentLanguage
         );
-      if (this.dom.lucroResult) {
-        const li = this.dom.lucroResult.closest(".result-item");
-        if (ll !== null) {
-          this.dom.lucroResult.textContent = Utils.formatCurrency(
-            ll,
-            this.langManager.currentLanguage
-          );
-          if (li) li.style.display = "";
-        } else {
-          this.dom.lucroResult.textContent = "N/A";
-          if (li) li.style.display = "none";
-        }
+        if (li) li.style.display = "";
+      } else {
+        this.dom.lucroResult.textContent = "N/A";
+        if (li) li.style.display = "none";
       }
-      if (this.dom.resultCard) {
-        this.dom.resultCard.style.display = "block";
-        this.dom.resultCard.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }
+      this.dom.resultCard.style.display = "block";
+      this.dom.resultCard.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
       this._saveTripToHistory({
         kmInicial,
         kmFinal,
@@ -1115,37 +1320,37 @@ document.addEventListener("DOMContentLoaded", () => {
       this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.HISTORY, h);
     }
     _clearTripForm() {
-      if (this.dom.form) {
-        this.dom.kmInicialInput.value = "";
-        this.dom.kmFinalInput.value = "";
-        if (!this.vehicleManager.currentVehicle)
-          this.dom.kmPorLitroInput.value = "";
-        this.dom.precoCombustivelInput.value = "";
-        this.dom.ganhoUberInput.value = "";
-      }
+      this.dom.kmInicialInput.value = "";
+      this.dom.kmFinalInput.value = "";
+      if (!this.vehicleManager.currentVehicle)
+        this.dom.kmPorLitroInput.value = "";
+      this.dom.precoCombustivelInput.value = "";
+      this.dom.ganhoUberInput.value = "";
     }
     resetState() {
       this._clearTripForm();
-      if (this.dom.resultCard) this.dom.resultCard.style.display = "none";
-      if (this.dom.kmPorLitroInput && !this.vehicleManager.currentVehicle)
+      this.dom.resultCard.style.display = "none";
+      if (!this.vehicleManager.currentVehicle)
         this.dom.kmPorLitroInput.value = "";
     }
   }
+
   class HistoryManager {
-    constructor(sm, um, vm, lm) {
+    constructor(sm, um, vm, lm, dom) {
       this.storageManager = sm;
       this.uiManager = um;
       this.vehicleManager = vm;
       this.langManager = lm;
+      this.dom = dom;
       this.isFullHistoryVisible = false;
-      this.dom = {
-        historySection: document.getElementById("historySection"),
-        historyList: document.getElementById("historyList"),
-        seeMoreBtn: document.getElementById("seeMoreHistoryBtn"),
-        minimizeBtn: document.getElementById("minimizeHistoryBtn"),
-        clearHistoryBtn: document.getElementById("clearHistoryBtn"),
-      };
       this._bindEvents();
+    }
+    _handleHistoryListInteraction(event) {
+      const listItem = event.target.closest("li[data-record-id]");
+      if (listItem) {
+        event.preventDefault();
+        this._showRecordDetails(listItem.dataset.recordId);
+      }
     }
     _bindEvents() {
       if (this.dom.seeMoreBtn)
@@ -1169,6 +1374,17 @@ document.addEventListener("DOMContentLoaded", () => {
             })
           );
           if (c) this.clearHistoryForCurrentType();
+        });
+      }
+      if (this.dom.historyList) {
+        this.dom.historyList.addEventListener(
+          "click",
+          this._handleHistoryListInteraction.bind(this)
+        );
+        this.dom.historyList.addEventListener("keypress", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            this._handleHistoryListInteraction(e);
+          }
         });
       }
       document.addEventListener("languageChanged", () => this.renderHistory());
@@ -1261,13 +1477,6 @@ document.addEventListener("DOMContentLoaded", () => {
       ss.textContent = st;
       li.appendChild(ds);
       li.appendChild(ss);
-      li.addEventListener("click", () => this._showRecordDetails(r.id));
-      li.addEventListener("keypress", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          this._showRecordDetails(r.id);
-        }
-      });
       return li;
     }
     _showRecordDetails(id) {
@@ -1350,24 +1559,19 @@ document.addEventListener("DOMContentLoaded", () => {
       this.renderHistory();
     }
   }
+
   class StatisticsManager {
-    constructor(sm, um, vm, lm) {
+    constructor(sm, um, vm, lm, dom) {
       this.storageManager = sm;
       this.uiManager = um;
       this.vehicleManager = vm;
       this.langManager = lm;
+      this.dom = dom;
       this.chartInstance = null;
       this.debouncedUpdate = Utils.debounce(
         () => this.updateStatistics(),
         CONFIG.DEBOUNCE_DELAY
       );
-      this.dom = {
-        statsSection: document.getElementById("statsSection"),
-        totalKmStat: document.getElementById("totalKmStat"),
-        totalGastoStat: document.getElementById("totalGastoStat"),
-        mediaConsumoStat: document.getElementById("mediaConsumoStat"),
-        chartCanvas: document.getElementById("fuelChartCanvas"),
-      };
       this._bindEvents();
     }
     _bindEvents() {
@@ -1380,6 +1584,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.addEventListener("tripCalculated", () => this.debouncedUpdate());
       document.addEventListener("historyCleared", () => this.debouncedUpdate());
       document.addEventListener("allDataCleared", () => this.debouncedUpdate());
+      document.addEventListener("themeChanged", () => this.debouncedUpdate());
     }
     updateStatistics() {
       if (!this.dom.statsSection) return;
@@ -1410,15 +1615,12 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       const tl = hd.reduce((s, i) => s + parseFloat(i.litrosConsumidos), 0);
       const mc = tl > 0 ? tk / tl : 0;
-      if (this.dom.totalKmStat)
-        this.dom.totalKmStat.textContent = `${tk.toFixed(1)} km`;
-      if (this.dom.totalGastoStat)
-        this.dom.totalGastoStat.textContent = Utils.formatCurrency(
-          tg,
-          this.langManager.currentLanguage
-        );
-      if (this.dom.mediaConsumoStat)
-        this.dom.mediaConsumoStat.textContent = `${mc.toFixed(1)} km/L`;
+      this.dom.totalKmStat.textContent = `${tk.toFixed(1)} km`;
+      this.dom.totalGastoStat.textContent = Utils.formatCurrency(
+        tg,
+        this.langManager.currentLanguage
+      );
+      this.dom.mediaConsumoStat.textContent = `${mc.toFixed(1)} km/L`;
     }
     _prepareChartData(hd) {
       const dc = {};
@@ -1453,20 +1655,12 @@ document.addEventListener("DOMContentLoaded", () => {
           : "vehicleTypeMotorcycle"
       );
       const cl = this.langManager.get("chartDailyExpenseLabel", { type: vt });
-      const tc =
-        getComputedStyle(document.documentElement)
-          .getPropertyValue("--uber-text-primary")
-          .trim() || "#e0e0e0";
-      const gc =
-        getComputedStyle(document.documentElement)
-          .getPropertyValue("--uber-gray-light")
-          .trim() || "#444444";
-      const ug =
-        getComputedStyle(document.documentElement)
-          .getPropertyValue("--uber-green")
-          .trim() || "#00c165";
-      const ugt = "rgba(0, 193, 101, 0.2)";
-      const cc = {
+      const style = getComputedStyle(document.documentElement);
+      const textColor = style.getPropertyValue("--c-text-primary").trim();
+      const gridColor = style.getPropertyValue("--c-border").trim();
+      const accentColor = style.getPropertyValue("--c-accent").trim();
+      const accentBgColor = style.getPropertyValue("--c-accent-light").trim();
+      const chartConfig = {
         type: "line",
         data: {
           labels: labels,
@@ -1474,16 +1668,20 @@ document.addEventListener("DOMContentLoaded", () => {
             {
               label: cl,
               data: data,
-              borderColor: ug,
-              backgroundColor: ugt,
-              tension: 0.3,
+              borderColor: accentColor,
+              backgroundColor: accentBgColor,
+              tension: 0.4,
               fill: true,
-              pointBackgroundColor: ug,
-              pointBorderColor: "#fff",
+              pointBackgroundColor: accentColor,
+              pointBorderColor: style
+                .getPropertyValue("--c-bg-secondary")
+                .trim(),
               pointRadius: 4,
               pointHoverRadius: 7,
-              pointHoverBackgroundColor: "#fff",
-              pointHoverBorderColor: ug,
+              pointHoverBackgroundColor: style
+                .getPropertyValue("--c-bg-secondary")
+                .trim(),
+              pointHoverBorderColor: accentColor,
               borderWidth: 2,
             },
           ],
@@ -1493,30 +1691,32 @@ document.addEventListener("DOMContentLoaded", () => {
           maintainAspectRatio: false,
           scales: {
             x: {
-              ticks: { color: tc, font: { size: 10 } },
-              grid: { color: gc, drawBorder: false },
+              ticks: { color: textColor, font: { size: 10 } },
+              grid: { color: gridColor, drawBorder: false },
             },
             y: {
               ticks: {
-                color: tc,
+                color: textColor,
                 callback: (v) =>
                   Utils.formatCurrency(v, this.langManager.currentLanguage),
                 font: { size: 10 },
               },
-              grid: { color: gc, drawBorder: false },
+              grid: { color: gridColor, drawBorder: false },
               beginAtZero: true,
             },
           },
           plugins: {
-            legend: { labels: { color: tc, font: { size: 12 } } },
+            legend: { labels: { color: textColor, font: { size: 12 } } },
             tooltip: {
-              backgroundColor: "rgba(0,0,0,0.85)",
-              titleColor: ug,
-              bodyColor: tc,
-              borderColor: ug,
+              backgroundColor: style
+                .getPropertyValue("--c-bg-secondary")
+                .trim(),
+              titleColor: textColor,
+              bodyColor: textColor,
+              borderColor: gridColor,
               borderWidth: 1,
               padding: 10,
-              cornerRadius: 4,
+              cornerRadius: 8,
               callbacks: {
                 label: (c) =>
                   `${c.dataset.label || ""}: ${Utils.formatCurrency(
@@ -1530,25 +1730,17 @@ document.addEventListener("DOMContentLoaded", () => {
         },
       };
       if (this.chartInstance) {
-        this.chartInstance.data.labels = labels;
-        this.chartInstance.data.datasets[0].data = data;
-        this.chartInstance.data.datasets[0].label = cl;
-        this.chartInstance.options.scales.y.ticks.callback = (v) =>
-          Utils.formatCurrency(v, this.langManager.currentLanguage);
-        this.chartInstance.options.plugins.tooltip.callbacks.label = (c) =>
-          `${c.dataset.label || ""}: ${Utils.formatCurrency(
-            c.parsed.y,
-            this.langManager.currentLanguage
-          )}`;
+        this.chartInstance.data = chartConfig.data;
+        this.chartInstance.options = chartConfig.options;
         this.chartInstance.update();
       } else {
         try {
           this.chartInstance = new Chart(
             this.dom.chartCanvas.getContext("2d"),
-            cc
+            chartConfig
           );
         } catch (e) {
-          console.error("Erro Chart:", e);
+          console.error("Erro ao criar Chart.js:", e);
           this.uiManager.showNotification("genericError", "error");
           this.chartInstance = null;
         }
@@ -1558,133 +1750,149 @@ document.addEventListener("DOMContentLoaded", () => {
       this.updateStatistics();
     }
   }
+
   class AppManager {
-    constructor() {
-      this.storageManager = new StorageManager();
-      this.languageManager = new LanguageManager(this.storageManager);
-      this.uiManager = new UIManager(this.languageManager);
-      this.storageManager.uiManager = this.uiManager;
+    constructor(dom) {
+      this.dom = dom;
+      this.uiManager = new UIManager(null, this.dom);
+      this.storageManager = new StorageManager(this.uiManager);
+      this.languageManager = new LanguageManager(this.storageManager, this.dom);
+      this.themeManager = new ThemeManager(this.storageManager, this.dom);
+      this.uiManager.langManager = this.languageManager;
       this.validator = new Validator(this.uiManager, this.languageManager);
       this.inputFormatter = new InputFormatter();
       this.vehicleManager = new VehicleManager(
         this.storageManager,
         this.uiManager,
         this.validator,
-        this.languageManager
+        this.languageManager,
+        this.dom
       );
       this.fuelCalculator = new FuelCalculator(
         this.storageManager,
         this.uiManager,
         this.validator,
         this.vehicleManager,
-        this.languageManager
+        this.languageManager,
+        this.dom
       );
       this.historyManager = new HistoryManager(
         this.storageManager,
         this.uiManager,
         this.vehicleManager,
-        this.languageManager
+        this.languageManager,
+        this.dom
       );
       this.statisticsManager = new StatisticsManager(
         this.storageManager,
         this.uiManager,
         this.vehicleManager,
-        this.languageManager
+        this.languageManager,
+        this.dom
       );
-      this.dom = {
-        appVersionSpan: document.getElementById("appVersion"),
-        appContainer: document.getElementById("appContainer"),
-        desktopNoticeOverlay: document.getElementById("desktop-notice-overlay"),
-        qrCodeCanvas: document.getElementById("qrCodeCanvas"),
-        pageUrlLink: document.getElementById("pageUrlLink"),
-      };
+      this.eventsBound = false;
       this._init();
     }
     _init() {
-      this._displayAppVersion();
+      this._displayAppInfo();
+      this.themeManager.init();
       this.languageManager.setLanguage(this.languageManager.currentLanguage);
       this.inputFormatter.initialize();
-      if (this._isDesktop()) {
-        this._setupDesktopNotice();
-      } else {
-        if (this.dom.appContainer)
-          this.dom.appContainer.classList.remove("app-content-hidden");
-        if (this.dom.desktopNoticeOverlay)
-          this.dom.desktopNoticeOverlay.style.display = "none";
-        this._registerServiceWorker();
-        this._bindGlobalAppEvents();
-      }
+      this._bindGlobalAppEvents();
+      this._handleViewport();
+      window.addEventListener(
+        "resize",
+        Utils.debounce(() => this._handleViewport(), CONFIG.DEBOUNCE_DELAY)
+      );
       this._hideSplashScreen();
     }
-    _isDesktop() {
-      const minWidthForDesktop = 1024;
-      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-      if (
-        /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
-          userAgent.toLowerCase()
-        )
-      ) {
-        return false;
+    _handleViewport() {
+      const isDesktop = window.innerWidth > CONFIG.MAX_MOBILE_WIDTH;
+      this.dom.body.classList.toggle("desktop-view", isDesktop);
+      if (isDesktop) {
+        this._setupDesktopNotice();
+      } else if (!this.eventsBound) {
+        this._registerServiceWorker();
+        this.eventsBound = true;
       }
-      return window.innerWidth >= minWidthForDesktop;
     }
     _setupDesktopNotice() {
-      if (this.dom.appContainer)
-        this.dom.appContainer.classList.add("app-content-hidden");
-      if (this.dom.desktopNoticeOverlay) {
-        this.dom.desktopNoticeOverlay.style.display = "flex";
-        this.languageManager.applyTranslationsToPage();
-        const pageUrl = "https://johnaugust934.github.io/FuelCalc/";
-        if (this.dom.pageUrlLink) {
-          this.dom.pageUrlLink.href = pageUrl;
-          this.dom.pageUrlLink.textContent = pageUrl;
-        }
-        if (this.dom.qrCodeCanvas && typeof QRious !== "undefined") {
-          new QRious({
+      this.languageManager.applyTranslationsToPage();
+      const pageUrl = "https://johnaugust934.github.io/FuelCalc/";
+      if (this.dom.pageUrlLink) {
+        this.dom.pageUrlLink.href = pageUrl;
+        this.dom.pageUrlLink.textContent = pageUrl;
+      }
+      if (this.dom.qrCodeCanvas && typeof QRious !== "undefined") {
+        if (!this.qrInstance) {
+          this.qrInstance = new QRious({
             element: this.dom.qrCodeCanvas,
             value: pageUrl,
-            size: 200,
+            size: 180,
             level: "H",
-            background: null,
+            background: "white",
             foreground: "black",
-            padding: 0,
+            padding: 10,
           });
-        } else {
-          console.warn("Canvas ou QRious não encontrado.");
-          if (this.dom.qrCodeCanvas)
-            this.dom.qrCodeCanvas.style.display = "none";
         }
+      } else {
+        console.warn("Canvas ou QRious não encontrado.");
+        if (this.dom.qrCodeCanvas) this.dom.qrCodeCanvas.style.display = "none";
       }
     }
-    _displayAppVersion() {
+    _displayAppInfo() {
       if (this.dom.appVersionSpan)
         this.dom.appVersionSpan.textContent = CONFIG.APP_VERSION;
+      if (this.dom.currentYearSpan)
+        this.dom.currentYearSpan.textContent = new Date().getFullYear();
     }
     _registerServiceWorker() {
-      if ("serviceWorker" in navigator && !this._isDesktop()) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker
-            .register("./sw.js")
-            .then((reg) => console.log("SW FuelCalc OK. Escopo:", reg.scope))
-            .catch((err) => console.error("Falha SW FuelCalc:", err));
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("./sw.js")
+          .then((reg) => {
+            console.log("SW FuelCalc OK. Escopo:", reg.scope);
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              if (installingWorker) {
+                installingWorker.onstatechange = () => {
+                  if (
+                    installingWorker.state === "installed" &&
+                    navigator.serviceWorker.controller
+                  ) {
+                    this.uiManager.showUpdateNotification(() => {
+                      installingWorker.postMessage({ type: "SKIP_WAITING" });
+                    });
+                  }
+                };
+              }
+            };
+          })
+          .catch((err) => console.error("Falha SW FuelCalc:", err));
+        let refreshing;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (!refreshing) {
+            window.location.reload();
+            refreshing = true;
+          }
         });
       }
     }
     _bindGlobalAppEvents() {
-      const exportBtn = document.getElementById("exportDataBtn");
-      if (exportBtn)
-        exportBtn.addEventListener("click", () =>
+      if (this.dom.exportBtn)
+        this.dom.exportBtn.addEventListener("click", () =>
           this.storageManager.exportData()
         );
-      const importBtn = document.getElementById("importDataBtn");
-      const importFileInput = document.getElementById("importFileInput");
-      if (importBtn && importFileInput) {
-        importBtn.addEventListener("click", () => importFileInput.click());
-        importFileInput.addEventListener("change", async (e) => {
+      if (this.dom.importBtn && this.dom.importFileInput) {
+        this.dom.importBtn.addEventListener("click", () =>
+          this.dom.importFileInput.click()
+        );
+        this.dom.importFileInput.addEventListener("change", async (e) => {
           const file = e.target.files[0];
           if (file) {
             const success = await this.storageManager.importData(file);
             if (success) {
+              this.themeManager.applyTheme();
               const newLang =
                 this.languageManager._loadLanguagePreference() ||
                 CONFIG.DEFAULT_LANGUAGE;
@@ -1693,13 +1901,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 this.vehicleManager.currentVehicleType
               );
             }
-            importFileInput.value = "";
+            this.dom.importFileInput.value = "";
           }
         });
       }
-      const clearAllDataBtn = document.getElementById("clearAllDataBtn");
-      if (clearAllDataBtn) {
-        clearAllDataBtn.addEventListener("click", async () => {
+      if (this.dom.clearAllDataBtn) {
+        this.dom.clearAllDataBtn.addEventListener("click", async () => {
           const c1 = await this.uiManager.showConfirm(
             "confirmClearAllData",
             "clearAllDataBtn"
@@ -1719,9 +1926,15 @@ document.addEventListener("DOMContentLoaded", () => {
           this._performClearAllData();
         });
       }
+      if (this.dom.helpButton) {
+        this.dom.helpButton.addEventListener("click", () =>
+          this.uiManager.showHelpModal()
+        );
+      }
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           this.uiManager.hideDetailsModal();
+          this.uiManager.hideHelpModal();
           if (
             this.uiManager.confirmModalOverlay &&
             this.uiManager.confirmModalOverlay.classList.contains("active")
@@ -1738,6 +1951,7 @@ document.addEventListener("DOMContentLoaded", () => {
         this.historyManager.resetState();
         this.statisticsManager.resetState();
         this.languageManager.setLanguage(CONFIG.DEFAULT_LANGUAGE);
+        this.themeManager.setTheme(CONFIG.DEFAULT_THEME);
         document.dispatchEvent(new CustomEvent("allDataCleared"));
         this.uiManager.showNotification("allDataClearedSuccess", "success");
       }
@@ -1751,7 +1965,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "transitionend",
             () => {
               if (s.classList.contains("hidden")) {
-                /* s.remove(); */
+                s.style.display = "none";
               }
             },
             { once: true }
@@ -1763,10 +1977,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Inicia a aplicação.
   try {
-    new AppManager();
+    new AppManager(DOM);
   } catch (e) {
     console.error("Erro fatal ao inicializar a aplicação:", e);
-    // Exibe uma mensagem de erro na tela de splash se a aplicação falhar em carregar.
     const splash = document.getElementById("splash-screen");
     if (splash) {
       splash.innerHTML = `<div style="padding: 2rem; color: #ffcdd2;"><h1>Erro Crítico</h1><p>A aplicação não pôde ser iniciada. Por favor, tente recarregar a página ou limpar o cache do navegador.</p><p style="font-size: 0.8rem; margin-top: 1rem;">Erro: ${e.message}</p></div>`;
