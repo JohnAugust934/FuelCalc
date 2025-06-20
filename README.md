@@ -89,3 +89,44 @@ Acesse a aplicação diretamente através do link do GitHub Pages:
     - Em navegadores compatíveis (Chrome, Edge, Firefox em Android), procure pelo ícone de instalação na barra de endereço ou no menu para adicionar o FuelCalc à sua tela inicial e usá-lo como um aplicativo nativo.
 
 ## 📂 Estrutura do Projeto
+
+```
+FuelCalc/
+├── icons/                          # Ícones da aplicação para PWA e favicons
+│   ├── icon-72x72.png
+│   └── ... (outros tamanhos)
+├── libs/                           # Bibliotecas de terceiros
+│   └── chart.min.js                # Chart.js para gráficos
+├── screenshots/                    # Screenshots para o manifest PWA
+│   ├── screenshot1.png
+│   └── screenshot2.png
+├── app.js                          # Lógica principal da aplicação em JavaScript
+├── index.html                      # Estrutura principal da página (HTML)
+├── manifest.json                   # Web App Manifest para PWA
+├── README.md                       # Este ficheiro
+├── styles.css                      # Folha de estilos principal
+├── sw.js                           # Service Worker para PWA (cache e offline)
+└── translations.js                 # Strings de tradução para i18n
+```
+
+## 🤝 Como Contribuir
+
+Contribuições são sempre bem-vindas! Se você tem sugestões, correções de bugs ou novas funcionalidades:
+
+1.  Faça um **Fork** do projeto.
+2.  Crie uma nova **Branch** para a sua funcionalidade (`git checkout -b feature/MinhaNovaFeature`).
+3.  Faça **Commit** das suas alterações (`git commit -m 'Adiciona MinhaNovaFeature'`).
+4.  Faça **Push** para a sua Branch (`git push origin feature/MinhaNovaFeature`).
+5.  Abra um **Pull Request** no repositório original.
+
+Por favor, tente seguir os padrões de código existentes e adicione comentários relevantes às suas alterações.
+
+## 📜 Licença
+
+Este projeto está licenciado sob a Licença MIT. Veja o ficheiro `LICENSE` (se existir) para mais detalhes, ou consulte [opensource.org/licenses/MIT](https://opensource.org/licenses/MIT).
+
+---
+
+**Desenvolvido com ❤️ por João Augusto**
+
+✨ Sinta-se à vontade para usar, modificar e contribuir! ✨
