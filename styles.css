@@ -1,4 +1,4 @@
-/* styles.css - FuelCalc */
+/* styles.css - FuelCalc v1.5.6 */
 
 /* ===== VARIÁVEIS GLOBAIS E RESET ===== */
 :root {
@@ -13,9 +13,8 @@
   --uber-red: #e74c3c;
   --uber-red-dark: #c0392b;
   --uber-blue: #3498db;
-
   --font-primary: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    Helvetica, Arial, sans-serif;
   --border-radius-small: 4px;
   --border-radius-medium: 8px;
   --border-radius-large: 15px;
@@ -24,7 +23,6 @@
   --transition-fast: all 0.2s ease-in-out;
   --transition-medium: all 0.3s ease-in-out;
 }
-
 *,
 *::before,
 *::after {
@@ -32,7 +30,6 @@
   padding: 0;
   box-sizing: border-box;
 }
-
 body {
   font-family: var(--font-primary);
   background-color: var(--uber-gray-dark);
@@ -44,11 +41,11 @@ body {
   flex-direction: column;
   align-items: center;
 }
-
 body.modal-open {
   overflow: hidden;
 }
 
+/* ===== LAYOUT PRINCIPAL ===== */
 .container {
   width: 100%;
   max-width: 700px;
@@ -59,7 +56,6 @@ body.modal-open {
   box-shadow: var(--box-shadow-strong);
   padding: 0;
 }
-
 .app-header {
   padding: 1.5rem;
   background: linear-gradient(135deg, var(--uber-green), var(--uber-black));
@@ -68,7 +64,6 @@ body.modal-open {
   color: #ffffff;
   position: relative;
 }
-
 .app-header .logo {
   width: 70px;
   height: 70px;
@@ -78,54 +73,75 @@ body.modal-open {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   object-fit: cover;
 }
-
 .app-header h1 {
   font-size: 2.2rem;
   margin-bottom: 0.25rem;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
-
 .app-header p {
   font-size: 1rem;
   color: var(--uber-text-secondary);
   margin-top: 0;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
 }
-
-.language-switcher {
+.header-controls {
   position: absolute;
   top: 10px;
   right: 10px;
   display: flex;
-  gap: 5px;
+  align-items: center;
+  gap: 10px;
 }
-
-.lang-button {
+.language-switcher {
+  display: flex;
+  gap: 5px;
   background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 0.3rem 0.6rem;
+  border-radius: var(--border-radius-small);
+  padding: 2px;
+}
+.lang-button {
+  background-color: transparent;
+  color: #fff;
+  border: none;
+  padding: 0.2rem 0.5rem;
   border-radius: var(--border-radius-small);
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 500;
   transition: var(--transition-fast);
 }
-
 .lang-button:hover,
 .lang-button:focus {
   background-color: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
   outline: none;
 }
-
 .lang-button[aria-pressed="true"] {
   background-color: var(--uber-green);
   color: var(--uber-black);
-  border-color: var(--uber-green);
   box-shadow: 0 0 5px rgba(0, 193, 101, 0.5);
 }
-
+.header-icon-button {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
+}
+.header-icon-button:hover,
+.header-icon-button:focus {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+  outline: none;
+}
 .app-footer {
   text-align: center;
   padding: 1.5rem 1rem;
@@ -139,10 +155,10 @@ body.modal-open {
   color: var(--uber-text-primary);
 }
 
+/* ===== COMPONENTES GERAIS ===== */
 .input-group {
   margin-bottom: 1.25rem;
 }
-
 .input-group label {
   display: block;
   margin-bottom: 0.5rem;
@@ -150,11 +166,10 @@ body.modal-open {
   font-weight: 500;
   color: var(--uber-text-secondary);
 }
-
 .input-group input[type="text"],
 .input-group input[type="number"],
-.input-group input[type="password"],
-.input-group select {
+.input-group select,
+.uber-select {
   width: 100%;
   padding: 0.85rem 1rem;
   background: var(--uber-gray-dark);
@@ -165,19 +180,17 @@ body.modal-open {
   font-family: var(--font-primary);
   transition: var(--transition-fast);
 }
-
 .input-group input:focus,
-.input-group select:focus {
+.input-group select:focus,
+.uber-select:focus {
   outline: none;
   border-color: var(--uber-green);
   box-shadow: 0 0 0 3px rgba(0, 193, 101, 0.25);
 }
-
 .input-group input::placeholder {
   color: var(--uber-text-secondary);
   opacity: 0.7;
 }
-
 .uber-button {
   display: inline-block;
   background: var(--uber-green);
@@ -194,7 +207,6 @@ body.modal-open {
   box-shadow: var(--box-shadow-soft);
   margin: 0.5rem 0;
 }
-
 .uber-button:hover,
 .uber-button:focus {
   background-color: var(--uber-green-dark);
@@ -202,25 +214,21 @@ body.modal-open {
   box-shadow: 0 4px 10px rgba(0, 193, 101, 0.3);
   outline: none;
 }
-
 .uber-button:active {
   transform: translateY(0px);
   box-shadow: var(--box-shadow-soft);
 }
-
 .uber-button.secondary {
   background: transparent;
   color: var(--uber-green);
   border: 2px solid var(--uber-green);
 }
-
 .uber-button.secondary:hover,
 .uber-button.secondary:focus {
   background: rgba(0, 193, 101, 0.1);
   color: var(--uber-green-dark);
   border-color: var(--uber-green-dark);
 }
-
 .uber-button.danger {
   background: var(--uber-red);
   color: #ffffff;
@@ -230,12 +238,10 @@ body.modal-open {
   background: var(--uber-red-dark);
   box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
 }
-
 .uber-button.full-width {
   display: block;
   width: 100%;
 }
-
 .button-group {
   display: flex;
   gap: 0.75rem;
@@ -247,7 +253,60 @@ body.modal-open {
   margin: 0;
   flex-grow: 1;
 }
+.uber-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
 
+/* ===== COMPONENTE HÍBRIDO DE EFICIÊNCIA ===== */
+.hybrid-input-container {
+  position: relative;
+  display: flex;
+}
+.hybrid-input-container::after {
+  content: "▼";
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: var(--uber-text-secondary);
+  pointer-events: none;
+  transition: var(--transition-fast);
+}
+.hybrid-input-container.no-vehicles #tripEfficiencySelector,
+.hybrid-input-container.manual-mode #tripEfficiencySelector {
+  display: none;
+}
+.hybrid-input-container.no-vehicles #tripEfficiencyInput,
+.hybrid-input-container.manual-mode #tripEfficiencyInput {
+  display: block;
+}
+.hybrid-input-container:not(.manual-mode):not(.no-vehicles)
+  #tripEfficiencyInput {
+  display: block;
+  border-left: none;
+  background: var(--uber-gray-medium);
+  color: var(--uber-text-secondary);
+  width: 35%;
+  flex-shrink: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.hybrid-input-container:not(.manual-mode):not(.no-vehicles)
+  #tripEfficiencySelector {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  flex-grow: 1;
+  width: 65%;
+}
+.hybrid-input-container.manual-mode::after {
+  display: none;
+}
+
+/* ===== SEÇÕES ESPECÍFICAS ===== */
 .content-section {
   padding: 1.5rem;
   border-bottom: 1px solid var(--uber-gray-light);
@@ -255,7 +314,6 @@ body.modal-open {
 .content-section:last-child {
   border-bottom: none;
 }
-
 .content-section h2,
 .content-section h3 {
   color: var(--uber-green);
@@ -266,14 +324,12 @@ body.modal-open {
 .content-section h3 {
   font-size: 1.3rem;
 }
-
 .vehicle-type-buttons {
   display: flex;
   justify-content: center;
   gap: 0.75rem;
   margin-bottom: 1.5rem;
 }
-
 .vehicle-type-buttons .uber-button {
   padding: 0.6rem 1.2rem;
   font-size: 0.9rem;
@@ -281,7 +337,6 @@ body.modal-open {
   color: var(--uber-text-secondary);
   border: 2px solid transparent;
 }
-
 .vehicle-type-buttons .uber-button.selected {
   background-color: var(--uber-green);
   color: var(--uber-black);
@@ -292,14 +347,12 @@ body.modal-open {
   background-color: var(--uber-gray-medium);
   color: var(--uber-text-primary);
 }
-
 .vehicle-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
-
 .vehicle-card {
   background: var(--uber-gray-dark);
   padding: 1rem;
@@ -313,19 +366,16 @@ body.modal-open {
   align-items: flex-start;
   position: relative;
 }
-
 .vehicle-card:hover,
 .vehicle-card:focus-within {
   transform: translateY(-3px);
   box-shadow: 0 5px 12px rgba(0, 0, 0, 0.25);
   border-color: var(--uber-green);
 }
-
 .vehicle-card.active {
   border-color: var(--uber-green);
   box-shadow: 0 0 0 3px rgba(0, 193, 101, 0.3), var(--box-shadow-soft);
 }
-
 .vehicle-card h4 {
   font-size: 1.1rem;
   color: var(--uber-text-primary);
@@ -361,6 +411,7 @@ body.modal-open {
   outline: none;
 }
 .vehicle-form {
+  display: none;
   background-color: var(--uber-gray-dark);
   padding: 1.5rem;
   border-radius: var(--border-radius-medium);
@@ -396,8 +447,6 @@ body.modal-open {
   color: var(--uber-green);
   font-size: 1.2rem;
   font-weight: bold;
-}
-.history-section {
 }
 .price-list {
   list-style: none;
@@ -440,8 +489,6 @@ body.modal-open {
   word-break: break-word;
   min-width: 0;
 }
-.stats-section {
-}
 .stat-item {
   display: flex;
   justify-content: space-between;
@@ -469,8 +516,6 @@ body.modal-open {
   border-radius: var(--border-radius-medium);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
-.backup-section {
-}
 .backup-buttons {
   display: flex;
   gap: 1rem;
@@ -491,8 +536,6 @@ body.modal-open {
   margin: 0;
   text-align: center;
 }
-
-/* ===== MODAIS ===== */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -585,7 +628,6 @@ body.modal-open {
   gap: 0.75rem;
   margin-top: 1.5rem;
 }
-
 .notification-area {
   position: fixed;
   top: 1rem;
@@ -650,8 +692,6 @@ body.modal-open {
     transform: translateX(100%);
   }
 }
-
-/* ===== TELA DE CARREGAMENTO (SPLASH SCREEN) ===== */
 .splash-screen {
   position: fixed;
   top: 0;
@@ -708,8 +748,6 @@ body.modal-open {
   font-style: italic;
   list-style-type: none;
 }
-
-/* ===== AVISO PARA DESKTOP E QR CODE ===== */
 .desktop-notice-overlay {
   position: fixed;
   top: 0;
@@ -735,7 +773,7 @@ body.modal-open {
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centraliza conteúdo interno */
+  align-items: center;
 }
 .desktop-notice-content .logo {
   width: 80px;
@@ -755,25 +793,19 @@ body.modal-open {
   margin-bottom: 1.5rem;
   color: var(--uber-text-secondary);
 }
-
-/* Contêiner para o QR Code para melhor controle do fundo branco e padding */
 .qr-code-container {
-  background-color: white; /* Fundo branco para o QR code */
-  padding: 15px; /* Espaçamento entre o QR code e a borda do contêiner branco */
-  border-radius: var(
-    --border-radius-small
-  ); /* Bordas arredondadas para o quadrado branco */
-  display: inline-block; /* Para que o padding funcione corretamente */
-  margin: 1rem auto 1.5rem auto; /* Centraliza o contêiner branco */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra suave opcional */
+  background-color: white;
+  padding: 15px;
+  border-radius: var(--border-radius-medium);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem auto 1.5rem auto;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
-
 #qrCodeCanvas {
-  display: block; /* Remove espaço extra abaixo do canvas se for inline */
-  /* O tamanho é definido pela biblioteca Qrious (ex: size: 200) */
-  /* A centralização do canvas em si dentro do .qr-code-container é automática se o canvas for menor que o padding */
+  display: block;
 }
-
 #desktop-url-info {
   font-size: 0.9rem;
   color: var(--uber-text-secondary);
@@ -789,8 +821,37 @@ body.modal-open {
 .app-content-hidden {
   display: none !important;
 }
-
-/* ===== MEDIA QUERIES (Responsividade) ===== */
+.help-modal-content {
+  max-width: 600px;
+}
+.manual-content {
+  text-align: left;
+  margin-top: 1rem;
+}
+.manual-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.manual-step:last-child {
+  margin-bottom: 0;
+}
+.manual-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  margin-top: -5px;
+}
+.manual-text h4 {
+  color: var(--uber-text-primary);
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+.manual-text p {
+  color: var(--uber-text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
 @media (max-width: 768px) {
   body {
     padding: 0.5rem;
@@ -832,13 +893,19 @@ body.modal-open {
   .modal-content h3 {
     font-size: 1.3rem;
   }
-  .language-switcher {
+  .header-controls {
     top: 5px;
     right: 5px;
+    gap: 5px;
   }
   .lang-button {
     padding: 0.2rem 0.4rem;
     font-size: 0.7rem;
+  }
+  .header-icon-button {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
   }
 }
 @media (max-width: 480px) {
@@ -896,9 +963,8 @@ body.modal-open {
     padding: 1.5rem;
   }
   .qr-code-container {
-    padding: 10px; /* Menor padding em telas menores, embora seja para desktop */
+    padding: 10px;
   }
-  /* #qrCodeCanvas { max-width: 180px; } // O tamanho do canvas é definido pela lib, max-width no container é melhor */
 }
 *:focus-visible {
   outline: 3px solid var(--uber-blue);

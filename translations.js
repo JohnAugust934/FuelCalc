@@ -1,40 +1,10 @@
-// js/config.js
+// translations.js
+// Armazena todas as strings de tradução da aplicação.
+// Este ficheiro deve ser carregado antes do app.js no index.html.
 
-// Versão atual da aplicação, visível para o utilizador e útil para versionamento de cache/storage.
-export const APP_VERSION = "1.5.3"; // Incrementada a versão
-
-// Configurações e constantes globais da aplicação.
-export const CONFIG = {
-  APP_VERSION,
-  STORAGE_KEYS: {
-    VEHICLES: `fuelCalc_vehicles_v${APP_VERSION.substring(0, 3)}`,
-    HISTORY: `fuelCalc_history_v${APP_VERSION.substring(0, 3)}`,
-    APP_SETTINGS: `fuelCalc_settings_v${APP_VERSION.substring(0, 3)}`,
-  },
-  DEFAULT_LANGUAGE: "pt-BR",
-  VALIDATION: {
-    MIN_EFFICIENCY: 1,
-    MAX_EFFICIENCY: 70,
-    MIN_KM: 0,
-    MAX_KM: 9999999,
-    MIN_PRICE: 0.1,
-    MAX_PRICE: 25,
-    MAX_TRIP_DISTANCE: 5000,
-    MIN_VEHICLE_NAME_LENGTH: 2,
-    MAX_VEHICLE_NAME_LENGTH: 40,
-    MAX_UBER_GAIN: 20000,
-  },
-  HISTORY_DISPLAY_COUNT: 3,
-  HISTORY_LIMIT: 50,
-  DEBOUNCE_DELAY: 350,
-  NOTIFICATION_TIMEOUT: 4000,
-  CHART_MAX_DAYS: 30,
-};
-
-// Objeto contendo todas as strings de tradução para os idiomas suportados.
-export const translations = {
+const translations = {
   "pt-BR": {
-    // ... (todas as traduções anteriores) ...
+    // Chaves para elementos HTML (identificados por data-translate-key)
     appTitle: "FuelCalc: Calculadora de Combustível",
     appDescriptionMeta:
       "Calculadora PWA de gastos com combustível, com estatísticas e gerenciamento de veículos.",
@@ -56,9 +26,9 @@ export const translations = {
     tripEfficiencyLabel: "Eficiência do Veículo (km/L):",
     tripEfficiencyPlaceholder: "Selecione um veículo ou informe",
     initialKmLabel: "KM Inicial:",
-    initialKmPlaceholder: "Ex: 15000.0",
+    initialKmPlaceholder: "Ex: 150000",
     finalKmLabel: "KM Final:",
-    finalKmPlaceholder: "Ex: 15120.5",
+    finalKmPlaceholder: "Ex: 150120",
     fuelPriceLabel: "Preço por Litro (R$):",
     fuelPricePlaceholder: "Ex: 5.89",
     tripGrossGainLabel: "Ganho Bruto da Viagem (R$, opcional):",
@@ -92,7 +62,22 @@ export const translations = {
     tripDetailsModalTitle: "Detalhes da Viagem",
     confirmActionModalTitle: "Confirmar Ação",
     areYouSure: "Você tem certeza?",
-    closeModalAriaLabel: "Fechar Detalhes",
+    closeModalAriaLabel: "Fechar",
+    helpButtonAriaLabel: "Ajuda e Guia Rápido",
+    helpModalTitle: "Como Usar o FuelCalc",
+    manualStep1Title: "1. Gerencie Seus Veículos",
+    manualStep1Desc:
+      "Adicione carros ou motos com sua eficiência de combustível (km/L). Selecione um veículo para usar seus dados automaticamente no cálculo.",
+    manualStep2Title: "2. Calcule Suas Viagens",
+    manualStep2Desc:
+      "Preencha os KMs inicial e final, o preço do combustível e, opcionalmente, seus ganhos. Clique em 'Calcular' para ver o resultado.",
+    manualStep3Title: "3. Analise Seu Histórico",
+    manualStep3Desc:
+      "Cada cálculo é guardado. Veja seu histórico e estatísticas detalhadas, incluindo um gráfico de gastos, para o tipo de veículo selecionado.",
+    manualStep4Title: "4. Faça Backup dos Seus Dados",
+    manualStep4Desc:
+      "Use as opções de 'Backup e Restauração' para exportar seus dados para um ficheiro e importá-los quando precisar. Nunca perca suas informações!",
+
     vehicleSelected: 'Veículo "{name}" selecionado.',
     vehicleSaved: 'Veículo "{name}" salvo com sucesso!',
     vehicleDeleted: 'Veículo "{name}" excluído.',
@@ -159,13 +144,14 @@ export const translations = {
     invalidVehicleTypeError:
       "Tipo de veículo inválido. Selecione 'Carro' ou 'Moto'.",
     initialKmError: "KM Inicial inválido (entre {min} e {max}).",
+    initialKmNotIntegerError: "KM Inicial deve ser um número inteiro.",
+    finalKmNotIntegerError: "KM Final deve ser um número inteiro.",
     finalKmError:
       "KM Final inválido (deve ser maior que KM Inicial e até {max}).",
     maxTripDistanceError: "Distância da viagem excede o limite de {limit} km.",
     fuelPriceError: "Preço do combustível inválido (entre R${min} e R${max}).",
     tripGainError: "Ganho da viagem inválido (entre R$0 e R${max}).",
     currencyPlaceholder: "R$ --",
-    // Novas chaves para o aviso de desktop
     desktopNoticeTitle: "Otimizado para Mobile!",
     desktopNoticeMessage:
       "Esta aplicação foi desenhada para uma experiência móvel. Para usar o FuelCalc, por favor, acesse através do seu smartphone ou tablet.",
@@ -174,7 +160,22 @@ export const translations = {
     desktopOrVisit: "Ou visite:",
   },
   en: {
-    // ... (todas as traduções anteriores para inglês) ...
+    initialKmNotIntegerError: "Initial KM must be an integer.",
+    finalKmNotIntegerError: "Final KM must be an integer.",
+    helpModalTitle: "How to Use FuelCalc",
+    manualStep1Title: "1. Manage Your Vehicles",
+    manualStep1Desc:
+      "Add cars or motorcycles with their fuel efficiency (e.g., km/L or MPG). Select a vehicle to automatically use its data in calculations.",
+    manualStep2Title: "2. Calculate Your Trips",
+    manualStep2Desc:
+      "Fill in the initial and final KM/Miles, the fuel price, and optionally, your earnings. Click 'Calculate' to see the result.",
+    manualStep3Title: "3. Analyze Your History",
+    manualStep3Desc:
+      "Every calculation is saved. View your history and detailed statistics, including a spending chart, for the selected vehicle type.",
+    manualStep4Title: "4. Backup Your Data",
+    manualStep4Desc:
+      "Use the 'Backup & Restore' options to export your data to a file and import it whenever you need. Never lose your information!",
+    helpButtonAriaLabel: "Help and Quick Guide",
     appTitle: "FuelCalc: Fuel Calculator",
     appDescriptionMeta:
       "PWA fuel expense calculator with statistics and vehicle management.",
@@ -196,9 +197,9 @@ export const translations = {
     tripEfficiencyLabel: "Vehicle Efficiency (km/L or MPG):",
     tripEfficiencyPlaceholder: "Select a vehicle or enter manually",
     initialKmLabel: "Initial KM (or Miles):",
-    initialKmPlaceholder: "Ex: 15000.0",
+    initialKmPlaceholder: "Ex: 150000",
     finalKmLabel: "Final KM (or Miles):",
-    finalKmPlaceholder: "Ex: 15120.5",
+    finalKmPlaceholder: "Ex: 150120",
     fuelPriceLabel: "Price per Liter (or Gallon):",
     fuelPricePlaceholder: "Ex: 1.50",
     tripGrossGainLabel: "Gross Trip Earnings (optional):",
@@ -232,7 +233,7 @@ export const translations = {
     tripDetailsModalTitle: "Trip Details",
     confirmActionModalTitle: "Confirm Action",
     areYouSure: "Are you sure?",
-    closeModalAriaLabel: "Close Details",
+    closeModalAriaLabel: "Close",
     vehicleSelected: 'Vehicle "{name}" selected.',
     vehicleSaved: 'Vehicle "{name}" saved successfully!',
     vehicleDeleted: 'Vehicle "{name}" deleted.',
@@ -303,9 +304,9 @@ export const translations = {
     fuelPriceError: "Fuel price invalid (between ${min} and ${max}).",
     tripGainError: "Trip earnings invalid (between $0 and ${max}).",
     currencyPlaceholder: "$ --",
-    // Novas chaves para o aviso de desktop
     desktopNoticeTitle: "Optimized for Mobile!",
-    desktopNoticeMessage: "This application is designed for a mobile experience. To use FuelCalc, please access it via your smartphone or tablet.",
+    desktopNoticeMessage:
+      "This application is designed for a mobile experience. To use FuelCalc, please access it via your smartphone or tablet.",
     desktopScanQrMessage: "Scan the QR Code below with your mobile device:",
     desktopOrVisit: "Or visit:",
   },
