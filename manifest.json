@@ -8,8 +8,8 @@
     "scope": "/FuelCalc/",
     "display": "standalone",
     "orientation": "portrait-primary",
-    "background_color": "#1A1A1A",
-    "theme_color": "#00C165",
+    "background_color": "#f8f9fa",
+    "theme_color": "#ffffff",
     "categories": [
         "productivity",
         "utilities",

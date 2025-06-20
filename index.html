@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="system">
 
 <head>
     <meta charset="UTF-8">
@@ -10,7 +10,7 @@
     <meta name="author" content="João Augusto">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
-    <meta name="theme-color" content="#00C165">
+    <meta name="theme-color" content="#ffffff">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
     <link rel="shortcut icon" href="icons/favicon.ico">
@@ -26,25 +26,24 @@
         <h1 data-translate-key="appName">FuelCalc</h1>
         <p data-translate-key="splashLoading">Carregando sua calculadora...</p>
     </div>
+
     <div id="desktop-notice-overlay" class="desktop-notice-overlay" style="display: none;">
         <div class="desktop-notice-content">
-            <div class="qr-code-container">
-                <canvas id="qrCodeCanvas"></canvas>
-            </div>
             <h2 data-translate-key="desktopNoticeTitle">Otimizado para Mobile!</h2>
             <p data-translate-key="desktopNoticeMessage">Esta aplicação foi desenhada para uma experiência móvel. Para
                 usar o FuelCalc, por favor, acesse através do seu smartphone ou tablet.</p>
             <p data-translate-key="desktopScanQrMessage">Escaneie o QR Code abaixo com seu dispositivo móvel:</p>
+            <div class="qr-code-container">
+                <canvas id="qrCodeCanvas"></canvas>
+            </div>
             <p id="desktop-url-info">
                 <span data-translate-key="desktopOrVisit">Ou visite:</span> <a id="pageUrlLink" href="#"></a>
             </p>
         </div>
     </div>
+
     <div class="container" id="appContainer">
         <header class="app-header">
-            <img src="icons/icon-192x192.png" alt="Logo FuelCalc" class="logo">
-            <h1 data-translate-key="appName">FuelCalc</h1>
-            <p data-translate-key="appSubtitle">Sua calculadora de combustível inteligente</p>
             <div class="header-controls">
                 <button type="button" class="header-icon-button" id="helpButton"
                     data-translate-key-aria-label="helpButtonAriaLabel" aria-label="Ajuda">?</button>
@@ -54,20 +53,58 @@
                     <button type="button" class="lang-button" data-lang="en" aria-pressed="false"
                         title="Switch to English">🇬🇧</button>
                 </div>
+                <div class="theme-switcher">
+                    <button type="button" class="theme-button" data-theme-toggle="light"
+                        data-translate-key-title="themeLight" title="Tema Claro">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </button>
+                    <button type="button" class="theme-button" data-theme-toggle="dark"
+                        data-translate-key-title="themeDark" title="Tema Escuro">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+                    <button type="button" class="theme-button active" data-theme-toggle="system"
+                        data-translate-key-title="themeSystem" title="Tema do Sistema">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="app-header-content">
+                <img src="icons/icon-192x192.png" alt="Logo FuelCalc" class="logo">
+                <h1 data-translate-key="appName">FuelCalc</h1>
+                <p data-translate-key="appSubtitle">Sua calculadora de combustível inteligente</p>
             </div>
         </header>
-        <section class="vehicle-selector content-section" aria-labelledby="vehicle-selector-title">
+        <section class="content-section" aria-labelledby="vehicle-selector-title">
             <h2 id="vehicle-selector-title" data-translate-key="manageVehiclesTitle">Gerenciar Veículos</h2>
             <div class="vehicle-type-buttons">
-                <button type="button" class="uber-button" data-vehicle-type="carro" aria-pressed="true"
+                <button type="button" class="btn" data-vehicle-type="carro" aria-pressed="true"
                     data-translate-key="vehicleTypeCar">Carro</button>
-                <button type="button" class="uber-button" data-vehicle-type="moto" aria-pressed="false"
+                <button type="button" class="btn" data-vehicle-type="moto" aria-pressed="false"
                     data-translate-key="vehicleTypeMotorcycle">Moto</button>
             </div>
             <div class="vehicle-cards" id="vehicleList" aria-live="polite"></div>
-            <button type="button" class="uber-button secondary full-width" id="addVehicleBtn"
+            <button type="button" class="btn btn-secondary full-width" id="addVehicleBtn"
                 data-translate-key="addVehicleBtn" aria-label="Adicionar Novo Veículo">+ Adicionar Veículo</button>
-            <form id="vehicleForm" class="vehicle-form" style="display:none;" novalidate>
+            <form id="vehicleForm" class="form-section" style="display:none;" novalidate>
                 <input type="hidden" id="vehicleType" name="vehicleType">
                 <div class="input-group">
                     <label for="vehicleName" data-translate-key="vehicleNameLabel">Nome do Veículo:</label>
@@ -84,14 +121,14 @@
                     <div class="error-message"></div>
                 </div>
                 <div class="button-group">
-                    <button type="submit" class="uber-button" id="saveVehicleBtn"
+                    <button type="submit" class="btn btn-primary" id="saveVehicleBtn"
                         data-translate-key="saveVehicleBtn">Salvar Veículo</button>
-                    <button type="button" class="uber-button secondary" id="cancelVehicleBtn"
+                    <button type="button" class="btn btn-secondary" id="cancelVehicleBtn"
                         data-translate-key="cancelBtn">Cancelar</button>
                 </div>
             </form>
         </section>
-        <main class="calculator-form content-section" aria-labelledby="calculator-title">
+        <main class="content-section" aria-labelledby="calculator-title">
             <h2 id="calculator-title" data-translate-key="calculateTripTitle">Calcular Gastos da Viagem</h2>
             <form id="fuelForm" novalidate>
                 <div class="input-group">
@@ -129,7 +166,7 @@
                         data-translate-key-placeholder="tripGrossGainPlaceholder" placeholder="Ex: 75.50">
                     <div class="error-message"></div>
                 </div>
-                <button type="submit" class="uber-button full-width" id="calculateTripBtn"
+                <button type="submit" class="btn btn-primary full-width" id="calculateTripBtn"
                     data-translate-key="calculateTripBtn">Calcular Gastos</button>
             </form>
         </main>
@@ -153,12 +190,12 @@
             <h3 id="history-title" data-translate-key="tripHistoryTitle">Histórico de Viagens</h3>
             <ul id="historyList" class="price-list" aria-live="polite"></ul>
             <div class="button-group">
-                <button type="button" id="seeMoreHistoryBtn" class="uber-button secondary" style="display:none;"
+                <button type="button" id="seeMoreHistoryBtn" class="btn btn-secondary" style="display:none;"
                     data-translate-key="seeMoreBtn">Ver Mais</button>
-                <button type="button" id="minimizeHistoryBtn" class="uber-button secondary" style="display:none;"
+                <button type="button" id="minimizeHistoryBtn" class="btn btn-secondary" style="display:none;"
                     data-translate-key="minimizeBtn">Minimizar</button>
             </div>
-            <button type="button" id="clearHistoryBtn" class="uber-button danger full-width" style="margin-top: 1rem;"
+            <button type="button" id="clearHistoryBtn" class="btn btn-danger full-width" style="margin-top: 1rem;"
                 data-translate-key="clearTypeHistoryBtn">Limpar Histórico deste Tipo de Veículo</button>
         </section>
         <section id="statsSection" class="stats-section content-section" style="display:none;"
@@ -179,19 +216,33 @@
         <section class="backup-section content-section" aria-labelledby="backup-title">
             <h3 id="backup-title" data-translate-key="backupRestoreTitle">Backup e Restauração de Dados</h3>
             <div class="backup-buttons">
-                <button type="button" id="exportDataBtn" class="uber-button" data-translate-key="exportDataBtn">📤
-                    Exportar Dados</button>
-                <button type="button" id="importDataBtn" class="uber-button" data-translate-key="importDataBtn">📥
-                    Importar Dados</button>
+                <button type="button" id="exportDataBtn" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20"
+                        height="20">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v4.59L7.3 9.72a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l2.5-2.5a.75.75 0 10-1.06-1.06L10.75 11.34V6.75z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <span data-translate-key="exportDataBtn">Exportar Dados</span>
+                </button>
+                <button type="button" id="importDataBtn" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20"
+                        height="20">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm-5.5-2.5a.75.75 0 000 1h11a.75.75 0 000-1h-11zM10 4.25a.75.75 0 01.75.75v4.59l2.44-2.44a.75.75 0 011.06 1.06l-3.75 3.75a.75.75 0 01-1.06 0L6.22 8.16a.75.75 0 111.06-1.06L9.25 9.59V5a.75.75 0 01.75-.75z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <span data-translate-key="importDataBtn">Importar Dados</span>
+                </button>
                 <input type="file" id="importFileInput" accept=".json" style="display: none;" aria-hidden="true">
             </div>
             <p class="backup-info" data-translate-key="backupInfoText">Exporte seus dados para um arquivo de backup ou
                 importe de um arquivo salvo anteriormente.</p>
-            <hr style="margin: 1.5rem 0; border-color: var(--uber-gray-light);">
-            <button type="button" id="clearAllDataBtn" class="uber-button danger full-width"
+            <hr>
+            <button type="button" id="clearAllDataBtn" class="btn btn-danger full-width"
                 data-translate-key="clearAllDataBtn">⚠️ Limpar Todos os Dados da Aplicação</button>
-            <p class="backup-info" style="margin-top: 0.5rem; color: var(--uber-red);"
-                data-translate-key="clearAllDataWarning">Atenção: Esta ação é irreversível e apagará todos os veículos e
+            <p class="backup-info danger-text" data-translate-key="clearAllDataWarning">Atenção: Esta ação é
+                irreversível e apagará todos os veículos e
                 históricos.</p>
         </section>
     </div>
@@ -259,9 +310,11 @@
             <h3 id="confirmModalTitle" data-translate-key="confirmActionModalTitle">Confirmar Ação</h3>
             <p id="confirmModalMessage" style="margin-bottom: 1.5rem; text-align: center;"
                 data-translate-key="areYouSure">Você tem certeza?</p>
-            <div class="confirm-modal-actions"><button type="button" class="uber-button secondary"
-                    id="confirmModalCancelBtn" data-translate-key="cancelBtn">Cancelar</button><button type="button"
-                    class="uber-button" id="confirmModalConfirmBtn" data-translate-key="confirmBtn">Confirmar</button>
+            <div class="confirm-modal-actions">
+                <button type="button" class="btn btn-secondary" id="confirmModalCancelBtn"
+                    data-translate-key="cancelBtn">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmModalConfirmBtn"
+                    data-translate-key="confirmBtn">Confirmar</button>
             </div>
         </div>
     </div>

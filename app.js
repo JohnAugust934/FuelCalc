@@ -1,10 +1,10 @@
 // app.js - Lógica Principal do FuelCalc
-// Versão: 1.5.8 (DOM Centralizado e Delegação de Eventos)
+// Versão: 1.6.0 (Refatoração de UI e Responsividade Mobile-Only)
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===== CONFIGURAÇÕES E CONSTANTES GLOBAIS =====
-  const APP_VERSION = "1.5.8";
+  const APP_VERSION = "1.6.0";
   const CONFIG = {
     APP_VERSION,
     STORAGE_KEYS: {
@@ -13,6 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
       APP_SETTINGS: `fuelCalc_settings_v1.5`,
     },
     DEFAULT_LANGUAGE: "pt-BR",
+    DEFAULT_THEME: "system",
+    MAX_MOBILE_WIDTH: 450,
     VALIDATION: {
       MIN_EFFICIENCY: 1,
       MAX_EFFICIENCY: 70,
@@ -27,13 +29,14 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     HISTORY_DISPLAY_COUNT: 3,
     HISTORY_LIMIT: 50,
-    DEBOUNCE_DELAY: 350,
+    DEBOUNCE_DELAY: 150,
     NOTIFICATION_TIMEOUT: 4000,
     CHART_MAX_DAYS: 30,
   };
 
-  // Objeto centralizado para referências do DOM
   const DOM = {
+    html: document.documentElement,
+    body: document.body,
     appVersionSpan: document.getElementById("appVersion"),
     currentYearSpan: document.getElementById("currentYear"),
     appContainer: document.getElementById("appContainer"),
@@ -46,8 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
     importFileInput: document.getElementById("importFileInput"),
     clearAllDataBtn: document.getElementById("clearAllDataBtn"),
     langButtons: document.querySelectorAll(".lang-button"),
-
-    // Modals
+    themeButtons: document.querySelectorAll(".theme-button"),
     detailsModalOverlay: document.getElementById("detailsModalOverlay"),
     detailsModalContent: document.getElementById("detailsModalContent"),
     closeDetailsModalBtn: document.getElementById("closeDetailsModalBtn"),
@@ -59,8 +61,6 @@ document.addEventListener("DOMContentLoaded", () => {
     helpModalOverlay: document.getElementById("helpModalOverlay"),
     closeHelpModalBtn: document.getElementById("closeHelpModalBtn"),
     notificationArea: document.getElementById("notificationArea"),
-
-    // Gerenciador de Veículos
     vehicleTypeButtons: document.querySelectorAll("[data-vehicle-type]"),
     vehicleListContainer: document.getElementById("vehicleList"),
     addVehicleBtn: document.getElementById("addVehicleBtn"),
@@ -69,8 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
     vehicleNameInput: document.getElementById("vehicleName"),
     vehicleEfficiencyInput: document.getElementById("vehicleEfficiency"),
     cancelVehicleBtn: document.getElementById("cancelVehicleBtn"),
-
-    // Calculadora
     fuelForm: document.getElementById("fuelForm"),
     kmInicialInput: document.getElementById("kmInicial"),
     kmFinalInput: document.getElementById("kmFinal"),
@@ -82,15 +80,11 @@ document.addEventListener("DOMContentLoaded", () => {
     litrosResult: document.getElementById("litrosResult"),
     custoResult: document.getElementById("custoResult"),
     lucroResult: document.getElementById("lucroResult"),
-
-    // Histórico
     historySection: document.getElementById("historySection"),
     historyList: document.getElementById("historyList"),
     seeMoreBtn: document.getElementById("seeMoreHistoryBtn"),
     minimizeBtn: document.getElementById("minimizeHistoryBtn"),
     clearHistoryBtn: document.getElementById("clearHistoryBtn"),
-
-    // Estatísticas
     statsSection: document.getElementById("statsSection"),
     totalKmStat: document.getElementById("totalKmStat"),
     totalGastoStat: document.getElementById("totalGastoStat"),
@@ -99,7 +93,6 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ===== INÍCIO DAS CLASSES DA APLICAÇÃO =====
-
   class Utils {
     static sanitizeHTML(str) {
       if (typeof str !== "string") return "";
@@ -227,13 +220,81 @@ document.addEventListener("DOMContentLoaded", () => {
           const pk = el.dataset.translateKeyPlaceholder;
           const ak = el.dataset.translateKeyAriaLabel;
           const tk = el.dataset.translateKeyTitle;
-          if (k) el.textContent = this.get(k);
+
+          // Special handling for buttons with icons to preserve the icon
+          if (k && el.tagName === "BUTTON") {
+            const icon = el.querySelector("svg");
+            const textSpan = el.querySelector("span");
+
+            if (textSpan) {
+              textSpan.textContent = this.get(k);
+            } else if (!icon) {
+              el.textContent = this.get(k);
+            }
+          } else if (k) {
+            el.textContent = this.get(k);
+          }
+
           if (pk) el.placeholder = this.get(pk);
           if (ak) el.setAttribute("aria-label", this.get(ak));
           if (tk) el.title = this.get(tk);
         });
       const pte = document.querySelector("title[data-translate-key]");
       if (pte) pte.textContent = this.get(pte.dataset.translateKey);
+    }
+  }
+
+  class ThemeManager {
+    constructor(storageManager, dom) {
+      this.storageManager = storageManager;
+      this.dom = dom;
+      this.systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    }
+    init() {
+      this.dom.themeButtons.forEach((button) => {
+        button.addEventListener("click", () =>
+          this.setTheme(button.dataset.themeToggle)
+        );
+      });
+      this.systemThemeQuery.addEventListener("change", () => this.applyTheme());
+      this.applyTheme();
+    }
+    _getPreference() {
+      const settings = this.storageManager.safeGetItem(
+        CONFIG.STORAGE_KEYS.APP_SETTINGS,
+        {}
+      );
+      return settings.theme || CONFIG.DEFAULT_THEME;
+    }
+    _savePreference(theme) {
+      const settings = this.storageManager.safeGetItem(
+        CONFIG.STORAGE_KEYS.APP_SETTINGS,
+        {}
+      );
+      settings.theme = theme;
+      this.storageManager.safeSetItem(
+        CONFIG.STORAGE_KEYS.APP_SETTINGS,
+        settings
+      );
+    }
+    setTheme(theme) {
+      this._savePreference(theme);
+      this.applyTheme();
+    }
+    applyTheme() {
+      const preference = this._getPreference();
+      let effectiveTheme = preference;
+      if (preference === "system") {
+        effectiveTheme = this.systemThemeQuery.matches ? "dark" : "light";
+      }
+      this.dom.html.setAttribute("data-theme", effectiveTheme);
+      this.dom.themeButtons.forEach((button) => {
+        button.classList.toggle(
+          "active",
+          button.dataset.themeToggle === preference
+        );
+      });
+      document.dispatchEvent(new CustomEvent("themeChanged"));
     }
   }
 
@@ -247,7 +308,6 @@ document.addEventListener("DOMContentLoaded", () => {
         this._retranslateOpenModals()
       );
     }
-
     _retranslateOpenModals() {
       const retranslate = (overlay, titleKey, titleId) => {
         if (overlay && overlay.classList.contains("active")) {
@@ -256,7 +316,6 @@ document.addEventListener("DOMContentLoaded", () => {
             titleElement.textContent = this.langManager.get(titleKey);
         }
       };
-
       retranslate(
         this.dom.detailsModalOverlay,
         "tripDetailsModalTitle",
@@ -267,7 +326,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "helpModalTitle",
         "#helpModalTitle"
       );
-
       if (
         this.dom.confirmModalOverlay &&
         this.dom.confirmModalOverlay.classList.contains("active")
@@ -284,7 +342,6 @@ document.addEventListener("DOMContentLoaded", () => {
             this.langManager.get("confirmBtn");
       }
     }
-
     _bindModalEvents() {
       const setupModal = (overlay, closeBtn) => {
         if (closeBtn)
@@ -294,10 +351,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (e.target === overlay) this._hideModal(overlay);
           });
       };
-
       setupModal(this.dom.detailsModalOverlay, this.dom.closeDetailsModalBtn);
       setupModal(this.dom.helpModalOverlay, this.dom.closeHelpModalBtn);
-
       if (this.dom.confirmModalCancelBtn)
         this.dom.confirmModalCancelBtn.addEventListener("click", () =>
           this._handleConfirm(false)
@@ -312,7 +367,6 @@ document.addEventListener("DOMContentLoaded", () => {
             this._handleConfirm(false);
         });
     }
-
     _showModal(overlay) {
       if (!overlay) return;
       overlay.style.display = "flex";
@@ -322,7 +376,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const closeButton = overlay.querySelector(".modal-close-button");
       if (closeButton) closeButton.focus();
     }
-
     _hideModal(overlay) {
       if (!overlay || !overlay.classList.contains("active")) return;
       overlay.classList.remove("active");
@@ -340,25 +393,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }, 350);
     }
-
     showNotification(key, type = "info", params = {}) {
       if (!this.dom.notificationArea) return;
+      document.body.classList.remove("fade-out-active");
       const msg = this.langManager.get(key, params);
       const n = document.createElement("div");
       n.className = `notification ${type}`;
       n.setAttribute("role", "alert");
       n.setAttribute("aria-live", "assertive");
-
       const content = document.createElement("div");
       content.className = "notification-content";
-
       const ms = document.createElement("span");
       ms.className = "notification-message";
       ms.textContent = msg;
       content.appendChild(ms);
-
       n.appendChild(content);
-
       const cb = document.createElement("button");
       cb.innerHTML = "&times;";
       cb.className = "notification-close";
@@ -366,39 +415,32 @@ document.addEventListener("DOMContentLoaded", () => {
         "aria-label",
         this.langManager.get("closeModalAriaLabel")
       );
-      cb.addEventListener("click", () => this._removeNotification(n));
+      cb.addEventListener("click", () => this._removeNotification(n, 0));
       n.appendChild(cb);
-
       this.dom.notificationArea.appendChild(n);
-      void n.offsetWidth;
-
-      setTimeout(() => {
-        n.classList.add("fade-out");
-        this._removeNotification(n, CONFIG.NOTIFICATION_TIMEOUT);
-      }, CONFIG.NOTIFICATION_TIMEOUT);
-
+      setTimeout(
+        () => this._removeNotification(n, CONFIG.NOTIFICATION_TIMEOUT),
+        50
+      );
       return n;
     }
-
     showUpdateNotification(onUpdate) {
       if (!this.dom.notificationArea) return;
+      document.body.classList.remove("fade-out-active");
       const n = document.createElement("div");
       n.className = "notification info persistent";
       n.setAttribute("role", "alert");
       n.setAttribute("aria-live", "assertive");
-
       const content = document.createElement("div");
       content.className = "notification-content";
-
       const ms = document.createElement("span");
       ms.className = "notification-message";
       ms.textContent = this.langManager.get("updateAvailable");
       content.appendChild(ms);
-
       const actions = document.createElement("div");
       actions.className = "notification-actions";
       const updateBtn = document.createElement("button");
-      updateBtn.className = "update-btn";
+      updateBtn.className = "btn update-btn";
       updateBtn.textContent = this.langManager.get("updateBtn");
       updateBtn.onclick = () => {
         onUpdate();
@@ -406,29 +448,25 @@ document.addEventListener("DOMContentLoaded", () => {
       };
       actions.appendChild(updateBtn);
       content.appendChild(actions);
-
       n.appendChild(content);
       this.dom.notificationArea.appendChild(n);
     }
-
     _removeNotification(n, delay = 0) {
       if (n && n.parentNode) {
         setTimeout(() => {
+          document.body.classList.add("fade-out-active");
           n.classList.add("fade-out");
-          n.addEventListener(
-            "transitionend",
-            () => {
-              if (n.parentNode) n.parentNode.removeChild(n);
-            },
-            { once: true }
-          );
-          setTimeout(() => {
+          const onEnd = () => {
             if (n.parentNode) n.parentNode.removeChild(n);
-          }, 500);
+            if (this.dom.notificationArea.childElementCount === 0) {
+              document.body.classList.remove("fade-out-active");
+            }
+            n.removeEventListener("transitionend", onEnd);
+          };
+          n.addEventListener("transitionend", onEnd);
         }, delay);
       }
     }
-
     displayInlineError(field, message) {
       if (!field) return;
       field.classList.add("has-error");
@@ -440,7 +478,6 @@ document.addEventListener("DOMContentLoaded", () => {
         errorContainer.textContent = message;
       }
     }
-
     clearInlineError(field) {
       if (!field) return;
       field.classList.remove("has-error");
@@ -452,13 +489,11 @@ document.addEventListener("DOMContentLoaded", () => {
         errorContainer.textContent = "";
       }
     }
-
     clearAllInlineErrors(formElement) {
       if (!formElement) return;
       const fields = formElement.querySelectorAll("input.has-error");
       fields.forEach((field) => this.clearInlineError(field));
     }
-
     showDetailsModal(key, details) {
       if (!this.dom.detailsModalOverlay || !this.dom.detailsModalContent)
         return;
@@ -485,19 +520,15 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       this._showModal(this.dom.detailsModalOverlay);
     }
-
     hideDetailsModal() {
       this._hideModal(this.dom.detailsModalOverlay);
     }
-
     showHelpModal() {
       this._showModal(this.dom.helpModalOverlay);
     }
-
     hideHelpModal() {
       this._hideModal(this.dom.helpModalOverlay);
     }
-
     showConfirm(key, titleKey = "confirmActionModalTitle", params = {}) {
       return new Promise((resolve) => {
         if (!this.dom.confirmModalOverlay) {
@@ -515,7 +546,6 @@ document.addEventListener("DOMContentLoaded", () => {
           this.dom.confirmModalConfirmBtn.focus();
       });
     }
-
     _handleConfirm(confirmed) {
       if (!this.dom.confirmModalOverlay) return;
       this._hideModal(this.dom.confirmModalOverlay);
@@ -530,13 +560,20 @@ document.addEventListener("DOMContentLoaded", () => {
     constructor(uiManager) {
       this.uiManager = uiManager;
     }
-    safeGetItem(key, defaultValue = []) {
+    safeGetItem(key, defaultValue = {}) {
       try {
-        if (!this._isStorageAvailable()) {
+        if (!this._isStorageAvailable()) return defaultValue;
+        const i = localStorage.getItem(key);
+        if (i === null) {
+          if (
+            key === CONFIG.STORAGE_KEYS.VEHICLES ||
+            key === CONFIG.STORAGE_KEYS.HISTORY
+          ) {
+            return [];
+          }
           return defaultValue;
         }
-        const i = localStorage.getItem(key);
-        return i ? JSON.parse(i) : defaultValue;
+        return JSON.parse(i);
       } catch (e) {
         console.error(`Erro ao carregar ${key}:`, e);
         if (this.uiManager)
@@ -592,9 +629,7 @@ document.addEventListener("DOMContentLoaded", () => {
         exportDate: new Date().toISOString(),
         vehicles: this.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []),
         history: this.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY, []),
-        settings: this.safeGetItem(CONFIG.STORAGE_KEYS.APP_SETTINGS, {
-          language: CONFIG.DEFAULT_LANGUAGE,
-        }),
+        settings: this.safeGetItem(CONFIG.STORAGE_KEYS.APP_SETTINGS, {}),
       };
       const b = new Blob([JSON.stringify(d, null, 2)], {
         type: "application/json",
@@ -646,11 +681,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (d.settings && typeof d.settings === "object") {
           const cs = this.safeGetItem(CONFIG.STORAGE_KEYS.APP_SETTINGS, {});
           const ns = { ...cs, ...d.settings };
-          if (d.settings.language && translations[d.settings.language]) {
-            ns.language = d.settings.language;
-          } else if (d.settings.language) {
-            ns.language = cs.language || CONFIG.DEFAULT_LANGUAGE;
-          }
           if (this.safeSetItem(CONFIG.STORAGE_KEYS.APP_SETTINGS, ns)) i = true;
         }
         if (i) {
@@ -702,12 +732,10 @@ document.addEventListener("DOMContentLoaded", () => {
     validateVehicle({ nameInput, efficiencyInput, type }) {
       this.uiManager.clearAllInlineErrors(nameInput.form);
       let isValid = true;
-
       const nome = nameInput.value.trim();
       const eficiencia = parseFloat(
         Utils.convertCommaToPoint(String(efficiencyInput.value))
       );
-
       if (
         nome.length < CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH ||
         nome.length > CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH
@@ -721,7 +749,6 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         isValid = false;
       }
-
       if (
         !Utils.validateNumber(
           eficiencia,
@@ -738,12 +765,10 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         isValid = false;
       }
-
       if (!["carro", "moto"].includes(type)) {
         console.error("Tipo de veículo inválido fornecido:", type);
         isValid = false;
       }
-
       return {
         isValid,
         data: isValid ? { nome, eficiencia, tipo: type } : null,
@@ -754,7 +779,6 @@ document.addEventListener("DOMContentLoaded", () => {
       this.uiManager.clearAllInlineErrors(inputs.kmInicialInput.form);
       let isValid = true;
       const d = {};
-
       d.kmInicial = parseFloat(
         Utils.convertCommaToPoint(String(inputs.kmInicialInput.value))
       );
@@ -780,7 +804,6 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         isValid = false;
       }
-
       d.kmFinal = parseFloat(
         Utils.convertCommaToPoint(String(inputs.kmFinalInput.value))
       );
@@ -819,7 +842,6 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         isValid = false;
       }
-
       d.kmPorLitro = parseFloat(
         Utils.convertCommaToPoint(String(inputs.kmPorLitroInput.value))
       );
@@ -839,7 +861,6 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         isValid = false;
       }
-
       d.precoCombustivel = parseFloat(
         Utils.convertCommaToPoint(String(inputs.precoCombustivelInput.value))
       );
@@ -859,7 +880,6 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         isValid = false;
       }
-
       const ganhoUberValue = inputs.ganhoUberInput.value;
       if (
         ganhoUberValue !== null &&
@@ -883,7 +903,6 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         d.ganhoUber = null;
       }
-
       return { isValid, data: isValid ? d : null };
     }
   }
@@ -900,7 +919,6 @@ document.addEventListener("DOMContentLoaded", () => {
     initialize() {
       this.decimalInputs.forEach((i) => this._formatDecimal(i));
       this.integerInputs.forEach((i) => this._formatInteger(i));
-      console.log("Formatadores de input inicializados.");
     }
     _formatDecimal(el) {
       el.addEventListener("input", (e) => {
@@ -935,17 +953,14 @@ document.addEventListener("DOMContentLoaded", () => {
         this.loadAndRenderVehicles()
       );
     }
-
     _handleVehicleListClick(event) {
       const target = event.target;
       const vehicleCard = target.closest(".vehicle-card");
       const deleteButton = target.closest(".delete-button");
-
       if (deleteButton && vehicleCard) {
         event.stopPropagation();
         const vehicleId = vehicleCard.dataset.vehicleId;
         const vehicleName = vehicleCard.querySelector("h4").textContent;
-
         this.uiManager
           .showConfirm(
             this.langManager.get("confirmDeleteVehicle", { name: vehicleName })
@@ -955,12 +970,10 @@ document.addEventListener("DOMContentLoaded", () => {
           });
         return;
       }
-
       if (vehicleCard) {
         this.selectVehicle(vehicleCard.dataset.vehicleId);
       }
     }
-
     _bindEvents() {
       this.dom.vehicleTypeButtons.forEach((b) =>
         b.addEventListener("click", (e) =>
@@ -980,8 +993,6 @@ document.addEventListener("DOMContentLoaded", () => {
         this.dom.cancelVehicleBtn.addEventListener("click", () =>
           this.hideVehicleForm()
         );
-
-      // Event Delegation
       if (this.dom.vehicleListContainer) {
         this.dom.vehicleListContainer.addEventListener(
           "click",
@@ -998,7 +1009,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
-
     selectVehicleType(type) {
       if (type !== "carro" && type !== "moto") return;
       this.currentVehicleType = type;
@@ -1070,7 +1080,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "aria-label",
         this.langManager.get("deleteVehicleAriaLabel", { name: vs })
       );
-
       c.appendChild(t);
       c.appendChild(es);
       c.appendChild(db);
@@ -1086,7 +1095,6 @@ document.addEventListener("DOMContentLoaded", () => {
         this.currentVehicle = v;
         this.dom.kmPorLitroInput.value = v.eficiencia;
         this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
-
         this.dom.vehicleListContainer
           .querySelectorAll(".vehicle-card")
           .forEach((c) =>
@@ -1119,10 +1127,8 @@ document.addEventListener("DOMContentLoaded", () => {
         efficiencyInput: this.dom.vehicleEfficiencyInput,
         type: this.dom.vehicleTypeInput.value,
       };
-
       const vr = this.validator.validateVehicle(validationInputs);
       if (!vr.isValid) return;
-
       const { nome, eficiencia, tipo } = vr.data;
       const nv = {
         id: `vehicle_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
@@ -1209,7 +1215,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (this.dom.resultCard.style.display === "block") {
         const custoText = this.dom.custoResult.textContent;
         const lucroText = this.dom.lucroResult.textContent;
-
         if (custoText !== this.langManager.get("currencyPlaceholder")) {
           const ct = custoText.replace(/[R$\sA-Z]/gi, "").replace(",", ".");
           if (!isNaN(parseFloat(ct)))
@@ -1246,24 +1251,20 @@ document.addEventListener("DOMContentLoaded", () => {
         precoCombustivelInput: this.dom.precoCombustivelInput,
         ganhoUberInput: this.dom.ganhoUberInput,
       };
-
       const vr = this.validator.validateTrip(validationInputs);
       if (!vr.isValid) return;
-
       const { kmInicial, kmFinal, kmPorLitro, precoCombustivel, ganhoUber } =
         vr.data;
       const d = kmFinal - kmInicial;
       const lc = d / kmPorLitro;
       const ct = lc * precoCombustivel;
       const ll = ganhoUber !== null ? ganhoUber - ct : null;
-
       this.dom.distanciaResult.textContent = `${d.toFixed(1)} km`;
       this.dom.litrosResult.textContent = `${lc.toFixed(1)} L`;
       this.dom.custoResult.textContent = Utils.formatCurrency(
         ct,
         this.langManager.currentLanguage
       );
-
       const li = this.dom.lucroResult.closest(".result-item");
       if (ll !== null) {
         this.dom.lucroResult.textContent = Utils.formatCurrency(
@@ -1275,13 +1276,11 @@ document.addEventListener("DOMContentLoaded", () => {
         this.dom.lucroResult.textContent = "N/A";
         if (li) li.style.display = "none";
       }
-
       this.dom.resultCard.style.display = "block";
       this.dom.resultCard.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
-
       this._saveTripToHistory({
         kmInicial,
         kmFinal,
@@ -1357,7 +1356,6 @@ document.addEventListener("DOMContentLoaded", () => {
         this._showRecordDetails(listItem.dataset.recordId);
       }
     }
-
     _bindEvents() {
       if (this.dom.seeMoreBtn)
         this.dom.seeMoreBtn.addEventListener("click", () =>
@@ -1382,8 +1380,6 @@ document.addEventListener("DOMContentLoaded", () => {
           if (c) this.clearHistoryForCurrentType();
         });
       }
-
-      // Event Delegation
       if (this.dom.historyList) {
         this.dom.historyList.addEventListener(
           "click",
@@ -1395,7 +1391,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         });
       }
-
       document.addEventListener("languageChanged", () => this.renderHistory());
       document.addEventListener("vehicleTypeChanged", () => {
         this.isFullHistoryVisible = false;
@@ -1409,6 +1404,7 @@ document.addEventListener("DOMContentLoaded", () => {
       this.renderHistory();
     }
     renderHistory() {
+      if (!this.dom.historyList || !this.dom.historySection) return;
       const ah = this.storageManager.safeGetItem(
         CONFIG.STORAGE_KEYS.HISTORY,
         []
@@ -1592,6 +1588,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.addEventListener("tripCalculated", () => this.debouncedUpdate());
       document.addEventListener("historyCleared", () => this.debouncedUpdate());
       document.addEventListener("allDataCleared", () => this.debouncedUpdate());
+      document.addEventListener("themeChanged", () => this.debouncedUpdate());
     }
     updateStatistics() {
       if (!this.dom.statsSection) return;
@@ -1622,7 +1619,6 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       const tl = hd.reduce((s, i) => s + parseFloat(i.litrosConsumidos), 0);
       const mc = tl > 0 ? tk / tl : 0;
-
       this.dom.totalKmStat.textContent = `${tk.toFixed(1)} km`;
       this.dom.totalGastoStat.textContent = Utils.formatCurrency(
         tg,
@@ -1663,20 +1659,12 @@ document.addEventListener("DOMContentLoaded", () => {
           : "vehicleTypeMotorcycle"
       );
       const cl = this.langManager.get("chartDailyExpenseLabel", { type: vt });
-      const tc =
-        getComputedStyle(document.documentElement)
-          .getPropertyValue("--uber-text-primary")
-          .trim() || "#e0e0e0";
-      const gc =
-        getComputedStyle(document.documentElement)
-          .getPropertyValue("--uber-gray-light")
-          .trim() || "#444444";
-      const ug =
-        getComputedStyle(document.documentElement)
-          .getPropertyValue("--uber-green")
-          .trim() || "#00c165";
-      const ugt = "rgba(0, 193, 101, 0.2)";
-      const cc = {
+      const style = getComputedStyle(document.documentElement);
+      const textColor = style.getPropertyValue("--c-text-primary").trim();
+      const gridColor = style.getPropertyValue("--c-border").trim();
+      const accentColor = style.getPropertyValue("--c-accent").trim();
+      const accentBgColor = style.getPropertyValue("--c-accent-light").trim();
+      const chartConfig = {
         type: "line",
         data: {
           labels: labels,
@@ -1684,16 +1672,20 @@ document.addEventListener("DOMContentLoaded", () => {
             {
               label: cl,
               data: data,
-              borderColor: ug,
-              backgroundColor: ugt,
-              tension: 0.3,
+              borderColor: accentColor,
+              backgroundColor: accentBgColor,
+              tension: 0.4,
               fill: true,
-              pointBackgroundColor: ug,
-              pointBorderColor: "#fff",
+              pointBackgroundColor: accentColor,
+              pointBorderColor: style
+                .getPropertyValue("--c-bg-secondary")
+                .trim(),
               pointRadius: 4,
               pointHoverRadius: 7,
-              pointHoverBackgroundColor: "#fff",
-              pointHoverBorderColor: ug,
+              pointHoverBackgroundColor: style
+                .getPropertyValue("--c-bg-secondary")
+                .trim(),
+              pointHoverBorderColor: accentColor,
               borderWidth: 2,
             },
           ],
@@ -1703,30 +1695,32 @@ document.addEventListener("DOMContentLoaded", () => {
           maintainAspectRatio: false,
           scales: {
             x: {
-              ticks: { color: tc, font: { size: 10 } },
-              grid: { color: gc, drawBorder: false },
+              ticks: { color: textColor, font: { size: 10 } },
+              grid: { color: gridColor, drawBorder: false },
             },
             y: {
               ticks: {
-                color: tc,
+                color: textColor,
                 callback: (v) =>
                   Utils.formatCurrency(v, this.langManager.currentLanguage),
                 font: { size: 10 },
               },
-              grid: { color: gc, drawBorder: false },
+              grid: { color: gridColor, drawBorder: false },
               beginAtZero: true,
             },
           },
           plugins: {
-            legend: { labels: { color: tc, font: { size: 12 } } },
+            legend: { labels: { color: textColor, font: { size: 12 } } },
             tooltip: {
-              backgroundColor: "rgba(0,0,0,0.85)",
-              titleColor: ug,
-              bodyColor: tc,
-              borderColor: ug,
+              backgroundColor: style
+                .getPropertyValue("--c-bg-secondary")
+                .trim(),
+              titleColor: textColor,
+              bodyColor: textColor,
+              borderColor: gridColor,
               borderWidth: 1,
               padding: 10,
-              cornerRadius: 4,
+              cornerRadius: 8,
               callbacks: {
                 label: (c) =>
                   `${c.dataset.label || ""}: ${Utils.formatCurrency(
@@ -1740,25 +1734,17 @@ document.addEventListener("DOMContentLoaded", () => {
         },
       };
       if (this.chartInstance) {
-        this.chartInstance.data.labels = labels;
-        this.chartInstance.data.datasets[0].data = data;
-        this.chartInstance.data.datasets[0].label = cl;
-        this.chartInstance.options.scales.y.ticks.callback = (v) =>
-          Utils.formatCurrency(v, this.langManager.currentLanguage);
-        this.chartInstance.options.plugins.tooltip.callbacks.label = (c) =>
-          `${c.dataset.label || ""}: ${Utils.formatCurrency(
-            c.parsed.y,
-            this.langManager.currentLanguage
-          )}`;
+        this.chartInstance.data = chartConfig.data;
+        this.chartInstance.options = chartConfig.options;
         this.chartInstance.update();
       } else {
         try {
           this.chartInstance = new Chart(
             this.dom.chartCanvas.getContext("2d"),
-            cc
+            chartConfig
           );
         } catch (e) {
-          console.error("Erro Chart:", e);
+          console.error("Erro ao criar Chart.js:", e);
           this.uiManager.showNotification("genericError", "error");
           this.chartInstance = null;
         }
@@ -1772,14 +1758,13 @@ document.addEventListener("DOMContentLoaded", () => {
   class AppManager {
     constructor(dom) {
       this.dom = dom;
-      this.uiManager = new UIManager(null, this.dom); // languageManager will be set after init
+      this.uiManager = new UIManager(null, this.dom);
       this.storageManager = new StorageManager(this.uiManager);
       this.languageManager = new LanguageManager(this.storageManager, this.dom);
-      this.uiManager.langManager = this.languageManager; // Inject back
-
+      this.themeManager = new ThemeManager(this.storageManager, this.dom);
+      this.uiManager.langManager = this.languageManager;
       this.validator = new Validator(this.uiManager, this.languageManager);
       this.inputFormatter = new InputFormatter();
-
       this.vehicleManager = new VehicleManager(
         this.storageManager,
         this.uiManager,
@@ -1809,63 +1794,56 @@ document.addEventListener("DOMContentLoaded", () => {
         this.languageManager,
         this.dom
       );
-
+      this.eventsBound = false;
       this._init();
     }
     _init() {
       this._displayAppInfo();
+      this.themeManager.init();
       this.languageManager.setLanguage(this.languageManager.currentLanguage);
       this.inputFormatter.initialize();
-      if (this._isDesktop()) {
-        this._setupDesktopNotice();
-      } else {
-        if (this.dom.appContainer)
-          this.dom.appContainer.classList.remove("app-content-hidden");
-        if (this.dom.desktopNoticeOverlay)
-          this.dom.desktopNoticeOverlay.style.display = "none";
-        this._registerServiceWorker();
-        this._bindGlobalAppEvents();
-      }
+      this._handleViewport();
+      window.addEventListener(
+        "resize",
+        Utils.debounce(() => this._handleViewport(), CONFIG.DEBOUNCE_DELAY)
+      );
       this._hideSplashScreen();
     }
-    _isDesktop() {
-      const minWidthForDesktop = 1024;
-      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-      if (
-        /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
-          userAgent.toLowerCase()
-        )
-      ) {
-        return false;
+    _handleViewport() {
+      const isDesktop = window.innerWidth > CONFIG.MAX_MOBILE_WIDTH;
+      this.dom.body.classList.toggle("desktop-view", isDesktop);
+      if (isDesktop) {
+        this._setupDesktopNotice();
+      } else {
+        if (!this.eventsBound) {
+          this._registerServiceWorker();
+          this._bindGlobalAppEvents();
+          this.eventsBound = true;
+        }
       }
-      return window.innerWidth >= minWidthForDesktop;
     }
     _setupDesktopNotice() {
-      if (this.dom.appContainer)
-        this.dom.appContainer.classList.add("app-content-hidden");
-      if (this.dom.desktopNoticeOverlay) {
-        this.dom.desktopNoticeOverlay.style.display = "flex";
-        this.languageManager.applyTranslationsToPage();
-        const pageUrl = "https://johnaugust934.github.io/FuelCalc/";
-        if (this.dom.pageUrlLink) {
-          this.dom.pageUrlLink.href = pageUrl;
-          this.dom.pageUrlLink.textContent = pageUrl;
-        }
-        if (this.dom.qrCodeCanvas && typeof QRious !== "undefined") {
-          new QRious({
+      this.languageManager.applyTranslationsToPage();
+      const pageUrl = "https://johnaugust934.github.io/FuelCalc/";
+      if (this.dom.pageUrlLink) {
+        this.dom.pageUrlLink.href = pageUrl;
+        this.dom.pageUrlLink.textContent = pageUrl;
+      }
+      if (this.dom.qrCodeCanvas && typeof QRious !== "undefined") {
+        if (!this.qrInstance) {
+          this.qrInstance = new QRious({
             element: this.dom.qrCodeCanvas,
             value: pageUrl,
-            size: 200,
+            size: 180,
             level: "H",
-            background: null,
+            background: "white",
             foreground: "black",
-            padding: 0,
+            padding: 10,
           });
-        } else {
-          console.warn("Canvas ou QRious não encontrado.");
-          if (this.dom.qrCodeCanvas)
-            this.dom.qrCodeCanvas.style.display = "none";
         }
+      } else {
+        console.warn("Canvas ou QRious não encontrado.");
+        if (this.dom.qrCodeCanvas) this.dom.qrCodeCanvas.style.display = "none";
       }
     }
     _displayAppInfo() {
@@ -1875,7 +1853,7 @@ document.addEventListener("DOMContentLoaded", () => {
         this.dom.currentYearSpan.textContent = new Date().getFullYear();
     }
     _registerServiceWorker() {
-      if ("serviceWorker" in navigator && !this._isDesktop()) {
+      if ("serviceWorker" in navigator) {
         navigator.serviceWorker
           .register("./sw.js")
           .then((reg) => {
@@ -1897,7 +1875,6 @@ document.addEventListener("DOMContentLoaded", () => {
             };
           })
           .catch((err) => console.error("Falha SW FuelCalc:", err));
-
         let refreshing;
         navigator.serviceWorker.addEventListener("controllerchange", () => {
           if (!refreshing) {
@@ -1912,7 +1889,6 @@ document.addEventListener("DOMContentLoaded", () => {
         this.dom.exportBtn.addEventListener("click", () =>
           this.storageManager.exportData()
         );
-
       if (this.dom.importBtn && this.dom.importFileInput) {
         this.dom.importBtn.addEventListener("click", () =>
           this.dom.importFileInput.click()
@@ -1922,6 +1898,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (file) {
             const success = await this.storageManager.importData(file);
             if (success) {
+              this.themeManager.applyTheme();
               const newLang =
                 this.languageManager._loadLanguagePreference() ||
                 CONFIG.DEFAULT_LANGUAGE;
@@ -1934,7 +1911,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         });
       }
-
       if (this.dom.clearAllDataBtn) {
         this.dom.clearAllDataBtn.addEventListener("click", async () => {
           const c1 = await this.uiManager.showConfirm(
@@ -1956,13 +1932,11 @@ document.addEventListener("DOMContentLoaded", () => {
           this._performClearAllData();
         });
       }
-
       if (this.dom.helpButton) {
         this.dom.helpButton.addEventListener("click", () =>
           this.uiManager.showHelpModal()
         );
       }
-
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           this.uiManager.hideDetailsModal();
@@ -1983,6 +1957,7 @@ document.addEventListener("DOMContentLoaded", () => {
         this.historyManager.resetState();
         this.statisticsManager.resetState();
         this.languageManager.setLanguage(CONFIG.DEFAULT_LANGUAGE);
+        this.themeManager.setTheme(CONFIG.DEFAULT_THEME);
         document.dispatchEvent(new CustomEvent("allDataCleared"));
         this.uiManager.showNotification("allDataClearedSuccess", "success");
       }
