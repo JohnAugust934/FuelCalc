@@ -1,10 +1,10 @@
 // app.js - Lógica Principal do FuelCalc
-// Versão: 1.5.4 (Melhorias de Foco e Input)
+// Versão: 1.5.5 (Feedback de erro inline)
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===== CONFIGURAÇÕES E CONSTANTES GLOBAIS =====
-  const APP_VERSION = "1.5.4";
+  const APP_VERSION = "1.5.5";
   const CONFIG = {
     APP_VERSION,
     STORAGE_KEYS: {
@@ -288,6 +288,37 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 350);
       }
     }
+
+    displayInlineError(field, message) {
+      if (!field) return;
+      field.classList.add("has-error");
+      const errorContainer = field.nextElementSibling;
+      if (
+        errorContainer &&
+        errorContainer.classList.contains("error-message")
+      ) {
+        errorContainer.textContent = message;
+      }
+    }
+
+    clearInlineError(field) {
+      if (!field) return;
+      field.classList.remove("has-error");
+      const errorContainer = field.nextElementSibling;
+      if (
+        errorContainer &&
+        errorContainer.classList.contains("error-message")
+      ) {
+        errorContainer.textContent = "";
+      }
+    }
+
+    clearAllInlineErrors(formElement) {
+      if (!formElement) return;
+      const fields = formElement.querySelectorAll("input, select, textarea");
+      fields.forEach((field) => this.clearInlineError(field));
+    }
+
     showDetailsModal(key, details) {
       if (!this.detailsModalOverlay || !this.detailsModalContent) return;
       const t = this.detailsModalOverlay.querySelector("#detailsModalTitle");
@@ -545,129 +576,198 @@ document.addEventListener("DOMContentLoaded", () => {
       this.uiManager = uiManager;
       this.langManager = languageManager;
     }
-    validateVehicle(nome, eficiencia, tipo) {
-      const e = [];
-      const pe = parseFloat(Utils.convertCommaToPoint(String(eficiencia)));
-      const tn = String(nome).trim();
+
+    validateVehicle({ nameInput, efficiencyInput, type }) {
+      this.uiManager.clearAllInlineErrors(nameInput.form);
+      let isValid = true;
+
+      const nome = nameInput.value.trim();
+      const eficiencia = parseFloat(
+        Utils.convertCommaToPoint(String(efficiencyInput.value))
+      );
+
       if (
-        tn.length < CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH ||
-        tn.length > CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH
-      )
-        e.push(
+        nome.length < CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH ||
+        nome.length > CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH
+      ) {
+        this.uiManager.displayInlineError(
+          nameInput,
           this.langManager.get("vehicleNameLengthError", {
             min: CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH,
             max: CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH,
           })
         );
+        isValid = false;
+      }
+
       if (
         !Utils.validateNumber(
-          pe,
+          eficiencia,
           CONFIG.VALIDATION.MIN_EFFICIENCY,
           CONFIG.VALIDATION.MAX_EFFICIENCY
         )
-      )
-        e.push(
+      ) {
+        this.uiManager.displayInlineError(
+          efficiencyInput,
           this.langManager.get("vehicleEfficiencyError", {
             min: CONFIG.VALIDATION.MIN_EFFICIENCY,
             max: CONFIG.VALIDATION.MAX_EFFICIENCY,
           })
         );
-      if (!["carro", "moto"].includes(tipo))
-        e.push(this.langManager.get("invalidVehicleTypeError"));
-      const i = e.length === 0;
-      if (!i) this.uiManager.showNotification(e.join("\n"), "error");
+        isValid = false;
+      }
+
+      if (!["carro", "moto"].includes(type)) {
+        // This is a programmatic error, but we keep the validation
+        console.error("Tipo de veículo inválido fornecido:", type);
+        isValid = false;
+      }
+
       return {
-        isValid: i,
-        errors: e,
-        data: i ? { nome: tn, eficiencia: pe, tipo } : null,
+        isValid,
+        data: isValid ? { nome, eficiencia, tipo: type } : null,
       };
     }
-    validateTrip(ki, kf, kpl, pc, gu) {
-      const e = [];
+
+    validateTrip(inputs) {
+      this.uiManager.clearAllInlineErrors(inputs.kmInicialInput.form);
+      let isValid = true;
       const d = {};
-      d.kmInicial = parseFloat(Utils.convertCommaToPoint(String(ki)));
+
+      d.kmInicial = parseFloat(
+        Utils.convertCommaToPoint(String(inputs.kmInicialInput.value))
+      );
       if (
         !Utils.validateNumber(
           d.kmInicial,
           CONFIG.VALIDATION.MIN_KM,
           CONFIG.VALIDATION.MAX_KM
         )
-      )
-        e.push(
+      ) {
+        this.uiManager.displayInlineError(
+          inputs.kmInicialInput,
           this.langManager.get("initialKmError", {
             min: CONFIG.VALIDATION.MIN_KM,
             max: CONFIG.VALIDATION.MAX_KM,
           })
         );
-      else if (!Number.isInteger(d.kmInicial))
-        e.push(this.langManager.get("initialKmNotIntegerError"));
-      d.kmFinal = parseFloat(Utils.convertCommaToPoint(String(kf)));
+        isValid = false;
+      } else if (!Number.isInteger(d.kmInicial)) {
+        this.uiManager.displayInlineError(
+          inputs.kmInicialInput,
+          this.langManager.get("initialKmNotIntegerError")
+        );
+        isValid = false;
+      }
+
+      d.kmFinal = parseFloat(
+        Utils.convertCommaToPoint(String(inputs.kmFinalInput.value))
+      );
       if (
+        !isValid ||
         !Utils.validateNumber(
           d.kmFinal,
           d.kmInicial + 1,
           CONFIG.VALIDATION.MAX_KM
         )
-      )
-        e.push(
-          this.langManager.get("finalKmError", {
-            max: CONFIG.VALIDATION.MAX_KM,
-          })
+      ) {
+        if (isValid) {
+          // Only show this error if initial KM was valid
+          this.uiManager.displayInlineError(
+            inputs.kmFinalInput,
+            this.langManager.get("finalKmError", {
+              max: CONFIG.VALIDATION.MAX_KM,
+            })
+          );
+        }
+        isValid = false;
+      } else if (!Number.isInteger(d.kmFinal)) {
+        this.uiManager.displayInlineError(
+          inputs.kmFinalInput,
+          this.langManager.get("finalKmNotIntegerError")
         );
-      else if (!Number.isInteger(d.kmFinal))
-        e.push(this.langManager.get("finalKmNotIntegerError"));
-      else if (d.kmFinal - d.kmInicial > CONFIG.VALIDATION.MAX_TRIP_DISTANCE)
-        e.push(
+        isValid = false;
+      } else if (
+        d.kmFinal - d.kmInicial >
+        CONFIG.VALIDATION.MAX_TRIP_DISTANCE
+      ) {
+        this.uiManager.displayInlineError(
+          inputs.kmFinalInput,
           this.langManager.get("maxTripDistanceError", {
             limit: CONFIG.VALIDATION.MAX_TRIP_DISTANCE,
           })
         );
-      d.kmPorLitro = parseFloat(Utils.convertCommaToPoint(String(kpl)));
+        isValid = false;
+      }
+
+      d.kmPorLitro = parseFloat(
+        Utils.convertCommaToPoint(String(inputs.kmPorLitroInput.value))
+      );
       if (
         !Utils.validateNumber(
           d.kmPorLitro,
           CONFIG.VALIDATION.MIN_EFFICIENCY,
           CONFIG.VALIDATION.MAX_EFFICIENCY
         )
-      )
-        e.push(
+      ) {
+        this.uiManager.displayInlineError(
+          inputs.kmPorLitroInput,
           this.langManager.get("vehicleEfficiencyError", {
             min: CONFIG.VALIDATION.MIN_EFFICIENCY,
             max: CONFIG.VALIDATION.MAX_EFFICIENCY,
           })
         );
-      d.precoCombustivel = parseFloat(Utils.convertCommaToPoint(String(pc)));
+        isValid = false;
+      }
+
+      d.precoCombustivel = parseFloat(
+        Utils.convertCommaToPoint(String(inputs.precoCombustivelInput.value))
+      );
       if (
         !Utils.validateNumber(
           d.precoCombustivel,
           CONFIG.VALIDATION.MIN_PRICE,
           CONFIG.VALIDATION.MAX_PRICE
         )
-      )
-        e.push(
+      ) {
+        this.uiManager.displayInlineError(
+          inputs.precoCombustivelInput,
           this.langManager.get("fuelPriceError", {
             min: CONFIG.VALIDATION.MIN_PRICE.toFixed(2),
             max: CONFIG.VALIDATION.MAX_PRICE.toFixed(2),
           })
         );
-      if (gu !== null && gu !== undefined && String(gu).trim() !== "") {
-        d.ganhoUber = parseFloat(Utils.convertCommaToPoint(String(gu)));
+        isValid = false;
+      }
+
+      const ganhoUberValue = inputs.ganhoUberInput.value;
+      if (
+        ganhoUberValue !== null &&
+        ganhoUberValue !== undefined &&
+        String(ganhoUberValue).trim() !== ""
+      ) {
+        d.ganhoUber = parseFloat(
+          Utils.convertCommaToPoint(String(ganhoUberValue))
+        );
         if (
           !Utils.validateNumber(d.ganhoUber, 0, CONFIG.VALIDATION.MAX_UBER_GAIN)
-        )
-          e.push(
+        ) {
+          this.uiManager.displayInlineError(
+            inputs.ganhoUberInput,
             this.langManager.get("tripGainError", {
               max: CONFIG.VALIDATION.MAX_UBER_GAIN.toFixed(2),
             })
           );
+          isValid = false;
+        }
       } else {
         d.ganhoUber = null;
       }
-      const i = e.length === 0;
-      if (!i) this.uiManager.showNotification(e.join("\n"), "error");
-      return { isValid: i, errors: e, data: i ? d : null };
+
+      return { isValid, data: isValid ? d : null };
     }
   }
+
   class InputFormatter {
     constructor() {
       this.decimalInputs = document.querySelectorAll(
@@ -864,6 +964,7 @@ document.addEventListener("DOMContentLoaded", () => {
         !this.dom.vehicleEfficiencyInput
       )
         return;
+      this.uiManager.clearAllInlineErrors(this.dom.vehicleForm);
       this.dom.vehicleTypeInput.value = this.currentVehicleType;
       this.dom.vehicleNameInput.value = "";
       this.dom.vehicleEfficiencyInput.value = "";
@@ -875,15 +976,21 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
     hideVehicleForm() {
-      if (this.dom.vehicleForm) this.dom.vehicleForm.style.display = "none";
+      if (this.dom.vehicleForm) {
+        this.uiManager.clearAllInlineErrors(this.dom.vehicleForm);
+        this.dom.vehicleForm.style.display = "none";
+      }
     }
     saveVehicle() {
-      const vr = this.validator.validateVehicle(
-        this.dom.vehicleNameInput.value,
-        this.dom.vehicleEfficiencyInput.value,
-        this.dom.vehicleTypeInput.value
-      );
+      const validationInputs = {
+        nameInput: this.dom.vehicleNameInput,
+        efficiencyInput: this.dom.vehicleEfficiencyInput,
+        type: this.dom.vehicleTypeInput.value,
+      };
+
+      const vr = this.validator.validateVehicle(validationInputs);
       if (!vr.isValid) return;
+
       const { nome, eficiencia, tipo } = vr.data;
       const nv = {
         id: `vehicle_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
@@ -1029,14 +1136,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
     calculateAndDisplayTrip() {
-      const vr = this.validator.validateTrip(
-        this.dom.kmInicialInput.value,
-        this.dom.kmFinalInput.value,
-        this.dom.kmPorLitroInput.value,
-        this.dom.precoCombustivelInput.value,
-        this.dom.ganhoUberInput.value
-      );
+      const validationInputs = {
+        kmInicialInput: this.dom.kmInicialInput,
+        kmFinalInput: this.dom.kmFinalInput,
+        kmPorLitroInput: this.dom.kmPorLitroInput,
+        precoCombustivelInput: this.dom.precoCombustivelInput,
+        ganhoUberInput: this.dom.ganhoUberInput,
+      };
+
+      const vr = this.validator.validateTrip(validationInputs);
       if (!vr.isValid) return;
+
       const { kmInicial, kmFinal, kmPorLitro, precoCombustivel, ganhoUber } =
         vr.data;
       const d = kmFinal - kmInicial;

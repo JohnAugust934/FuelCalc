@@ -74,12 +74,14 @@
                     <input type="text" id="vehicleName" name="vehicleName"
                         data-translate-key-placeholder="vehicleNamePlaceholder" placeholder="Ex: Onix 1.0" required
                         minlength="2" maxlength="40">
+                    <div class="error-message"></div>
                 </div>
                 <div class="input-group">
                     <label for="vehicleEfficiency" data-translate-key="vehicleEfficiencyLabel">Eficiência
                         (km/L):</label>
                     <input type="text" inputmode="decimal" id="vehicleEfficiency" name="vehicleEfficiency"
                         data-translate-key-placeholder="vehicleEfficiencyPlaceholder" placeholder="Ex: 12.5" required>
+                    <div class="error-message"></div>
                 </div>
                 <div class="button-group">
                     <button type="submit" class="uber-button" id="saveVehicleBtn"
@@ -98,29 +100,34 @@
                     <input type="text" inputmode="decimal" id="kmPorLitro" name="kmPorLitro"
                         data-translate-key-placeholder="tripEfficiencyPlaceholder"
                         placeholder="Selecione um veículo ou informe" required>
+                    <div class="error-message"></div>
                 </div>
                 <div class="input-group">
                     <label for="kmInicial" data-translate-key="initialKmLabel">KM Inicial:</label>
                     <input type="text" inputmode="numeric" pattern="[0-9]*" id="kmInicial" name="kmInicial"
                         data-translate-key-placeholder="initialKmPlaceholder" placeholder="Ex: 150000" required
                         maxlength="6">
+                    <div class="error-message"></div>
                 </div>
                 <div class="input-group">
                     <label for="kmFinal" data-translate-key="finalKmLabel">KM Final:</label>
                     <input type="text" inputmode="numeric" pattern="[0-9]*" id="kmFinal" name="kmFinal"
                         data-translate-key-placeholder="finalKmPlaceholder" placeholder="Ex: 150120" required
                         maxlength="6">
+                    <div class="error-message"></div>
                 </div>
                 <div class="input-group">
                     <label for="precoCombustivel" data-translate-key="fuelPriceLabel">Preço por Litro (R$):</label>
                     <input type="text" inputmode="decimal" id="precoCombustivel" name="precoCombustivel"
                         data-translate-key-placeholder="fuelPricePlaceholder" placeholder="Ex: 5.89" required>
+                    <div class="error-message"></div>
                 </div>
                 <div class="input-group">
                     <label for="ganhoUber" data-translate-key="tripGrossGainLabel">Ganho Bruto da Viagem (R$,
                         opcional):</label>
                     <input type="text" inputmode="decimal" id="ganhoUber" name="ganhoUber"
                         data-translate-key-placeholder="tripGrossGainPlaceholder" placeholder="Ex: 75.50">
+                    <div class="error-message"></div>
                 </div>
                 <button type="submit" class="uber-button full-width" id="calculateTripBtn"
                     data-translate-key="calculateTripBtn">Calcular Gastos</button>
