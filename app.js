@@ -1,10 +1,10 @@
 // app.js - Lógica Principal do FuelCalc
-// Versão: 1.6.0 (Refatoração de UI e Responsividade Mobile-Only)
+// Versão: 1.6.2 (Correção de Notificações e Layout)
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===== CONFIGURAÇÕES E CONSTANTES GLOBAIS =====
-  const APP_VERSION = "1.6.0";
+  const APP_VERSION = "1.6.2";
   const CONFIG = {
     APP_VERSION,
     STORAGE_KEYS: {
@@ -162,7 +162,10 @@ document.addEventListener("DOMContentLoaded", () => {
       this.currentLanguage =
         this._loadLanguagePreference() || CONFIG.DEFAULT_LANGUAGE;
       this.translationData = translations;
+    }
+    init() {
       this._bindLanguageButtons();
+      this.setLanguage(this.currentLanguage);
     }
     _loadLanguagePreference() {
       const s = this.storageManager.safeGetItem(
@@ -389,79 +392,90 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }, 350);
     }
-    showNotification(key, type = "info", params = {}) {
+    showNotification(key, type = "info", params = {}, persistent = false) {
       if (!this.dom.notificationArea) return;
-      document.body.classList.remove("fade-out-active");
       const msg = this.langManager.get(key, params);
-      const n = document.createElement("div");
-      n.className = `notification ${type}`;
-      n.setAttribute("role", "alert");
-      n.setAttribute("aria-live", "assertive");
+      const notificationElement = document.createElement("div");
+      notificationElement.className = `notification ${type}`;
+      notificationElement.setAttribute("role", "alert");
+      notificationElement.setAttribute("aria-live", "assertive");
+
       const content = document.createElement("div");
       content.className = "notification-content";
-      const ms = document.createElement("span");
-      ms.className = "notification-message";
-      ms.textContent = msg;
-      content.appendChild(ms);
-      n.appendChild(content);
-      const cb = document.createElement("button");
-      cb.innerHTML = "&times;";
-      cb.className = "notification-close";
-      cb.setAttribute(
+
+      const messageSpan = document.createElement("span");
+      messageSpan.className = "notification-message";
+      messageSpan.textContent = msg;
+      content.appendChild(messageSpan);
+      notificationElement.appendChild(content);
+
+      const closeButton = document.createElement("button");
+      closeButton.innerHTML = "&times;";
+      closeButton.className = "notification-close";
+      closeButton.setAttribute(
         "aria-label",
         this.langManager.get("closeModalAriaLabel")
       );
-      cb.addEventListener("click", () => this._removeNotification(n, 0));
-      n.appendChild(cb);
-      this.dom.notificationArea.appendChild(n);
-      setTimeout(
-        () => this._removeNotification(n, CONFIG.NOTIFICATION_TIMEOUT),
-        50
-      );
-      return n;
+      closeButton.onclick = (e) => {
+        e.stopPropagation();
+        this._removeNotification(notificationElement);
+      };
+      notificationElement.appendChild(closeButton);
+
+      this.dom.notificationArea.appendChild(notificationElement);
+
+      requestAnimationFrame(() => {
+        notificationElement.classList.add("visible");
+      });
+
+      if (!persistent) {
+        const timeoutId = setTimeout(() => {
+          this._removeNotification(notificationElement);
+        }, CONFIG.NOTIFICATION_TIMEOUT);
+        notificationElement.dataset.timeoutId = timeoutId;
+      }
+
+      return notificationElement;
     }
     showUpdateNotification(onUpdate) {
-      if (!this.dom.notificationArea) return;
-      document.body.classList.remove("fade-out-active");
-      const n = document.createElement("div");
-      n.className = "notification info persistent";
-      n.setAttribute("role", "alert");
-      n.setAttribute("aria-live", "assertive");
-      const content = document.createElement("div");
-      content.className = "notification-content";
-      const ms = document.createElement("span");
-      ms.className = "notification-message";
-      ms.textContent = this.langManager.get("updateAvailable");
-      content.appendChild(ms);
-      const actions = document.createElement("div");
-      actions.className = "notification-actions";
-      const updateBtn = document.createElement("button");
-      updateBtn.className = "btn update-btn";
-      updateBtn.textContent = this.langManager.get("updateBtn");
-      updateBtn.onclick = () => {
-        onUpdate();
-        this._removeNotification(n);
-      };
-      actions.appendChild(updateBtn);
-      content.appendChild(actions);
-      n.appendChild(content);
-      this.dom.notificationArea.appendChild(n);
-    }
-    _removeNotification(n, delay = 0) {
-      if (n && n.parentNode) {
-        setTimeout(() => {
-          document.body.classList.add("fade-out-active");
-          n.classList.add("fade-out");
-          const onEnd = () => {
-            if (n.parentNode) n.parentNode.removeChild(n);
-            if (this.dom.notificationArea.childElementCount === 0) {
-              document.body.classList.remove("fade-out-active");
-            }
-            n.removeEventListener("transitionend", onEnd);
-          };
-          n.addEventListener("transitionend", onEnd);
-        }, delay);
+      const notificationElement = this.showNotification(
+        "updateAvailable",
+        "info",
+        {},
+        true
+      );
+      const contentDiv = notificationElement.querySelector(
+        ".notification-content"
+      );
+      if (contentDiv) {
+        const actions = document.createElement("div");
+        actions.className = "notification-actions";
+        const updateBtn = document.createElement("button");
+        updateBtn.className = "btn update-btn";
+        updateBtn.textContent = this.langManager.get("updateBtn");
+        updateBtn.onclick = () => {
+          onUpdate();
+          this._removeNotification(notificationElement);
+        };
+        actions.appendChild(updateBtn);
+        contentDiv.appendChild(actions);
       }
+    }
+    _removeNotification(n) {
+      if (!n || !n.parentNode) return;
+      if (n.dataset.timeoutId) {
+        clearTimeout(Number(n.dataset.timeoutId));
+      }
+      n.classList.remove("visible");
+      n.addEventListener(
+        "transitionend",
+        () => {
+          if (n.parentNode) {
+            n.parentNode.removeChild(n);
+          }
+        },
+        { once: true }
+      );
     }
     displayInlineError(field, message) {
       if (!field) return;
@@ -724,7 +738,6 @@ document.addEventListener("DOMContentLoaded", () => {
       this.uiManager = uiManager;
       this.langManager = languageManager;
     }
-
     validateVehicle({ nameInput, efficiencyInput, type }) {
       this.uiManager.clearAllInlineErrors(nameInput.form);
       let isValid = true;
@@ -770,7 +783,6 @@ document.addEventListener("DOMContentLoaded", () => {
         data: isValid ? { nome, eficiencia, tipo: type } : null,
       };
     }
-
     validateTrip(inputs) {
       this.uiManager.clearAllInlineErrors(inputs.kmInicialInput.form);
       let isValid = true;
@@ -1790,13 +1802,13 @@ document.addEventListener("DOMContentLoaded", () => {
         this.languageManager,
         this.dom
       );
-      this.eventsBound = false;
+      this.qrInstance = null;
       this._init();
     }
     _init() {
       this._displayAppInfo();
       this.themeManager.init();
-      this.languageManager.setLanguage(this.languageManager.currentLanguage);
+      this.languageManager.init();
       this.inputFormatter.initialize();
       this._bindGlobalAppEvents();
       this._handleViewport();
@@ -1805,35 +1817,37 @@ document.addEventListener("DOMContentLoaded", () => {
         Utils.debounce(() => this._handleViewport(), CONFIG.DEBOUNCE_DELAY)
       );
       this._hideSplashScreen();
+      this._registerServiceWorker();
     }
     _handleViewport() {
       const isDesktop = window.innerWidth > CONFIG.MAX_MOBILE_WIDTH;
       this.dom.body.classList.toggle("desktop-view", isDesktop);
       if (isDesktop) {
         this._setupDesktopNotice();
-      } else if (!this.eventsBound) {
-        this._registerServiceWorker();
-        this.eventsBound = true;
       }
     }
     _setupDesktopNotice() {
       this.languageManager.applyTranslationsToPage();
-      const pageUrl = "https://johnaugust934.github.io/FuelCalc/";
+      const pageUrl = window.location.href;
       if (this.dom.pageUrlLink) {
         this.dom.pageUrlLink.href = pageUrl;
         this.dom.pageUrlLink.textContent = pageUrl;
       }
       if (this.dom.qrCodeCanvas && typeof QRious !== "undefined") {
+        const fgColor = getComputedStyle(this.dom.html)
+          .getPropertyValue("--c-text-primary")
+          .trim();
         if (!this.qrInstance) {
           this.qrInstance = new QRious({
             element: this.dom.qrCodeCanvas,
             value: pageUrl,
-            size: 180,
+            size: 160,
             level: "H",
-            background: "white",
-            foreground: "black",
-            padding: 10,
+            backgroundAlpha: 0,
+            foreground: fgColor,
           });
+        } else {
+          this.qrInstance.foreground = fgColor;
         }
       } else {
         console.warn("Canvas ou QRious não encontrado.");

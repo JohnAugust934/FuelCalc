@@ -1,4 +1,4 @@
-/* styles.css - FuelCalc v1.6.0 */
+/* styles.css - FuelCalc v1.6.2 */
 
 /* ===== 1. VARIÁVEIS DE TEMA E RESET ===== */
 :root {
@@ -74,34 +74,44 @@ body.modal-open {
   margin: 0 auto;
   background-color: var(--c-bg-secondary);
   transition: background-color var(--transition-fast);
+  display: block; /* Padrão para mobile */
+}
+#desktop-notice-overlay {
+  display: none; /* Escondido por padrão */
 }
 body.desktop-view .container {
   display: none !important;
 }
-body:not(.desktop-view) #desktop-notice-overlay {
-  display: none !important;
+body.desktop-view #desktop-notice-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: var(--c-bg-primary);
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 10000;
+  padding: 2rem;
 }
 
 .app-header {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-  border-bottom: 1px solid var(--c-border);
-}
-.header-controls {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 0.5rem;
-  order: -1;
-}
-.app-header-content {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 0.25rem;
+  padding: 1rem;
+  padding-top: 4rem;
+  border-bottom: 1px solid var(--c-border);
+}
+.header-controls {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .app-header .logo {
   width: 50px;
@@ -160,7 +170,7 @@ body:not(.desktop-view) #desktop-notice-overlay {
   border-color: var(--c-accent-dark);
 }
 .btn-secondary {
-  background-color: transparent;
+  background-color: var(--c-bg-tertiary);
   color: var(--c-text-primary);
   border-color: var(--c-border);
 }
@@ -183,15 +193,24 @@ body:not(.desktop-view) #desktop-notice-overlay {
 }
 .button-group {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 0.75rem;
   margin-top: 1rem;
 }
+.button-group .btn {
+  flex-grow: 1;
+}
+
 .backup-buttons {
-  flex-direction: row;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 .backup-buttons .btn {
-  flex-grow: 1;
+  width: 100%;
+  max-width: 280px; /* Garante que os botões não fiquem excessivamente largos */
 }
 
 .content-section {
@@ -252,6 +271,9 @@ body:not(.desktop-view) #desktop-notice-overlay {
   border-radius: var(--radius-md);
   margin-top: 1.5rem;
   border: 1px solid var(--c-border);
+}
+.form-section .button-group {
+  flex-direction: row;
 }
 
 .vehicle-type-buttons {
@@ -461,6 +483,20 @@ body:not(.desktop-view) #desktop-notice-overlay {
 .modal-overlay.active .modal-content {
   transform: scale(1);
 }
+.confirm-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 1.5rem;
+}
+.confirm-modal-actions .btn-danger {
+  background-color: transparent;
+  border-color: var(--c-danger);
+  color: var(--c-danger);
+}
+.confirm-modal-actions .btn-danger:hover {
+  background-color: var(--c-danger-light);
+}
 .modal-close-button {
   position: absolute;
   top: 0.75rem;
@@ -471,6 +507,7 @@ body:not(.desktop-view) #desktop-notice-overlay {
   color: var(--c-text-secondary);
   cursor: pointer;
 }
+
 .notification-area {
   position: fixed;
   bottom: 1rem;
@@ -499,15 +536,11 @@ body:not(.desktop-view) #desktop-notice-overlay {
   pointer-events: auto;
   opacity: 0;
   transform: translateY(150%);
-  transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
+  transition: transform 0.4s ease-out, opacity 0.4s ease-out;
 }
-body:not(.fade-out-active) .notification {
+.notification.visible {
   transform: translateY(0);
   opacity: 1;
-}
-.notification.fade-out {
-  transform: translateY(150%);
-  opacity: 0;
 }
 .notification.info {
   border-left-color: var(--c-accent);
@@ -563,18 +596,6 @@ body:not(.fade-out-active) .notification {
 .splash-screen.hidden {
   opacity: 0;
   visibility: hidden;
-}
-#desktop-notice-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: var(--c-bg-primary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  z-index: 10000;
-  padding: 2rem;
 }
 #desktop-notice-overlay .desktop-notice-content {
   background-color: var(--c-bg-secondary);
