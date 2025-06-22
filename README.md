@@ -3,11 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 ![PWA Ready](https://img.shields.io/badge/PWA-Pronto-blueviolet.svg)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/JohnAugust934/FuelCalc)
-![Version](https://img.shields.io/badge/Versão-1.6.0-orange)
+![Version](https://img.shields.io/badge/Versão-1.6.2-orange)
 
 **FuelCalc** é uma aplicação web progressiva (PWA) projetada para ajudar motoristas (especialmente de aplicativos como Uber e 99) a calcular e gerenciar seus gastos com combustível de forma eficiente. A aplicação oferece estatísticas detalhadas, gerenciamento de múltiplos veículos, histórico de viagens e muito mais, tudo com uma interface moderna e responsiva.
 
-![Imagem da tela principal do FuelCalc](https://raw.githubusercontent.com/JohnAugust934/FuelCalc/main/screenshots/screenshot1.png)
+![Imagem da tela principal do FuelCalc](https://raw.githubusercontent.com/JohnAugust934/FuelCalc/main/screenshots/screenshot.png)
 _Tela principal e gerenciamento de veículos._
 
 ## ✨ Funcionalidades Principais
@@ -98,8 +98,8 @@ FuelCalc/
 ├── libs/                           # Bibliotecas de terceiros
 │   └── chart.min.js                # Chart.js para gráficos
 ├── screenshots/                    # Screenshots para o manifest PWA
-│   ├── screenshot1.png
-│   └── screenshot2.png
+│   ├── screenshot.png
+│   └── screenshot1.png
 ├── app.js                          # Lógica principal da aplicação em JavaScript
 ├── index.html                      # Estrutura principal da página (HTML)
 ├── manifest.json                   # Web App Manifest para PWA
