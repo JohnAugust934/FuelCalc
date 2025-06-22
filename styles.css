@@ -464,6 +464,25 @@ body:not(.desktop-view) #desktop-notice-overlay {
   transform: scale(0.95);
   transition: transform 0.3s ease;
 }
+
+.modal-overlay.active .modal-content {
+  transform: scale(1);
+}
+.confirm-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 1.5rem;
+}
+.confirm-modal-actions .btn-danger {
+  background-color: transparent;
+  border-color: var(--c-danger);
+  color: var(--c-danger);
+}
+.confirm-modal-actions .btn-danger:hover {
+  background-color: var(--c-danger-light);
+}
+
 .modal-overlay.active .modal-content {
   transform: scale(1);
 }

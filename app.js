@@ -1,5 +1,5 @@
 // app.js - Lógica Principal do FuelCalc
-// Versão: 1.6.1 (Ajuste final de estilo no QR Code)
+// Versão: 1.6.2 (Ajuste final de estilo no QR Code e correção de eventos)
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -92,6 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chartCanvas: document.getElementById("fuelChartCanvas"),
   };
 
+  // ===== INÍCIO DAS CLASSES DA APLICAÇÃO =====
   class Utils {
     static sanitizeHTML(str) {
       if (typeof str !== "string") return "";
@@ -726,7 +727,6 @@ document.addEventListener("DOMContentLoaded", () => {
       this.uiManager = uiManager;
       this.langManager = languageManager;
     }
-
     validateVehicle({ nameInput, efficiencyInput, type }) {
       this.uiManager.clearAllInlineErrors(nameInput.form);
       let isValid = true;
@@ -772,7 +772,6 @@ document.addEventListener("DOMContentLoaded", () => {
         data: isValid ? { nome, eficiencia, tipo: type } : null,
       };
     }
-
     validateTrip(inputs) {
       this.uiManager.clearAllInlineErrors(inputs.kmInicialInput.form);
       let isValid = true;
@@ -1793,6 +1792,7 @@ document.addEventListener("DOMContentLoaded", () => {
         this.dom
       );
       this.eventsBound = false;
+      this.qrInstance = null;
       this._init();
     }
     _init() {
@@ -1822,7 +1822,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     _setupDesktopNotice() {
       this.languageManager.applyTranslationsToPage();
-      const pageUrl = "https://johnaugust934.github.io/FuelCalc/";
+      const pageUrl = window.location.href;
       if (this.dom.pageUrlLink) {
         this.dom.pageUrlLink.href = pageUrl;
         this.dom.pageUrlLink.textContent = pageUrl;
@@ -1840,6 +1840,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? "#E4E6EB"
                 : "#212529",
           });
+        } else {
+          this.qrInstance.foreground =
+            document.documentElement.getAttribute("data-theme") === "dark"
+              ? "#E4E6EB"
+              : "#212529";
         }
       } else {
         console.warn("Canvas ou QRious não encontrado.");
