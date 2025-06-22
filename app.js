@@ -1,5 +1,5 @@
 // app.js - Lógica Principal do FuelCalc
-// Versão: 1.6.2 (Ajuste final de estilo no QR Code e correção de eventos)
+// Versão: 1.6.2 (Correção de Notificações e Layout)
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -392,79 +392,90 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }, 350);
     }
-    showNotification(key, type = "info", params = {}) {
+    showNotification(key, type = "info", params = {}, persistent = false) {
       if (!this.dom.notificationArea) return;
-      document.body.classList.remove("fade-out-active");
       const msg = this.langManager.get(key, params);
-      const n = document.createElement("div");
-      n.className = `notification ${type}`;
-      n.setAttribute("role", "alert");
-      n.setAttribute("aria-live", "assertive");
+      const notificationElement = document.createElement("div");
+      notificationElement.className = `notification ${type}`;
+      notificationElement.setAttribute("role", "alert");
+      notificationElement.setAttribute("aria-live", "assertive");
+
       const content = document.createElement("div");
       content.className = "notification-content";
-      const ms = document.createElement("span");
-      ms.className = "notification-message";
-      ms.textContent = msg;
-      content.appendChild(ms);
-      n.appendChild(content);
-      const cb = document.createElement("button");
-      cb.innerHTML = "&times;";
-      cb.className = "notification-close";
-      cb.setAttribute(
+
+      const messageSpan = document.createElement("span");
+      messageSpan.className = "notification-message";
+      messageSpan.textContent = msg;
+      content.appendChild(messageSpan);
+      notificationElement.appendChild(content);
+
+      const closeButton = document.createElement("button");
+      closeButton.innerHTML = "&times;";
+      closeButton.className = "notification-close";
+      closeButton.setAttribute(
         "aria-label",
         this.langManager.get("closeModalAriaLabel")
       );
-      cb.addEventListener("click", () => this._removeNotification(n, 0));
-      n.appendChild(cb);
-      this.dom.notificationArea.appendChild(n);
-      setTimeout(
-        () => this._removeNotification(n, CONFIG.NOTIFICATION_TIMEOUT),
-        50
-      );
-      return n;
+      closeButton.onclick = (e) => {
+        e.stopPropagation();
+        this._removeNotification(notificationElement);
+      };
+      notificationElement.appendChild(closeButton);
+
+      this.dom.notificationArea.appendChild(notificationElement);
+
+      requestAnimationFrame(() => {
+        notificationElement.classList.add("visible");
+      });
+
+      if (!persistent) {
+        const timeoutId = setTimeout(() => {
+          this._removeNotification(notificationElement);
+        }, CONFIG.NOTIFICATION_TIMEOUT);
+        notificationElement.dataset.timeoutId = timeoutId;
+      }
+
+      return notificationElement;
     }
     showUpdateNotification(onUpdate) {
-      if (!this.dom.notificationArea) return;
-      document.body.classList.remove("fade-out-active");
-      const n = document.createElement("div");
-      n.className = "notification info persistent";
-      n.setAttribute("role", "alert");
-      n.setAttribute("aria-live", "assertive");
-      const content = document.createElement("div");
-      content.className = "notification-content";
-      const ms = document.createElement("span");
-      ms.className = "notification-message";
-      ms.textContent = this.langManager.get("updateAvailable");
-      content.appendChild(ms);
-      const actions = document.createElement("div");
-      actions.className = "notification-actions";
-      const updateBtn = document.createElement("button");
-      updateBtn.className = "btn update-btn";
-      updateBtn.textContent = this.langManager.get("updateBtn");
-      updateBtn.onclick = () => {
-        onUpdate();
-        this._removeNotification(n);
-      };
-      actions.appendChild(updateBtn);
-      content.appendChild(actions);
-      n.appendChild(content);
-      this.dom.notificationArea.appendChild(n);
-      setTimeout(() => {
-        n.style.transform = "translateY(0)";
-        n.style.opacity = 1;
-      }, 50);
-    }
-    _removeNotification(n, delay = 0) {
-      if (n && n.parentNode) {
-        setTimeout(() => {
-          n.classList.add("fade-out");
-          const onEnd = () => {
-            if (n.parentNode) n.parentNode.removeChild(n);
-            n.removeEventListener("transitionend", onEnd);
-          };
-          n.addEventListener("transitionend", onEnd);
-        }, delay);
+      const notificationElement = this.showNotification(
+        "updateAvailable",
+        "info",
+        {},
+        true
+      );
+      const contentDiv = notificationElement.querySelector(
+        ".notification-content"
+      );
+      if (contentDiv) {
+        const actions = document.createElement("div");
+        actions.className = "notification-actions";
+        const updateBtn = document.createElement("button");
+        updateBtn.className = "btn update-btn";
+        updateBtn.textContent = this.langManager.get("updateBtn");
+        updateBtn.onclick = () => {
+          onUpdate();
+          this._removeNotification(notificationElement);
+        };
+        actions.appendChild(updateBtn);
+        contentDiv.appendChild(actions);
       }
+    }
+    _removeNotification(n) {
+      if (!n || !n.parentNode) return;
+      if (n.dataset.timeoutId) {
+        clearTimeout(Number(n.dataset.timeoutId));
+      }
+      n.classList.remove("visible");
+      n.addEventListener(
+        "transitionend",
+        () => {
+          if (n.parentNode) {
+            n.parentNode.removeChild(n);
+          }
+        },
+        { once: true }
+      );
     }
     displayInlineError(field, message) {
       if (!field) return;
@@ -1791,7 +1802,6 @@ document.addEventListener("DOMContentLoaded", () => {
         this.languageManager,
         this.dom
       );
-      this.eventsBound = false;
       this.qrInstance = null;
       this._init();
     }
@@ -1807,17 +1817,13 @@ document.addEventListener("DOMContentLoaded", () => {
         Utils.debounce(() => this._handleViewport(), CONFIG.DEBOUNCE_DELAY)
       );
       this._hideSplashScreen();
+      this._registerServiceWorker();
     }
     _handleViewport() {
       const isDesktop = window.innerWidth > CONFIG.MAX_MOBILE_WIDTH;
       this.dom.body.classList.toggle("desktop-view", isDesktop);
       if (isDesktop) {
         this._setupDesktopNotice();
-      } else {
-        if (!this.eventsBound) {
-          this._registerServiceWorker();
-          this.eventsBound = true;
-        }
       }
     }
     _setupDesktopNotice() {
@@ -1828,6 +1834,9 @@ document.addEventListener("DOMContentLoaded", () => {
         this.dom.pageUrlLink.textContent = pageUrl;
       }
       if (this.dom.qrCodeCanvas && typeof QRious !== "undefined") {
+        const fgColor = getComputedStyle(this.dom.html)
+          .getPropertyValue("--c-text-primary")
+          .trim();
         if (!this.qrInstance) {
           this.qrInstance = new QRious({
             element: this.dom.qrCodeCanvas,
@@ -1835,16 +1844,10 @@ document.addEventListener("DOMContentLoaded", () => {
             size: 160,
             level: "H",
             backgroundAlpha: 0,
-            foreground:
-              document.documentElement.getAttribute("data-theme") === "dark"
-                ? "#E4E6EB"
-                : "#212529",
+            foreground: fgColor,
           });
         } else {
-          this.qrInstance.foreground =
-            document.documentElement.getAttribute("data-theme") === "dark"
-              ? "#E4E6EB"
-              : "#212529";
+          this.qrInstance.foreground = fgColor;
         }
       } else {
         console.warn("Canvas ou QRious não encontrado.");
