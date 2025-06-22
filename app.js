@@ -1,16 +1,16 @@
 // app.js - Lógica Principal do FuelCalc
-// Versão: 1.6.2 (Correção de Notificações e Layout)
+// Versão: 1.7.0 (Com Helper de Eficiência)
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===== CONFIGURAÇÕES E CONSTANTES GLOBAIS =====
-  const APP_VERSION = "1.6.2";
+  const APP_VERSION = "1.7.0";
   const CONFIG = {
     APP_VERSION,
     STORAGE_KEYS: {
-      VEHICLES: `fuelCalc_vehicles_v1.5`,
+      VEHICLES: `fuelCalc_vehicles_v1.7`,
       HISTORY: `fuelCalc_history_v1.5`,
-      APP_SETTINGS: `fuelCalc_settings_v1.5`,
+      APP_SETTINGS: `fuelCalc_settings_v1.7`,
     },
     DEFAULT_LANGUAGE: "pt-BR",
     DEFAULT_THEME: "system",
@@ -90,6 +90,25 @@ document.addEventListener("DOMContentLoaded", () => {
     totalGastoStat: document.getElementById("totalGastoStat"),
     mediaConsumoStat: document.getElementById("mediaConsumoStat"),
     chartCanvas: document.getElementById("fuelChartCanvas"),
+    // Novos elementos do Helper de Eficiência
+    efficiencyHelperBtnVehicle: document.getElementById(
+      "efficiencyHelperBtnVehicle"
+    ),
+    efficiencyHelperBtnTrip: document.getElementById("efficiencyHelperBtnTrip"),
+    efficiencyHelperModalOverlay: document.getElementById(
+      "efficiencyHelperModalOverlay"
+    ),
+    closeEfficiencyHelperModalBtn: document.getElementById(
+      "closeEfficiencyHelperModalBtn"
+    ),
+    helperKmDrivenInput: document.getElementById("helperKmDriven"),
+    helperLitersFueledInput: document.getElementById("helperLitersFueled"),
+    calculateEfficiencyHelperBtn: document.getElementById(
+      "calculateEfficiencyHelperBtn"
+    ),
+    efficiencyHelperResult: document.getElementById("efficiencyHelperResult"),
+    efficiencyResultValue: document.getElementById("efficiencyResultValue"),
+    useEfficiencyValueBtn: document.getElementById("useEfficiencyValueBtn"),
   };
 
   // ===== INÍCIO DAS CLASSES DA APLICAÇÃO =====
@@ -302,6 +321,8 @@ document.addEventListener("DOMContentLoaded", () => {
       this.langManager = languageManager;
       this.dom = dom;
       this._resolveConfirm = null;
+      this._efficiencyTargetInput = null;
+      this._calculatedEfficiency = null;
       this._bindModalEvents();
       document.addEventListener("languageChanged", () =>
         this._retranslateOpenModals()
@@ -324,6 +345,11 @@ document.addEventListener("DOMContentLoaded", () => {
         this.dom.helpModalOverlay,
         "helpModalTitle",
         "#helpModalTitle"
+      );
+      retranslate(
+        this.dom.efficiencyHelperModalOverlay,
+        "efficiencyHelperModalTitle",
+        "#efficiencyHelperModalTitle"
       );
       if (
         this.dom.confirmModalOverlay &&
@@ -352,6 +378,10 @@ document.addEventListener("DOMContentLoaded", () => {
       };
       setupModal(this.dom.detailsModalOverlay, this.dom.closeDetailsModalBtn);
       setupModal(this.dom.helpModalOverlay, this.dom.closeHelpModalBtn);
+      setupModal(
+        this.dom.efficiencyHelperModalOverlay,
+        this.dom.closeEfficiencyHelperModalBtn
+      );
       if (this.dom.confirmModalCancelBtn)
         this.dom.confirmModalCancelBtn.addEventListener("click", () =>
           this._handleConfirm(false)
@@ -564,7 +594,30 @@ document.addEventListener("DOMContentLoaded", () => {
         this._resolveConfirm = null;
       }
     }
+    // Novos métodos para o Helper de Eficiência
+    showEfficiencyHelperModal(targetInput) {
+      if (!this.dom.efficiencyHelperModalOverlay) return;
+      this._efficiencyTargetInput = targetInput;
+      this._calculatedEfficiency = null;
+
+      this.dom.helperKmDrivenInput.value = "";
+      this.dom.helperLitersFueledInput.value = "";
+      this.dom.efficiencyHelperResult.style.display = "none";
+      this.clearInlineError(this.dom.helperKmDrivenInput);
+      this.clearInlineError(this.dom.helperLitersFueledInput);
+
+      this._showModal(this.dom.efficiencyHelperModalOverlay);
+      this.dom.helperKmDrivenInput.focus();
+    }
+    hideEfficiencyHelperModal() {
+      this._hideModal(this.dom.efficiencyHelperModalOverlay);
+    }
   }
+
+  // ... (Restante das classes sem alterações até AppManager) ...
+
+  // (As classes StorageManager, Validator, InputFormatter, VehicleManager, FuelCalculator,
+  // HistoryManager, StatisticsManager permanecem inalteradas. Cole-as aqui.)
 
   class StorageManager {
     constructor(uiManager) {
@@ -1811,6 +1864,7 @@ document.addEventListener("DOMContentLoaded", () => {
       this.languageManager.init();
       this.inputFormatter.initialize();
       this._bindGlobalAppEvents();
+      this._bindHelperEvents();
       this._handleViewport();
       window.addEventListener(
         "resize",
@@ -1949,6 +2003,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === "Escape") {
           this.uiManager.hideDetailsModal();
           this.uiManager.hideHelpModal();
+          this.uiManager.hideEfficiencyHelperModal();
           if (
             this.uiManager.confirmModalOverlay &&
             this.uiManager.confirmModalOverlay.classList.contains("active")
@@ -1985,6 +2040,98 @@ document.addEventListener("DOMContentLoaded", () => {
             { once: true }
           );
         }, 50);
+      }
+    }
+    // Novos métodos para o Helper de Eficiência
+    _bindHelperEvents() {
+      if (this.dom.efficiencyHelperBtnVehicle) {
+        this.dom.efficiencyHelperBtnVehicle.addEventListener("click", () => {
+          this.uiManager.showEfficiencyHelperModal(
+            this.dom.vehicleEfficiencyInput
+          );
+        });
+      }
+      if (this.dom.efficiencyHelperBtnTrip) {
+        this.dom.efficiencyHelperBtnTrip.addEventListener("click", () => {
+          this.uiManager.showEfficiencyHelperModal(this.dom.kmPorLitroInput);
+        });
+      }
+      if (this.dom.calculateEfficiencyHelperBtn) {
+        this.dom.calculateEfficiencyHelperBtn.addEventListener("click", () =>
+          this._calculateEfficiencyHelper()
+        );
+      }
+      if (this.dom.useEfficiencyValueBtn) {
+        this.dom.useEfficiencyValueBtn.addEventListener("click", () =>
+          this._useCalculatedEfficiency()
+        );
+      }
+    }
+    _calculateEfficiencyHelper() {
+      this.uiManager.clearInlineError(this.dom.helperKmDrivenInput);
+      this.uiManager.clearInlineError(this.dom.helperLitersFueledInput);
+
+      const km = parseFloat(
+        Utils.convertCommaToPoint(this.dom.helperKmDrivenInput.value)
+      );
+      const liters = parseFloat(
+        Utils.convertCommaToPoint(this.dom.helperLitersFueledInput.value)
+      );
+
+      let isValid = true;
+      if (isNaN(km) || km <= 0) {
+        this.uiManager.displayInlineError(
+          this.dom.helperKmDrivenInput,
+          this.languageManager.get("helperInvalidInput")
+        );
+        isValid = false;
+      }
+      if (isNaN(liters) || liters <= 0) {
+        this.uiManager.displayInlineError(
+          this.dom.helperLitersFueledInput,
+          this.languageManager.get("helperInvalidInput")
+        );
+        isValid = false;
+      }
+
+      if (!isValid) {
+        this.dom.efficiencyHelperResult.style.display = "none";
+        this.uiManager._calculatedEfficiency = null;
+        return;
+      }
+
+      const efficiency = km / liters;
+      this.uiManager._calculatedEfficiency = efficiency.toFixed(2);
+
+      const lang = this.languageManager.currentLanguage;
+      const formattedEfficiency =
+        lang === "pt-BR"
+          ? this.uiManager._calculatedEfficiency.replace(".", ",")
+          : this.uiManager._calculatedEfficiency;
+
+      this.dom.efficiencyResultValue.textContent = `${formattedEfficiency} ${
+        lang === "en" ? "units" : "km/L"
+      }`;
+      this.dom.efficiencyHelperResult.style.display = "block";
+
+      this.uiManager.showNotification("helperEfficiencyCalculated", "success", {
+        efficiency: formattedEfficiency,
+      });
+    }
+    _useCalculatedEfficiency() {
+      if (
+        this.uiManager._calculatedEfficiency &&
+        this.uiManager._efficiencyTargetInput
+      ) {
+        const lang = this.languageManager.currentLanguage;
+        const valueToInsert =
+          lang === "pt-BR"
+            ? this.uiManager._calculatedEfficiency.replace(".", ",")
+            : this.uiManager._calculatedEfficiency;
+
+        this.uiManager._efficiencyTargetInput.value = valueToInsert;
+        this.uiManager._efficiencyTargetInput.dispatchEvent(new Event("input"));
+        this.uiManager.hideEfficiencyHelperModal();
       }
     }
   }
