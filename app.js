@@ -4,7 +4,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===== CONFIGURAÇÕES E CONSTANTES GLOBAIS =====
-  const APP_VERSION = "1.6.1";
+  const APP_VERSION = "1.6.2";
   const CONFIG = {
     APP_VERSION,
     STORAGE_KEYS: {

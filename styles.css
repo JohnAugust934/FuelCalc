@@ -1,4 +1,4 @@
-/* styles.css - FuelCalc v1.6.0 */
+/* styles.css - FuelCalc v1.6.2 */
 
 /* ===== 1. VARIÁVEIS DE TEMA E RESET ===== */
 :root {
@@ -187,11 +187,17 @@ body:not(.desktop-view) #desktop-notice-overlay {
   gap: 0.75rem;
   margin-top: 1rem;
 }
+
 .backup-buttons {
-  flex-direction: row;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 .backup-buttons .btn {
-  flex-grow: 1;
+  width: 100%;
+  max-width: 280px;
 }
 
 .content-section {
@@ -545,6 +551,19 @@ body:not(.fade-out-active) .notification {
 .notification-actions {
   display: flex;
   gap: 0.5rem;
+}
+
+@keyframes slideInNotification {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fadeOutNotification {
+  to {
+    opacity: 0;
+    transform: translateY(150%);
+  }
 }
 
 .splash-screen {
