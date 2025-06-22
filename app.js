@@ -1,10 +1,10 @@
 // app.js - Lógica Principal do FuelCalc
-// Versão: 1.6.0 (Refatoração de UI e Responsividade Mobile-Only)
+// Versão: 1.6.1 (Ajuste final de estilo no QR Code)
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===== CONFIGURAÇÕES E CONSTANTES GLOBAIS =====
-  const APP_VERSION = "1.6.0";
+  const APP_VERSION = "1.6.1";
   const CONFIG = {
     APP_VERSION,
     STORAGE_KEYS: {
@@ -92,7 +92,6 @@ document.addEventListener("DOMContentLoaded", () => {
     chartCanvas: document.getElementById("fuelChartCanvas"),
   };
 
-  // ===== INÍCIO DAS CLASSES DA APLICAÇÃO =====
   class Utils {
     static sanitizeHTML(str) {
       if (typeof str !== "string") return "";
@@ -162,7 +161,10 @@ document.addEventListener("DOMContentLoaded", () => {
       this.currentLanguage =
         this._loadLanguagePreference() || CONFIG.DEFAULT_LANGUAGE;
       this.translationData = translations;
+    }
+    init() {
       this._bindLanguageButtons();
+      this.setLanguage(this.currentLanguage);
     }
     _loadLanguagePreference() {
       const s = this.storageManager.safeGetItem(
@@ -446,17 +448,17 @@ document.addEventListener("DOMContentLoaded", () => {
       content.appendChild(actions);
       n.appendChild(content);
       this.dom.notificationArea.appendChild(n);
+      setTimeout(() => {
+        n.style.transform = "translateY(0)";
+        n.style.opacity = 1;
+      }, 50);
     }
     _removeNotification(n, delay = 0) {
       if (n && n.parentNode) {
         setTimeout(() => {
-          document.body.classList.add("fade-out-active");
           n.classList.add("fade-out");
           const onEnd = () => {
             if (n.parentNode) n.parentNode.removeChild(n);
-            if (this.dom.notificationArea.childElementCount === 0) {
-              document.body.classList.remove("fade-out-active");
-            }
             n.removeEventListener("transitionend", onEnd);
           };
           n.addEventListener("transitionend", onEnd);
@@ -1796,7 +1798,7 @@ document.addEventListener("DOMContentLoaded", () => {
     _init() {
       this._displayAppInfo();
       this.themeManager.init();
-      this.languageManager.setLanguage(this.languageManager.currentLanguage);
+      this.languageManager.init();
       this.inputFormatter.initialize();
       this._bindGlobalAppEvents();
       this._handleViewport();
@@ -1811,9 +1813,11 @@ document.addEventListener("DOMContentLoaded", () => {
       this.dom.body.classList.toggle("desktop-view", isDesktop);
       if (isDesktop) {
         this._setupDesktopNotice();
-      } else if (!this.eventsBound) {
-        this._registerServiceWorker();
-        this.eventsBound = true;
+      } else {
+        if (!this.eventsBound) {
+          this._registerServiceWorker();
+          this.eventsBound = true;
+        }
       }
     }
     _setupDesktopNotice() {
@@ -1828,11 +1832,13 @@ document.addEventListener("DOMContentLoaded", () => {
           this.qrInstance = new QRious({
             element: this.dom.qrCodeCanvas,
             value: pageUrl,
-            size: 180,
+            size: 160,
             level: "H",
-            background: "white",
-            foreground: "black",
-            padding: 10,
+            backgroundAlpha: 0,
+            foreground:
+              document.documentElement.getAttribute("data-theme") === "dark"
+                ? "#E4E6EB"
+                : "#212529",
           });
         }
       } else {
