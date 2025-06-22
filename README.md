@@ -7,7 +7,7 @@
 
 **FuelCalc** é uma aplicação web progressiva (PWA) projetada para ajudar motoristas (especialmente de aplicativos como Uber e 99) a calcular e gerenciar seus gastos com combustível de forma eficiente. A aplicação oferece estatísticas detalhadas, gerenciamento de múltiplos veículos, histórico de viagens e muito mais, tudo com uma interface moderna e responsiva.
 
-![Imagem da tela principal do FuelCalc](https://raw.githubusercontent.com/JohnAugust934/FuelCalc/main/screenshots/screenshot.png)
+![Imagem da tela principal do FuelCalc](https://raw.githubusercontent.com/JohnAugust934/FuelCalc/main/screenshots/mobile.png)
 _Tela principal e gerenciamento de veículos._
 
 ## ✨ Funcionalidades Principais
