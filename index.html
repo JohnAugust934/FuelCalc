@@ -114,8 +114,13 @@
                     <div class="error-message"></div>
                 </div>
                 <div class="input-group">
-                    <label for="vehicleEfficiency" data-translate-key="vehicleEfficiencyLabel">Eficiência
-                        (km/L):</label>
+                    <div class="label-with-helper">
+                        <label for="vehicleEfficiency" data-translate-key="vehicleEfficiencyLabel">Eficiência
+                            (km/L):</label>
+                        <button type="button" class="input-helper-btn" id="efficiencyHelperBtnVehicle"
+                            data-translate-key-aria-label="efficiencyHelperLabelAria"
+                            data-translate-key="efficiencyHelperLabel">Não sabe a sua? Calcule</button>
+                    </div>
                     <input type="text" inputmode="decimal" id="vehicleEfficiency" name="vehicleEfficiency"
                         data-translate-key-placeholder="vehicleEfficiencyPlaceholder" placeholder="Ex: 12.5" required>
                     <div class="error-message"></div>
@@ -132,8 +137,13 @@
             <h2 id="calculator-title" data-translate-key="calculateTripTitle">Calcular Gastos da Viagem</h2>
             <form id="fuelForm" novalidate>
                 <div class="input-group">
-                    <label for="kmPorLitro" data-translate-key="tripEfficiencyLabel">Eficiência do Veículo
-                        (km/L):</label>
+                    <div class="label-with-helper">
+                        <label for="kmPorLitro" data-translate-key="tripEfficiencyLabel">Eficiência do Veículo
+                            (km/L):</label>
+                        <button type="button" class="input-helper-btn" id="efficiencyHelperBtnTrip"
+                            data-translate-key-aria-label="efficiencyHelperLabelAria"
+                            data-translate-key="efficiencyHelperLabel">Não sabe a sua? Calcule</button>
+                    </div>
                     <input type="text" inputmode="decimal" id="kmPorLitro" name="kmPorLitro"
                         data-translate-key-placeholder="tripEfficiencyPlaceholder"
                         placeholder="Selecione um veículo ou informe" required>
@@ -252,6 +262,7 @@
         <p data-translate-key="developedWithLove">Desenvolvido com ❤️</p>
         <p> <span data-translate-key="versionLabel">Versão:</span> <span id="appVersion"></span></p>
     </footer>
+
     <div id="helpModalOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle"
         style="display:none;">
         <div class="modal-content help-modal-content">
@@ -311,13 +322,51 @@
             <p id="confirmModalMessage" style="margin-bottom: 1.5rem; text-align: center;"
                 data-translate-key="areYouSure">Você tem certeza?</p>
             <div class="confirm-modal-actions">
-                <button type="button" class="btn btn-primary" id="confirmModalCancelBtn"
+                <button type="button" class="btn btn-secondary" id="confirmModalCancelBtn"
                     data-translate-key="cancelBtn">Cancelar</button>
                 <button type="button" class="btn btn-danger" id="confirmModalConfirmBtn"
                     data-translate-key="confirmBtn">Confirmar</button>
             </div>
         </div>
     </div>
+
+    <div id="efficiencyHelperModalOverlay" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="efficiencyHelperModalTitle" style="display:none;">
+        <div class="modal-content">
+            <button type="button" class="modal-close-button" id="closeEfficiencyHelperModalBtn"
+                data-translate-key-aria-label="closeModalAriaLabel" aria-label="Fechar">&times;</button>
+            <h3 id="efficiencyHelperModalTitle" data-translate-key="efficiencyHelperModalTitle">Calculadora de
+                Eficiência</h3>
+            <p class="modal-description" data-translate-key="efficiencyHelperDesc">Para descobrir a eficiência, encha o
+                tanque do seu veículo e zere o odômetro parcial. Use o carro normalmente. No próximo abastecimento,
+                anote os KMs rodados e a quantidade de litros que usou para encher o tanque novamente.</p>
+
+            <div class="input-group">
+                <label for="helperKmDriven" data-translate-key="helperKmDrivenLabel">KM totais rodados com o
+                    tanque:</label>
+                <input type="text" inputmode="numeric" id="helperKmDriven" placeholder="Ex: 450">
+                <div class="error-message"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="helperLitersFueled" data-translate-key="helperLitersFueledLabel">Litros abastecidos para
+                    encher o tanque:</label>
+                <input type="text" inputmode="decimal" id="helperLitersFueled" placeholder="Ex: 35.5">
+                <div class="error-message"></div>
+            </div>
+
+            <button type="button" class="btn btn-primary full-width" id="calculateEfficiencyHelperBtn"
+                data-translate-key="calculateBtn">Calcular</button>
+
+            <div id="efficiencyHelperResult" class="result-card-mini" style="display:none;">
+                <p data-translate-key="efficiencyResultText">Sua eficiência é de aproximadamente:</p>
+                <strong id="efficiencyResultValue">-- km/L</strong>
+                <button type="button" class="btn btn-secondary" id="useEfficiencyValueBtn"
+                    data-translate-key="useThisValueBtn" style="margin-top: 1rem;">Usar este valor</button>
+            </div>
+        </div>
+    </div>
+
     <div id="notificationArea" class="notification-area" aria-live="assertive"></div>
 
     <script src="libs/chart.min.js" defer></script>

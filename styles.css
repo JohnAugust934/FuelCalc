@@ -1,4 +1,4 @@
-/* styles.css - FuelCalc v1.6.2 */
+/* styles.css - FuelCalc v1.7.0 (com Helper de Eficiência) */
 
 /* ===== 1. VARIÁVEIS DE TEMA E RESET ===== */
 :root {
@@ -264,6 +264,24 @@ body.desktop-view #desktop-notice-overlay {
   margin-top: 0.3rem;
   min-height: 1.2em;
 }
+.label-with-helper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.label-with-helper label {
+  margin-bottom: 0;
+}
+.input-helper-btn {
+  background: none;
+  border: none;
+  color: var(--c-accent);
+  text-decoration: underline;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.2rem;
+  font-family: inherit;
+}
 .form-section {
   display: none;
   background-color: var(--c-bg-primary);
@@ -485,17 +503,19 @@ body.desktop-view #desktop-notice-overlay {
 }
 .confirm-modal-actions {
   display: flex;
+  gap: 1rem;
   justify-content: space-between;
   width: 100%;
   margin-top: 1.5rem;
 }
-.confirm-modal-actions .btn-danger {
-  background-color: transparent;
-  border-color: var(--c-danger);
-  color: var(--c-danger);
+.confirm-modal-actions .btn {
+  flex-grow: 1;
 }
-.confirm-modal-actions .btn-danger:hover {
-  background-color: var(--c-danger-light);
+.confirm-modal-actions .btn-danger {
+  order: 1;
+}
+.confirm-modal-actions .btn-secondary {
+  order: 0;
 }
 .modal-close-button {
   position: absolute;
@@ -506,6 +526,40 @@ body.desktop-view #desktop-notice-overlay {
   border: none;
   color: var(--c-text-secondary);
   cursor: pointer;
+  width: 30px;
+  height: 30px;
+  line-height: 1;
+}
+.modal-description {
+  font-size: 0.9rem;
+  color: var(--c-text-secondary);
+  background-color: var(--c-bg-primary);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+  border-left: 3px solid var(--c-accent);
+}
+.result-card-mini {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  background-color: var(--c-bg-primary);
+}
+.result-card-mini p {
+  font-size: 0.9rem;
+  color: var(--c-text-secondary);
+  margin-bottom: 0.5rem;
+}
+.result-card-mini strong {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--c-success);
+}
+.result-card-mini .btn {
+  width: 100%;
 }
 
 .notification-area {

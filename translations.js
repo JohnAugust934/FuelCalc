@@ -78,6 +78,20 @@ const translations = {
     manualStep4Desc:
       "Use as opções de 'Backup e Restauração' para exportar seus dados para um ficheiro e importá-los quando precisar. Nunca perca suas informações!",
 
+    // Novas chaves para o helper de eficiência
+    efficiencyHelperLabel: "Não sabe a sua? Calcule",
+    efficiencyHelperLabelAria: "Ajuda para calcular a eficiência do veículo",
+    efficiencyHelperModalTitle: "Calculadora de Eficiência de Combustível",
+    efficiencyHelperDesc:
+      "Para descobrir a eficiência, encha o tanque e zere o odômetro parcial. No próximo abastecimento, anote os KMs rodados e a quantidade de litros usada para encher o tanque novamente.",
+    helperKmDrivenLabel: "KM totais rodados com o tanque:",
+    helperLitersFueledLabel: "Litros abastecidos para encher o tanque:",
+    calculateBtn: "Calcular",
+    useThisValueBtn: "Usar este valor",
+    efficiencyResultText: "Sua eficiência é de aproximadamente:",
+    helperInvalidInput: "Por favor, insira um número válido e maior que zero.",
+    helperEfficiencyCalculated: "Eficiência calculada: {efficiency} km/L",
+
     vehicleSelected: 'Veículo "{name}" selecionado.',
     vehicleSaved: 'Veículo "{name}" salvo com sucesso!',
     vehicleDeleted: 'Veículo "{name}" excluído.',
@@ -165,6 +179,20 @@ const translations = {
     themeSystem: "Usar Tema do Sistema",
   },
   en: {
+    // Novas chaves para o helper de eficiência
+    efficiencyHelperLabel: "Don't know yours? Calculate",
+    efficiencyHelperLabelAria: "Help to calculate vehicle efficiency",
+    efficiencyHelperModalTitle: "Fuel Efficiency Calculator",
+    efficiencyHelperDesc:
+      "To find your efficiency, fill up the tank and reset the trip odometer. At the next refuel, note the KMs/Miles driven and the liters/gallons used to fill the tank again.",
+    helperKmDrivenLabel: "Total KMs/Miles driven on the tank:",
+    helperLitersFueledLabel: "Liters/Gallons fueled to fill the tank:",
+    calculateBtn: "Calculate",
+    useThisValueBtn: "Use this value",
+    efficiencyResultText: "Your efficiency is approximately:",
+    helperInvalidInput: "Please enter a valid number greater than zero.",
+    helperEfficiencyCalculated: "Efficiency calculated: {efficiency}",
+
     initialKmNotIntegerError: "Initial KM must be an integer.",
     finalKmNotIntegerError: "Final KM must be an integer.",
     helpModalTitle: "How to Use FuelCalc",
