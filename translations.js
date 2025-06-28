@@ -138,7 +138,16 @@ const translations = {
     profitLabel: "Lucro",
     selectVehicleAriaLabel: "Selecionar veículo {name}, {efficiency} km/L",
     deleteVehicleAriaLabel: "Excluir veículo {name}",
+    editVehicleAriaLabel: "Editar veículo {name}",
     tripDetailsAriaLabel: "Detalhes da viagem de {date}",
+    updateVehicleBtn: "Atualizar Veículo",
+    vehicleUpdated: 'Veículo "{name}" atualizado com sucesso!',
+    addVehicleTitle: "Adicionar Novo Veículo", // Para o título do formulário, se usado
+    editVehicleTitle: "Editar Veículo", // Para o título do formulário, se usado
+    resetToVehicleEfficiency: "Usar eficiência de: {vehicleName}", // Texto mais curto e direto
+    resetToVehicleEfficiencyShort: "Usar eficiência do veículo",
+    tripDistanceLabel: "Distância da Viagem:",
+    maxTripDistanceErrorShort: "Dist. muito longa!", // Mais curto para caber
     detailLabelDate: "Data/Hora",
     detailLabelVehicle: "Veículo",
     detailLabelType: "Tipo",
@@ -311,7 +320,16 @@ const translations = {
     profitLabel: "Profit",
     selectVehicleAriaLabel: "Select vehicle {name}, {efficiency} km/L",
     deleteVehicleAriaLabel: "Delete vehicle {name}",
+    editVehicleAriaLabel: "Edit vehicle {name}",
     tripDetailsAriaLabel: "Trip details from {date}",
+    updateVehicleBtn: "Update Vehicle",
+    vehicleUpdated: 'Vehicle "{name}" updated successfully!',
+    addVehicleTitle: "Add New Vehicle",
+    editVehicleTitle: "Edit Vehicle",
+    resetToVehicleEfficiency: "Use efficiency from: {vehicleName}",
+    resetToVehicleEfficiencyShort: "Use vehicle efficiency",
+    tripDistanceLabel: "Trip Distance:",
+    maxTripDistanceErrorShort: "Dist. too long!",
     detailLabelDate: "Date/Time",
     detailLabelVehicle: "Vehicle",
     detailLabelType: "Type",
