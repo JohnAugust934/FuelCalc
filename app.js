@@ -1524,26 +1524,94 @@ document.addEventListener("DOMContentLoaded", () => {
         this.langManager.get("tripDetailsAriaLabel", { date: fd })
       );
       li.dataset.recordId = r.id;
-      const ds = document.createElement("span");
-      ds.textContent = fd;
-      const ss = document.createElement("strong");
-      let st = `${this.langManager.get("costLabel")}: ${Utils.formatCurrency(
+
+      // Usar textContent para segurança e performance em vez de innerHTML onde possível
+      const dateSpan = document.createElement("span");
+      dateSpan.textContent = fd;
+
+      const summaryStrong = document.createElement("strong");
+      let summaryText = `${this.langManager.get("costLabel")}: ${Utils.formatCurrency(
         parseFloat(r.custoTotalCombustivel),
         this.langManager.currentLanguage
       )}`;
       if (r.lucroLiquidoViagem !== null) {
-        st += ` / ${this.langManager.get(
+        summaryText += ` / ${this.langManager.get(
           "profitLabel"
         )}: ${Utils.formatCurrency(
           parseFloat(r.lucroLiquidoViagem),
           this.langManager.currentLanguage
         )}`;
       }
-      ss.textContent = st;
-      li.appendChild(ds);
-      li.appendChild(ss);
+      summaryStrong.textContent = summaryText;
+
+      li.appendChild(dateSpan);
+      li.appendChild(summaryStrong);
       return li;
     }
+
+    renderHistory() {
+      if (!this.dom.historyList || !this.dom.historySection) return;
+      const ah = this.storageManager.safeGetItem(
+        CONFIG.STORAGE_KEYS.HISTORY,
+        []
+      );
+      const fh = ah.filter(
+        (i) => i.tipoVeiculo === this.vehicleManager.currentVehicleType
+      );
+
+      // Usar DocumentFragment para minimizar reflows/repaints
+      const fragment = document.createDocumentFragment();
+
+      if (fh.length === 0) {
+        this.dom.historySection.style.display = "none";
+        this.dom.historyList.innerHTML = ""; // Limpa a lista
+        return;
+      }
+      this.dom.historySection.style.display = "block";
+      const itr = this.isFullHistoryVisible
+        ? fh
+        : fh.slice(0, CONFIG.HISTORY_DISPLAY_COUNT);
+      const vt = this.langManager.get(
+        this.vehicleManager.currentVehicleType === "carro"
+          ? "vehicleTypeCar"
+          : "vehicleTypeMotorcycle"
+      );
+
+      if (itr.length === 0 && fh.length > 0) {
+        const emptyMsgLi = document.createElement("li");
+        emptyMsgLi.className = "empty-message-list";
+        emptyMsgLi.textContent = this.langManager.get("noRecordsToDisplay");
+        fragment.appendChild(emptyMsgLi);
+      } else if (itr.length === 0) {
+        const emptyMsgLi = document.createElement("li");
+        emptyMsgLi.className = "empty-message-list";
+        emptyMsgLi.textContent = this.langManager.get(
+          "noHistoryForType",
+          { type: vt.toLowerCase() }
+        );
+        fragment.appendChild(emptyMsgLi);
+      } else {
+        itr.forEach((r) =>
+          fragment.appendChild(this._createHistoryItemElement(r))
+        );
+      }
+
+      this.dom.historyList.innerHTML = ""; // Limpa a lista antes de adicionar novos itens
+      this.dom.historyList.appendChild(fragment); // Adiciona todos os itens de uma vez
+
+      const tf = fh.length;
+      if (this.dom.seeMoreBtn)
+        this.dom.seeMoreBtn.style.display =
+          tf > CONFIG.HISTORY_DISPLAY_COUNT && !this.isFullHistoryVisible
+            ? "block"
+            : "none";
+      if (this.dom.minimizeBtn)
+        this.dom.minimizeBtn.style.display =
+          tf > CONFIG.HISTORY_DISPLAY_COUNT && this.isFullHistoryVisible
+            ? "block"
+            : "none";
+    }
+
     _showRecordDetails(id) {
       const ah = this.storageManager.safeGetItem(
         CONFIG.STORAGE_KEYS.HISTORY,
@@ -1633,6 +1701,7 @@ document.addEventListener("DOMContentLoaded", () => {
       this.langManager = lm;
       this.dom = dom;
       this.chartInstance = null;
+      this.chartJsLoaded = false; // Flag para controlar o carregamento do Chart.js
       this.debouncedUpdate = Utils.debounce(
         () => this.updateStatistics(),
         CONFIG.DEBOUNCE_DELAY
@@ -1651,7 +1720,35 @@ document.addEventListener("DOMContentLoaded", () => {
       document.addEventListener("allDataCleared", () => this.debouncedUpdate());
       document.addEventListener("themeChanged", () => this.debouncedUpdate());
     }
-    updateStatistics() {
+
+    _loadChartLibraryIfNeeded() {
+      return new Promise((resolve, reject) => {
+        if (this.chartJsLoaded) {
+          resolve();
+          return;
+        }
+        if (typeof Chart !== "undefined") {
+          this.chartJsLoaded = true;
+          resolve();
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.src = "libs/chart.min.js"; // Caminho local conforme estrutura do projeto
+        script.onload = () => {
+          this.chartJsLoaded = true;
+          console.log("Chart.js carregado dinamicamente.");
+          resolve();
+        };
+        script.onerror = () => {
+          console.error("Falha ao carregar Chart.js.");
+          reject();
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    async updateStatistics() {
       if (!this.dom.statsSection) return;
       const ah = this.storageManager.safeGetItem(
         CONFIG.STORAGE_KEYS.HISTORY,
@@ -1670,8 +1767,16 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       this.dom.statsSection.style.display = "block";
       this._calculateAndDisplaySummary(fh);
-      this._renderOrUpdateChart(fh);
+
+      try {
+        await this._loadChartLibraryIfNeeded();
+        this._renderOrUpdateChart(fh);
+      } catch (error) {
+        this.uiManager.showNotification("genericError", "error", { message: "Falha ao carregar biblioteca de gráficos." });
+        if(this.dom.chartCanvas) this.dom.chartCanvas.style.display = 'none'; // Esconde o canvas se a lib falhar
+      }
     }
+
     _calculateAndDisplaySummary(hd) {
       const tk = hd.reduce((s, i) => s + parseFloat(i.distancia), 0);
       const tg = hd.reduce(
@@ -1856,6 +1961,7 @@ document.addEventListener("DOMContentLoaded", () => {
         this.dom
       );
       this.qrInstance = null;
+      this.qriousLoaded = false; // Flag para controlar o carregamento do QRious
       this._init();
     }
     _init() {
@@ -1877,9 +1983,40 @@ document.addEventListener("DOMContentLoaded", () => {
       const isDesktop = window.innerWidth > CONFIG.MAX_MOBILE_WIDTH;
       this.dom.body.classList.toggle("desktop-view", isDesktop);
       if (isDesktop) {
-        this._setupDesktopNotice();
+        this._loadQrCodeGeneratorIfNeeded().then(() => {
+          this._setupDesktopNotice();
+        });
       }
     }
+
+    _loadQrCodeGeneratorIfNeeded() {
+      return new Promise((resolve, reject) => {
+        if (this.qriousLoaded) {
+          resolve();
+          return;
+        }
+        if (typeof QRious !== "undefined") {
+          this.qriousLoaded = true;
+          resolve();
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js";
+        script.onload = () => {
+          this.qriousLoaded = true;
+          console.log("QRious carregado dinamicamente.");
+          resolve();
+        };
+        script.onerror = () => {
+          console.error("Falha ao carregar QRious.");
+          if (this.dom.qrCodeCanvas) this.dom.qrCodeCanvas.style.display = "none";
+          reject();
+        };
+        document.body.appendChild(script);
+      });
+    }
+
     _setupDesktopNotice() {
       this.languageManager.applyTranslationsToPage();
       const pageUrl = window.location.href;
@@ -1887,10 +2024,15 @@ document.addEventListener("DOMContentLoaded", () => {
         this.dom.pageUrlLink.href = pageUrl;
         this.dom.pageUrlLink.textContent = pageUrl;
       }
+
       if (this.dom.qrCodeCanvas && typeof QRious !== "undefined") {
         const fgColor = getComputedStyle(this.dom.html)
           .getPropertyValue("--c-text-primary")
           .trim();
+
+        // Garante que o canvas esteja visível antes de tentar desenhar
+        this.dom.qrCodeCanvas.style.display = 'block';
+
         if (!this.qrInstance) {
           this.qrInstance = new QRious({
             element: this.dom.qrCodeCanvas,
@@ -1902,12 +2044,18 @@ document.addEventListener("DOMContentLoaded", () => {
           });
         } else {
           this.qrInstance.foreground = fgColor;
+          this.qrInstance.value = pageUrl; // Atualiza o valor caso a URL mude (improvável, mas seguro)
         }
       } else {
-        console.warn("Canvas ou QRious não encontrado.");
+        if (this.qriousLoaded) { // Se o script foi carregado mas QRious não está definido, é um problema
+            console.warn("QRious foi carregado, mas a biblioteca não está definida globalmente ou o canvas não foi encontrado.");
+        } else {
+            console.warn("QRious ainda não carregado ou canvas não encontrado para _setupDesktopNotice.");
+        }
         if (this.dom.qrCodeCanvas) this.dom.qrCodeCanvas.style.display = "none";
       }
     }
+
     _displayAppInfo() {
       if (this.dom.appVersionSpan)
         this.dom.appVersionSpan.textContent = CONFIG.APP_VERSION;
