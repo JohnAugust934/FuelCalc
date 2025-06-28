@@ -2030,8 +2030,9 @@ document.addEventListener("DOMContentLoaded", () => {
           .getPropertyValue("--c-text-primary")
           .trim();
 
-        // Garante que o canvas esteja visível antes de tentar desenhar
-        this.dom.qrCodeCanvas.style.display = 'block';
+        // Não é mais necessário forçar display: block aqui,
+        // pois o CSS/comportamento padrão deve cuidar da centralização.
+        // this.dom.qrCodeCanvas.style.display = 'block';
 
         if (!this.qrInstance) {
           this.qrInstance = new QRious({
