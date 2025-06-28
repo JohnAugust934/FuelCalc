@@ -1,5 +1,5 @@
 // app.js - Lógica Principal do FuelCalc
-// Versão: 1.7.0 (Com Helper de Eficiência)
+// Versão: 1.7.1 (Com Helper de Eficiência)
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
