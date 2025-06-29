@@ -1,16 +1,16 @@
 // app.js - Lógica Principal do FuelCalc
-// Versão: 1.7.2 (Com Helper de Eficiência)
+// Versão: 1.7.3
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===== CONFIGURAÇÕES E CONSTANTES GLOBAIS =====
-  const APP_VERSION = "1.7.2";
+  const APP_VERSION = "1.7.3";
   const CONFIG = {
     APP_VERSION,
     STORAGE_KEYS: {
-      VEHICLES: `fuelCalc_vehicles_v1.7`,
-      HISTORY: `fuelCalc_history_v1.5`,
-      APP_SETTINGS: `fuelCalc_settings_v1.7`,
+      VEHICLES: `fuelCalc_vehicles_v1.7.3`,
+      HISTORY: `fuelCalc_history_v1.7.3`,
+      APP_SETTINGS: `fuelCalc_settings_v1.7.3`,
     },
     DEFAULT_LANGUAGE: "pt-BR",
     DEFAULT_THEME: "system",
