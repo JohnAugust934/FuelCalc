@@ -1,6 +1,6 @@
 // sw.js - Service Worker para FuelCalc
 const CACHE_NAME_PREFIX = "fuelcalc-cache";
-const CACHE_VERSION = "v1.7.1"; // Incremented version
+const CACHE_VERSION = "v1.7.2"; // Incremented version
 const STATIC_CACHE_NAME = `${CACHE_NAME_PREFIX}-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_NAME = `${CACHE_NAME_PREFIX}-dynamic-${CACHE_VERSION}`;
 const BASE_PATH = "/FuelCalc";

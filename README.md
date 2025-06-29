@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 ![PWA Ready](https://img.shields.io/badge/PWA-Pronto-blueviolet.svg)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/JohnAugust934/FuelCalc)
-![Version](https://img.shields.io/badge/Versão-1.7.1-orange)
+![Version](https://img.shields.io/badge/Versão-1.7.2-orange)
 
 **FuelCalc** é uma aplicação web progressiva (PWA) projetada para ajudar motoristas (especialmente de aplicativos como Uber e 99) a calcular e gerenciar seus gastos com combustível de forma eficiente. A aplicação oferece estatísticas detalhadas, gerenciamento de múltiplos veículos, histórico de viagens e muito mais, tudo com uma interface moderna e responsiva.
 
