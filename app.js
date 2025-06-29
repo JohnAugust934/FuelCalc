@@ -813,17 +813,72 @@ document.addEventListener("DOMContentLoaded", () => {
       this.uiManager = uiManager;
       this.langManager = languageManager;
     }
+
+    /**
+     * Valida um campo numérico.
+     * @param {HTMLInputElement} inputEl - O elemento do input.
+     * @param {string} fieldNameKey - Chave base para mensagens de erro (ex: "initialKm", "fuelPrice").
+     * @param {object} rules - Regras de validação.
+     * @param {number} [rules.min=-Infinity] - Valor mínimo.
+     * @param {number} [rules.max=Infinity] - Valor máximo.
+     * @param {boolean} [rules.integer=false] - Se deve ser um inteiro.
+     * @param {boolean} [rules.allowEmpty=false] - Se um valor vazio é permitido.
+     * @param {any} [rules.emptyValue=null] - Valor a retornar se vazio e permitido.
+     * @param {number} [rules.maxDecimals] - Número máximo de casas decimais.
+     * @returns {{value: number|null, isValid: boolean}}
+     */
+    _validateNumericField(inputEl, fieldNameKey, rules = {}) {
+      const { min = -Infinity, max = Infinity, integer = false, allowEmpty = false, emptyValue = null, maxDecimals } = rules;
+      const rawValue = String(inputEl.value).trim();
+
+      if (allowEmpty && rawValue === "") {
+        this.uiManager.clearInlineError(inputEl);
+        return { value: emptyValue, isValid: true };
+      }
+
+      const valueStr = Utils.convertCommaToPoint(rawValue);
+      // Verifica se há mais casas decimais do que o permitido ANTES de parseFloat
+      if (maxDecimals !== undefined && valueStr.includes('.')) {
+        const decimals = valueStr.split('.')[1];
+        if (decimals && decimals.length > maxDecimals) {
+          this.uiManager.displayInlineError(inputEl, this.langManager.get(`${fieldNameKey}MaxDecimalsError`, { max: maxDecimals }));
+          return { value: null, isValid: false };
+        }
+      }
+
+      const numValue = parseFloat(valueStr);
+
+      if (isNaN(numValue)) {
+        this.uiManager.displayInlineError(inputEl, this.langManager.get(`${fieldNameKey}NotANumberError`));
+        return { value: null, isValid: false };
+      }
+      if (integer && !Number.isInteger(numValue)) {
+        this.uiManager.displayInlineError(inputEl, this.langManager.get(`${fieldNameKey}NotIntegerError`));
+        return { value: null, isValid: false };
+      }
+      if (numValue < min || numValue > max) {
+        let errorParams = { min, max };
+        if (fieldNameKey === "fuelPrice" || fieldNameKey === "tripGain") { // Exemplo para formatar como moeda
+            errorParams = { min: min.toFixed(2), max: max.toFixed(2) };
+        } else if (fieldNameKey === "vehicleEfficiency" || fieldNameKey === "tripEfficiency"){
+            errorParams = { min: min.toFixed(1), max: max.toFixed(1) };
+        }
+        this.uiManager.displayInlineError(inputEl, this.langManager.get(`${fieldNameKey}RangeError`, errorParams));
+        return { value: null, isValid: false };
+      }
+
+      this.uiManager.clearInlineError(inputEl);
+      return { value: numValue, isValid: true };
+    }
+
     validateVehicle({ nameInput, efficiencyInput, type }) {
       this.uiManager.clearAllInlineErrors(nameInput.form);
-      let isValid = true;
+      let overallIsValid = true;
+      // const validatedData = {}; // validatedData não é usado, pode ser removido ou usado posteriormente.
+
+      // Validação do nome
       const nome = nameInput.value.trim();
-      const eficiencia = parseFloat(
-        Utils.convertCommaToPoint(String(efficiencyInput.value))
-      );
-      if (
-        nome.length < CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH ||
-        nome.length > CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH
-      ) {
+      if (nome.length < CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH || nome.length > CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH) {
         this.uiManager.displayInlineError(
           nameInput,
           this.langManager.get("vehicleNameLengthError", {
@@ -831,11 +886,16 @@ document.addEventListener("DOMContentLoaded", () => {
             max: CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH,
           })
         );
-        isValid = false;
+        overallIsValid = false;
       }
+
+      // Validação da eficiência
+      const eficienciaStr = Utils.convertCommaToPoint(efficiencyInput.value.trim());
+      const eficienciaValue = parseFloat(eficienciaStr);
+
       if (
         !Utils.validateNumber(
-          eficiencia,
+          eficienciaValue,
           CONFIG.VALIDATION.MIN_EFFICIENCY,
           CONFIG.VALIDATION.MAX_EFFICIENCY
         )
@@ -847,15 +907,20 @@ document.addEventListener("DOMContentLoaded", () => {
             max: CONFIG.VALIDATION.MAX_EFFICIENCY,
           })
         );
-        isValid = false;
+        overallIsValid = false;
       }
+
+      // Validação do tipo
       if (!["carro", "moto"].includes(type)) {
         console.error("Tipo de veículo inválido fornecido:", type);
-        isValid = false;
+        // Poderia adicionar uma notificação para o usuário aqui se fosse relevante
+        // this.uiManager.showNotification("vehicleTypeInvalidError", "error");
+        overallIsValid = false;
       }
+
       return {
-        isValid,
-        data: isValid ? { nome, eficiencia, tipo: type } : null,
+        isValid: overallIsValid,
+        data: overallIsValid ? { nome, eficiencia: eficienciaValue, tipo: type } : null,
       };
     }
     validateTrip(inputs) {
@@ -1185,13 +1250,13 @@ document.addEventListener("DOMContentLoaded", () => {
       editButton.className = "action-button edit-button";
       editButton.setAttribute("aria-label", this.langManager.get("editVehicleAriaLabel", { name: vs }));
       // SVG para ícone de editar (lápis)
-      editButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+      editButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
 
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.className = "action-button delete-button";
       // SVG para ícone de excluir (lixeira)
-      deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+      deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
       deleteButton.setAttribute("aria-label", this.langManager.get("deleteVehicleAriaLabel", { name: vs }));
 
       actionsDiv.appendChild(editButton);
@@ -1685,7 +1750,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (li) li.style.display = "none";
       }
       this.dom.resultCard.style.display = "block";
-      this.dom.resultCard.scrollIntoView({
+      const resultTitle = this.dom.resultCard.querySelector('#result-title');
+      if (resultTitle) {
+          resultTitle.focus();
+      }
+      this.dom.resultCard.scrollIntoView({ // Scroll ainda pode ser útil
         behavior: "smooth",
         block: "start",
       });
