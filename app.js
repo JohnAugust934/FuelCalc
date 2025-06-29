@@ -874,7 +874,7 @@ document.addEventListener("DOMContentLoaded", () => {
     validateVehicle({ nameInput, efficiencyInput, type }) {
       this.uiManager.clearAllInlineErrors(nameInput.form);
       let overallIsValid = true;
-      const validatedData = {};
+      // const validatedData = {}; // validatedData não é usado, pode ser removido ou usado posteriormente.
 
       // Validação do nome
       const nome = nameInput.value.trim();
@@ -886,11 +886,16 @@ document.addEventListener("DOMContentLoaded", () => {
             max: CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH,
           })
         );
-        isValid = false;
+        overallIsValid = false;
       }
+
+      // Validação da eficiência
+      const eficienciaStr = Utils.convertCommaToPoint(efficiencyInput.value.trim());
+      const eficienciaValue = parseFloat(eficienciaStr);
+
       if (
         !Utils.validateNumber(
-          eficiencia,
+          eficienciaValue,
           CONFIG.VALIDATION.MIN_EFFICIENCY,
           CONFIG.VALIDATION.MAX_EFFICIENCY
         )
@@ -902,15 +907,20 @@ document.addEventListener("DOMContentLoaded", () => {
             max: CONFIG.VALIDATION.MAX_EFFICIENCY,
           })
         );
-        isValid = false;
+        overallIsValid = false;
       }
+
+      // Validação do tipo
       if (!["carro", "moto"].includes(type)) {
         console.error("Tipo de veículo inválido fornecido:", type);
-        isValid = false;
+        // Poderia adicionar uma notificação para o usuário aqui se fosse relevante
+        // this.uiManager.showNotification("vehicleTypeInvalidError", "error");
+        overallIsValid = false;
       }
+
       return {
-        isValid,
-        data: isValid ? { nome, eficiencia, tipo: type } : null,
+        isValid: overallIsValid,
+        data: overallIsValid ? { nome, eficiencia: eficienciaValue, tipo: type } : null,
       };
     }
     validateTrip(inputs) {
