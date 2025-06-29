@@ -813,17 +813,72 @@ document.addEventListener("DOMContentLoaded", () => {
       this.uiManager = uiManager;
       this.langManager = languageManager;
     }
+
+    /**
+     * Valida um campo numérico.
+     * @param {HTMLInputElement} inputEl - O elemento do input.
+     * @param {string} fieldNameKey - Chave base para mensagens de erro (ex: "initialKm", "fuelPrice").
+     * @param {object} rules - Regras de validação.
+     * @param {number} [rules.min=-Infinity] - Valor mínimo.
+     * @param {number} [rules.max=Infinity] - Valor máximo.
+     * @param {boolean} [rules.integer=false] - Se deve ser um inteiro.
+     * @param {boolean} [rules.allowEmpty=false] - Se um valor vazio é permitido.
+     * @param {any} [rules.emptyValue=null] - Valor a retornar se vazio e permitido.
+     * @param {number} [rules.maxDecimals] - Número máximo de casas decimais.
+     * @returns {{value: number|null, isValid: boolean}}
+     */
+    _validateNumericField(inputEl, fieldNameKey, rules = {}) {
+      const { min = -Infinity, max = Infinity, integer = false, allowEmpty = false, emptyValue = null, maxDecimals } = rules;
+      const rawValue = String(inputEl.value).trim();
+
+      if (allowEmpty && rawValue === "") {
+        this.uiManager.clearInlineError(inputEl);
+        return { value: emptyValue, isValid: true };
+      }
+
+      const valueStr = Utils.convertCommaToPoint(rawValue);
+      // Verifica se há mais casas decimais do que o permitido ANTES de parseFloat
+      if (maxDecimals !== undefined && valueStr.includes('.')) {
+        const decimals = valueStr.split('.')[1];
+        if (decimals && decimals.length > maxDecimals) {
+          this.uiManager.displayInlineError(inputEl, this.langManager.get(`${fieldNameKey}MaxDecimalsError`, { max: maxDecimals }));
+          return { value: null, isValid: false };
+        }
+      }
+
+      const numValue = parseFloat(valueStr);
+
+      if (isNaN(numValue)) {
+        this.uiManager.displayInlineError(inputEl, this.langManager.get(`${fieldNameKey}NotANumberError`));
+        return { value: null, isValid: false };
+      }
+      if (integer && !Number.isInteger(numValue)) {
+        this.uiManager.displayInlineError(inputEl, this.langManager.get(`${fieldNameKey}NotIntegerError`));
+        return { value: null, isValid: false };
+      }
+      if (numValue < min || numValue > max) {
+        let errorParams = { min, max };
+        if (fieldNameKey === "fuelPrice" || fieldNameKey === "tripGain") { // Exemplo para formatar como moeda
+            errorParams = { min: min.toFixed(2), max: max.toFixed(2) };
+        } else if (fieldNameKey === "vehicleEfficiency" || fieldNameKey === "tripEfficiency"){
+            errorParams = { min: min.toFixed(1), max: max.toFixed(1) };
+        }
+        this.uiManager.displayInlineError(inputEl, this.langManager.get(`${fieldNameKey}RangeError`, errorParams));
+        return { value: null, isValid: false };
+      }
+
+      this.uiManager.clearInlineError(inputEl);
+      return { value: numValue, isValid: true };
+    }
+
     validateVehicle({ nameInput, efficiencyInput, type }) {
       this.uiManager.clearAllInlineErrors(nameInput.form);
-      let isValid = true;
+      let overallIsValid = true;
+      const validatedData = {};
+
+      // Validação do nome
       const nome = nameInput.value.trim();
-      const eficiencia = parseFloat(
-        Utils.convertCommaToPoint(String(efficiencyInput.value))
-      );
-      if (
-        nome.length < CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH ||
-        nome.length > CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH
-      ) {
+      if (nome.length < CONFIG.VALIDATION.MIN_VEHICLE_NAME_LENGTH || nome.length > CONFIG.VALIDATION.MAX_VEHICLE_NAME_LENGTH) {
         this.uiManager.displayInlineError(
           nameInput,
           this.langManager.get("vehicleNameLengthError", {
