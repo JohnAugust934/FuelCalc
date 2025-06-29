@@ -138,7 +138,16 @@ const translations = {
     profitLabel: "Lucro",
     selectVehicleAriaLabel: "Selecionar veículo {name}, {efficiency} km/L",
     deleteVehicleAriaLabel: "Excluir veículo {name}",
+    editVehicleAriaLabel: "Editar veículo {name}",
     tripDetailsAriaLabel: "Detalhes da viagem de {date}",
+    updateVehicleBtn: "Atualizar Veículo",
+    vehicleUpdated: 'Veículo "{name}" atualizado com sucesso!',
+    addVehicleTitle: "Adicionar Novo Veículo", // Para o título do formulário, se usado
+    editVehicleTitle: "Editar Veículo", // Para o título do formulário, se usado
+    resetToVehicleEfficiency: "Usar eficiência de: {vehicleName}", // Texto mais curto e direto
+    resetToVehicleEfficiencyShort: "Usar eficiência do veículo",
+    tripDistanceLabel: "Distância da Viagem:",
+    maxTripDistanceErrorShort: "Dist. muito longa!", // Mais curto para caber
     detailLabelDate: "Data/Hora",
     detailLabelVehicle: "Veículo",
     detailLabelType: "Tipo",
@@ -165,6 +174,25 @@ const translations = {
     maxTripDistanceError: "Distância da viagem excede o limite de {limit} km.",
     fuelPriceError: "Preço do combustível inválido (entre R${min} e R${max}).",
     tripGainError: "Ganho da viagem inválido (entre R$0 e R${max}).",
+    // Novas chaves para Validator genérico
+    initialKmNotANumberError: "KM Inicial deve ser um número.",
+    initialKmRangeError: "KM Inicial inválido (entre {min} e {max}).", // Reutilizando/confirmando
+    finalKmNotANumberError: "KM Final deve ser um número.",
+    finalKmRangeError: "KM Final inválido (entre {min} e {max}).", // Reutilizando/confirmando
+    finalKmLessThanInitialError: "KM Final deve ser maior que o KM Inicial.",
+    tripEfficiencyNotANumberError: "Eficiência da viagem deve ser um número.",
+    tripEfficiencyRangeError: "Eficiência da viagem deve ser entre {min} e {max} km/L.",
+    tripEfficiencyMaxDecimalsError: "Eficiência da viagem pode ter no máximo {max} casa decimal.",
+    vehicleEfficiencyNotANumberError: "Eficiência do veículo deve ser um número.",
+    vehicleEfficiencyRangeError: "Eficiência do veículo deve ser entre {min} e {max} km/L.", // Reutilizando/confirmando vehicleEfficiencyError
+    vehicleEfficiencyMaxDecimalsError: "Eficiência do veículo pode ter no máximo {max} casa decimal.",
+    fuelPriceNotANumberError: "Preço do combustível deve ser um número.",
+    fuelPriceRangeError: "Preço do combustível inválido (entre R${min} e R${max}).", // Reutilizando/confirmando
+    fuelPriceMaxDecimalsError: "Preço do combustível pode ter no máximo {max} casas decimais.",
+    tripGainNotANumberError: "Ganho da viagem deve ser um número.",
+    tripGainRangeError: "Ganho da viagem inválido (entre R${min} e R${max}).", // Reutilizando/confirmando tripGainError
+    tripGainMaxDecimalsError: "Ganho da viagem pode ter no máximo {max} casas decimais.",
+    // Fim das novas chaves para Validator
     currencyPlaceholder: "R$ --",
     desktopNoticeTitle: "Otimizado para Mobile!",
     desktopNoticeMessage:
@@ -311,7 +339,16 @@ const translations = {
     profitLabel: "Profit",
     selectVehicleAriaLabel: "Select vehicle {name}, {efficiency} km/L",
     deleteVehicleAriaLabel: "Delete vehicle {name}",
+    editVehicleAriaLabel: "Edit vehicle {name}",
     tripDetailsAriaLabel: "Trip details from {date}",
+    updateVehicleBtn: "Update Vehicle",
+    vehicleUpdated: 'Vehicle "{name}" updated successfully!',
+    addVehicleTitle: "Add New Vehicle",
+    editVehicleTitle: "Edit Vehicle",
+    resetToVehicleEfficiency: "Use efficiency from: {vehicleName}",
+    resetToVehicleEfficiencyShort: "Use vehicle efficiency",
+    tripDistanceLabel: "Trip Distance:",
+    maxTripDistanceErrorShort: "Dist. too long!",
     detailLabelDate: "Date/Time",
     detailLabelVehicle: "Vehicle",
     detailLabelType: "Type",
@@ -336,6 +373,25 @@ const translations = {
     maxTripDistanceError: "Trip distance exceeds the limit of {limit}.",
     fuelPriceError: "Fuel price invalid (between ${min} and ${max}).",
     tripGainError: "Trip earnings invalid (between $0 and ${max}).",
+    // New generic Validator keys
+    initialKmNotANumberError: "Initial KM/Miles must be a number.",
+    initialKmRangeError: "Initial KM/Miles invalid (between {min} and {max}).", // Reusing/confirming
+    finalKmNotANumberError: "Final KM/Miles must be a number.",
+    finalKmRangeError: "Final KM/Miles invalid (between {min} and {max}).", // Reusing/confirming
+    finalKmLessThanInitialError: "Final KM/Miles must be greater than Initial KM/Miles.",
+    tripEfficiencyNotANumberError: "Trip efficiency must be a number.",
+    tripEfficiencyRangeError: "Trip efficiency must be between {min} and {max}.",
+    tripEfficiencyMaxDecimalsError: "Trip efficiency can have at most {max} decimal place(s).",
+    vehicleEfficiencyNotANumberError: "Vehicle efficiency must be a number.",
+    vehicleEfficiencyRangeError: "Vehicle efficiency must be between {min} and {max}.", // Reusing/confirming vehicleEfficiencyError
+    vehicleEfficiencyMaxDecimalsError: "Vehicle efficiency can have at most {max} decimal place(s).",
+    fuelPriceNotANumberError: "Fuel price must be a number.",
+    fuelPriceRangeError: "Fuel price invalid (between ${min} and ${max}).", // Reusing/confirming
+    fuelPriceMaxDecimalsError: "Fuel price can have at most {max} decimal places.",
+    tripGainNotANumberError: "Trip gain must be a number.",
+    tripGainRangeError: "Trip gain invalid (between ${min} and ${max}).", // Reusing/confirming tripGainError
+    tripGainMaxDecimalsError: "Trip gain can have at most {max} decimal places.",
+    // End of new Validator keys
     currencyPlaceholder: "$ --",
     desktopNoticeTitle: "Optimized for Mobile!",
     desktopNoticeMessage:

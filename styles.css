@@ -1,4 +1,4 @@
-/* styles.css - FuelCalc v1.7.0 (com Helper de Eficiência) */
+/* styles.css - FuelCalc v1.7.3 */
 
 /* ===== 1. VARIÁVEIS DE TEMA E RESET ===== */
 :root {
@@ -14,10 +14,10 @@ html {
   --c-bg-primary: #f8f9fa;
   --c-bg-secondary: #ffffff;
   --c-bg-tertiary: #e9ecef;
-  --c-text-primary: #212529;
-  --c-text-secondary: #6c757d;
-  --c-border: #dee2e6;
-  --c-accent: #0d6efd;
+  --c-text-primary: #212529; /* Contraste OK com bg-secondary */
+  --c-text-secondary: #575f67; /* Escurecido de #6c757d para melhor contraste com bg-secondary (4.54:1) e bg-primary (4.93:1) */
+  --c-border: #ced4da; /* Escurecido de #dee2e6 para melhor contraste em bordas de input (3.05:1 com bg-primary) */
+  --c-accent: #0d6efd; /* Contraste OK com branco para texto e com bg-secondary para fundos */
   --c-accent-dark: #0b5ed7;
   --c-accent-light: rgba(13, 110, 253, 0.15);
   --c-success: #198754;
@@ -32,11 +32,11 @@ html[data-theme="dark"] {
   --c-bg-primary: #18191a;
   --c-bg-secondary: #242526;
   --c-bg-tertiary: #3a3b3c;
-  --c-text-primary: #e4e6eb;
-  --c-text-secondary: #b0b3b8;
-  --c-border: #3f4041;
-  --c-accent: #4595ff;
-  --c-accent-dark: #6caeff;
+  --c-text-primary: #e4e6eb; /* Contraste OK com bg-secondary (#242526) */
+  --c-text-secondary: #a8b3cf; /* Ajustado de #b0b3b8 para melhor contraste com bg-secondary (4.58:1) e bg-primary (5.53:1) */
+  --c-border: #495057; /* Clareado de #3f4041 para melhor contraste em bordas de input (3.02:1 com bg-primary) */
+  --c-accent: #5d9eff; /* Ajustado de #4595ff para garantir contraste em texto sobre accent-light (4.5:1) e bom contraste como texto */
+  --c-accent-dark: #7cb5ff; /* Ajustado de #6caeff */
   --c-accent-light: rgba(69, 149, 255, 0.15);
   --c-success: #28a745;
   --c-danger: #ff5252;
@@ -155,11 +155,31 @@ body.desktop-view #desktop-notice-overlay {
   border: 1px solid transparent;
   transition: var(--transition-fast);
 }
-*:focus-visible {
-  outline: 2px solid var(--c-accent);
+*:focus-visible { /* Estilo de foco global */
+  outline: 3px solid var(--c-accent); /* Aumenta um pouco a espessura para melhor visibilidade */
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
+/* Garante que botões dentro de .header-controls também tenham um bom foco, mesmo com bg customizado */
+.header-controls button:focus-visible {
+    box-shadow: 0 0 0 2px var(--c-bg-secondary), 0 0 0 4px var(--c-accent); /* Anel duplo para se destacar */
+}
+.vehicle-card:focus-visible { /* Foco para cards de veículo clicáveis */
+    outline: 3px solid var(--c-accent);
+    outline-offset: 1px; /* Ajuste para cards */
+    border-color: var(--c-accent); /* Reforça a borda do card */
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-accent) 30%, transparent);
+}
+.price-list li:focus-visible { /* Foco para itens da lista de histórico clicáveis */
+    outline: 3px solid var(--c-accent);
+    outline-offset: 1px;
+    background-color: var(--c-accent-light);
+}
+/* Foco para botões de ação dentro dos cards de veículo */
+.vehicle-card .action-button:focus-visible {
+  box-shadow: 0 0 0 2px var(--c-bg-primary), 0 0 0 4px var(--c-accent); /* Anel duplo */
+}
+
 .btn-primary {
   background-color: var(--c-accent);
   color: #ffffff;
@@ -247,16 +267,23 @@ body.desktop-view #desktop-notice-overlay {
   font-size: 1rem;
   transition: var(--transition-fast);
 }
+.input-group input[type="text"]::placeholder { /* Estilizando placeholder */
+  color: var(--c-text-secondary);
+  opacity: 0.8; /* Ajustar opacidade para não ser tão forte quanto o texto secundário normal */
+}
 .input-group input[type="text"]:focus {
   outline: none;
   border-color: var(--c-accent);
-  box-shadow: 0 0 0 3px var(--c-accent-light);
+  /* Usar um box-shadow de anel duplo para maior clareza, similar a outros botões */
+  box-shadow: 0 0 0 2px var(--c-bg-secondary), 0 0 0 4px var(--c-accent);
 }
 .input-group input.has-error {
   border-color: var(--c-danger);
 }
 .input-group input.has-error:focus {
-  box-shadow: 0 0 0 3px var(--c-danger-light);
+  outline: none; /* Já estava implícito, mas bom ser explícito */
+  border-color: var(--c-danger); /* Mantém a cor da borda de erro */
+  box-shadow: 0 0 0 2px var(--c-bg-secondary), 0 0 0 4px var(--c-danger); /* Foco de erro */
 }
 .input-group .error-message {
   color: var(--c-danger);
@@ -264,6 +291,41 @@ body.desktop-view #desktop-notice-overlay {
   margin-top: 0.3rem;
   min-height: 1.2em;
 }
+
+.trip-distance-info {
+  font-size: 0.9rem;
+  color: var(--c-text-secondary);
+  text-align: right;
+  margin-top: -0.5rem; /* Puxa para mais perto dos inputs de KM */
+  margin-bottom: 1rem; /* Espaço antes do próximo input group */
+  padding-right: 0.25rem; /* Pequeno padding para não colar na borda */
+}
+.trip-distance-info strong {
+  color: var(--c-text-primary);
+  font-weight: 500;
+}
+
+/* Estilo para input de eficiência modificado manualmente */
+.input-group input#kmPorLitro.manual-override {
+  border-left-width: 3px;
+  border-left-color: var(--c-info); /* Usando uma cor de informação/aviso */
+}
+.efficiency-reset-btn {
+  background: none;
+  border: none;
+  color: var(--c-accent);
+  text-decoration: underline;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.2rem 0; /* Ajuste no padding */
+  font-family: inherit;
+  display: block; /* Para ocupar a linha abaixo do input */
+  text-align: right; /* Alinha à direita abaixo do input */
+  margin-top: -0.5rem; /* Leve ajuste para aproximar do input */
+  margin-bottom: 0.5rem; /* Espaço antes do próximo elemento */
+  display: none; /* Escondido por padrão */
+}
+
 .label-with-helper {
   display: flex;
   justify-content: space-between;
@@ -342,26 +404,40 @@ body.desktop-view #desktop-notice-overlay {
   font-size: 0.9rem;
   color: var(--c-text-secondary);
 }
-.vehicle-card .delete-button {
+.vehicle-card .card-actions {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+}
+.vehicle-card .action-button {
   background: transparent;
   color: var(--c-text-secondary);
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.2rem; /* Ajustado para caber melhor dois ícones */
   line-height: 1;
-  width: 30px;
-  height: 30px;
+  width: 28px; /* Ajustado */
+  height: 28px; /* Ajustado */
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: var(--transition-fast);
+  padding: 0;
 }
-.vehicle-card .delete-button:hover {
+.vehicle-card .action-button svg {
+  width: 16px; /* Tamanho do ícone SVG */
+  height: 16px;
+  stroke-width: 2.5; /* Aumenta a espessura do traço dos ícones para melhor visibilidade */
+}
+.vehicle-card .action-button.delete-button:hover {
   color: var(--c-danger);
   background-color: var(--c-danger-light);
+}
+.vehicle-card .action-button.edit-button:hover {
+  color: var(--c-accent);
+  background-color: var(--c-accent-light);
 }
 
 .result-card {
@@ -450,10 +526,13 @@ body.desktop-view #desktop-notice-overlay {
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: var(--transition-fast);
-  color: var(--c-text-secondary);
+  color: var(--c-text-secondary); /* Ícones do header */
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.header-controls button svg { /* Aumenta a espessura dos ícones do header */
+    stroke-width: 2.5;
 }
 .header-controls button:hover {
   color: var(--c-text-primary);
@@ -462,12 +541,14 @@ body.desktop-view #desktop-notice-overlay {
 .header-controls button.active,
 .header-controls button[aria-pressed="true"] {
   background-color: var(--c-accent);
-  color: white;
+  color: white; /* O SVG herda 'currentColor', então fica branco */
 }
-.header-icon-button {
+.header-icon-button { /* Botão de Ajuda ? */
   padding: 0.5rem;
   border-radius: 50% !important;
   background-color: var(--c-bg-secondary) !important;
+  font-weight: bold; /* Torna o '?' mais visível */
+  font-size: 1rem; /* Ajusta o tamanho do '?' */
 }
 
 .modal-overlay {
@@ -549,14 +630,17 @@ body.desktop-view #desktop-notice-overlay {
   background-color: var(--c-bg-primary);
 }
 .result-card-mini p {
-  font-size: 0.9rem;
+  font-size: 0.95rem; /* Levemente maior */
   color: var(--c-text-secondary);
   margin-bottom: 0.5rem;
 }
-.result-card-mini strong {
-  font-size: 1.5rem;
+.result-card-mini strong#efficiencyResultValue { /* Mais específico */
+  font-size: 2rem; /* Significativamente maior */
   font-weight: bold;
   color: var(--c-success);
+  display: block; /* Para ocupar a linha inteira e permitir margem */
+  margin-top: 0.25rem;
+  margin-bottom: 1rem; /* Mais espaço antes do botão */
 }
 .result-card-mini .btn {
   width: 100%;
