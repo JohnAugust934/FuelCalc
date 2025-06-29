@@ -118,18 +118,40 @@
                         minlength="2" maxlength="40">
                     <div class="error-message"></div>
                 </div>
-                <div class="input-group">
-                    <div class="label-with-helper">
-                        <label for="vehicleEfficiency" data-translate-key="vehicleEfficiencyLabel">Eficiência
-                            (km/L):</label>
-                        <button type="button" class="input-helper-btn" id="efficiencyHelperBtnVehicle"
-                            data-translate-key-aria-label="efficiencyHelperLabelAria"
-                            data-translate-key="efficiencyHelperLabel">Não sabe a sua? Calcule</button>
+
+                <!-- Container para os campos de combustível -->
+                <div id="fuelInputGroupContainer">
+                    <div class="input-group fuel-input-group">
+                        <div class="label-with-helper">
+                            <label for="vehicleEfficiencyGasoline" data-translate-key="vehicleEfficiencyLabelForFuel"
+                                data-translate-options='{"fuel": "Gasolina"}'>Eficiência Gasolina (km/L):</label>
+                            <button type="button" class="input-helper-btn" id="efficiencyHelperBtnVehicleGasoline"
+                                data-translate-key="efficiencyHelperLabel"
+                                data-translate-key-aria-label="efficiencyHelperLabelAriaGasoline"
+                                aria-label="Calcular eficiência para Gasolina">Não sabe? Calcule</button>
+                        </div>
+                        <input type="text" inputmode="decimal" id="vehicleEfficiencyGasoline"
+                            name="vehicleEfficiencyGasoline"
+                            data-translate-key-placeholder="vehicleEfficiencyPlaceholder" placeholder="Ex: 12.5">
+                        <div class="error-message"></div>
                     </div>
-                    <input type="text" inputmode="decimal" id="vehicleEfficiency" name="vehicleEfficiency"
-                        data-translate-key-placeholder="vehicleEfficiencyPlaceholder" placeholder="Ex: 12.5" required>
-                    <div class="error-message"></div>
+
+                    <div class="input-group fuel-input-group">
+                        <div class="label-with-helper">
+                            <label for="vehicleEfficiencyAlcohol" data-translate-key="vehicleEfficiencyLabelForFuel"
+                                data-translate-options='{"fuel": "Álcool"}'>Eficiência Álcool (km/L):</label>
+                            <button type="button" class="input-helper-btn" id="efficiencyHelperBtnVehicleAlcohol"
+                                data-translate-key="efficiencyHelperLabel"
+                                data-translate-key-aria-label="efficiencyHelperLabelAriaAlcohol"
+                                aria-label="Calcular eficiência para Álcool">Não sabe? Calcule</button>
+                        </div>
+                        <input type="text" inputmode="decimal" id="vehicleEfficiencyAlcohol" name="vehicleEfficiencyAlcohol"
+                            data-translate-key-placeholder="vehicleEfficiencyPlaceholder" placeholder="Ex: 8.7">
+                        <div class="error-message"></div>
+                    </div>
                 </div>
+                <!-- Fim do container para os campos de combustível -->
+
                 <div class="button-group">
                     <button type="submit" class="btn btn-primary" data-translate-key="saveVehicleBtn">Salvar
                         Veículo</button>
@@ -141,6 +163,15 @@
         <main class="content-section" aria-labelledby="calculator-title">
             <h2 id="calculator-title" data-translate-key="calculateTripTitle">Calcular Gastos da Viagem</h2>
             <form id="fuelForm" novalidate>
+                <!-- Novo seletor de tipo de combustível para a viagem (aparece para veículos flex) -->
+                <div class="input-group" id="tripFuelTypeGroup" style="display: none;">
+                    <label for="tripFuelTypeSelect" data-translate-key="tripFuelTypeLabel">Tipo de Combustível Usado:</label>
+                    <select id="tripFuelTypeSelect" name="tripFuelTypeSelect">
+                        <!-- Opções serão populadas dinamicamente -->
+                    </select>
+                    <div class="error-message"></div>
+                </div>
+
                 <div class="input-group">
                     <div class="label-with-helper">
                         <label for="kmPorLitro" data-translate-key="tripEfficiencyLabel">Eficiência do Veículo
@@ -215,6 +246,8 @@
                 <button type="button" id="minimizeHistoryBtn" class="btn btn-secondary" style="display:none;"
                     data-translate-key="minimizeBtn">Minimizar</button>
             </div>
+            <button type="button" id="exportHistoryCsvBtn" class="btn btn-secondary full-width" style="margin-top: 0.5rem;"
+                data-translate-key="exportHistoryCsvBtn">Exportar Histórico (CSV)</button>
             <button type="button" id="clearHistoryBtn" class="btn btn-danger full-width" style="margin-top: 1rem;"
                 data-translate-key="clearTypeHistoryBtn">Limpar Histórico deste Tipo de Veículo</button>
         </section>
@@ -232,7 +265,38 @@
             <div class="chart-container"> <canvas id="fuelChartCanvas"
                     data-translate-key-aria-label="fuelChartAriaLabel"
                     aria-label="Gráfico de gastos diários com combustível" role="img"></canvas> </div>
+            <button type="button" id="exportStatsCsvBtn" class="btn btn-secondary full-width" style="margin-top: 1rem;"
+                data-translate-key="exportStatsCsvBtn">Exportar Estatísticas (CSV)</button>
         </section>
+
+        <!-- Seção de Metas de Gastos -->
+        <section id="goalSection" class="content-section goal-section" aria-labelledby="goal-section-title">
+            <h3 id="goal-section-title" data-translate-key="goalSectionTitle">Meta de Gastos Mensal</h3>
+
+            <form id="goalForm" class="form-section" novalidate>
+                <p data-translate-key="goalFormDescription">Defina um teto de gastos com combustível para o tipo de veículo atual neste mês.</p>
+                <div class="input-group">
+                    <label for="goalAmountInput" data-translate-key="goalAmountLabel">Valor da Meta (R$):</label>
+                    <input type="text" inputmode="decimal" id="goalAmountInput" name="goalAmountInput"
+                           data-translate-key-placeholder="goalAmountPlaceholder" placeholder="Ex: 300,00" required>
+                    <div class="error-message"></div>
+                </div>
+                <button type="submit" id="setGoalBtn" class="btn btn-primary full-width" data-translate-key="setGoalBtn">Definir Meta</button>
+            </form>
+
+            <div id="currentGoalDisplay" style="display:none;">
+                <p id="goalProgressText" class="goal-progress-text"></p>
+                <div id="goalProgressBar" class="goal-progress-bar">
+                    <div id="goalProgressBarInner">
+                        <span id="goalProgressPercentage"></span>
+                    </div>
+                </div>
+                <button type="button" id="deleteGoalBtn" class="btn btn-danger btn-small" style="margin-top: 0.75rem;"
+                        data-translate-key="deleteGoalBtn">Excluir Meta Atual</button>
+            </div>
+        </section>
+        <!-- Fim da Seção de Metas de Gastos -->
+
         <section class="backup-section content-section" aria-labelledby="backup-title">
             <h3 id="backup-title" data-translate-key="backupRestoreTitle">Backup e Restauração de Dados</h3>
             <div class="backup-buttons">

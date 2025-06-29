@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
     DEBOUNCE_DELAY: 150,
     NOTIFICATION_TIMEOUT: 4000,
     CHART_MAX_DAYS: 30,
+    GOALS_STORAGE_KEY: `fuelCalc_goals_v1.0.0`, // Chave para metas
   };
 
   const DOM = {
@@ -67,9 +68,15 @@ document.addEventListener("DOMContentLoaded", () => {
     vehicleForm: document.getElementById("vehicleForm"),
     vehicleTypeInput: document.getElementById("vehicleType"),
     vehicleNameInput: document.getElementById("vehicleName"),
-    vehicleEfficiencyInput: document.getElementById("vehicleEfficiency"),
+    vehicleEfficiencyGasolineInput: document.getElementById("vehicleEfficiencyGasoline"),
+    vehicleEfficiencyAlcoholInput: document.getElementById("vehicleEfficiencyAlcohol"),
+    fuelInputGroupContainer: document.getElementById("fuelInputGroupContainer"),
+    efficiencyHelperBtnVehicleGasoline: document.getElementById("efficiencyHelperBtnVehicleGasoline"), // Novo
+    efficiencyHelperBtnVehicleAlcohol: document.getElementById("efficiencyHelperBtnVehicleAlcohol"), // Novo
     cancelVehicleBtn: document.getElementById("cancelVehicleBtn"),
     fuelForm: document.getElementById("fuelForm"),
+    tripFuelTypeGroup: document.getElementById("tripFuelTypeGroup"), // Novo para FuelCalculator
+    tripFuelTypeSelect: document.getElementById("tripFuelTypeSelect"), // Novo para FuelCalculator
     kmInicialInput: document.getElementById("kmInicial"),
     kmFinalInput: document.getElementById("kmFinal"),
     kmPorLitroInput: document.getElementById("kmPorLitro"),
@@ -85,15 +92,19 @@ document.addEventListener("DOMContentLoaded", () => {
     seeMoreBtn: document.getElementById("seeMoreHistoryBtn"),
     minimizeBtn: document.getElementById("minimizeHistoryBtn"),
     clearHistoryBtn: document.getElementById("clearHistoryBtn"),
+    exportHistoryCsvBtn: document.getElementById("exportHistoryCsvBtn"), // Novo
     statsSection: document.getElementById("statsSection"),
     totalKmStat: document.getElementById("totalKmStat"),
     totalGastoStat: document.getElementById("totalGastoStat"),
+    exportStatsCsvBtn: document.getElementById("exportStatsCsvBtn"), // Novo
     mediaConsumoStat: document.getElementById("mediaConsumoStat"),
     chartCanvas: document.getElementById("fuelChartCanvas"),
     // Novos elementos do Helper de Eficiência
-    efficiencyHelperBtnVehicle: document.getElementById(
+    efficiencyHelperBtnVehicle: document.getElementById( // Este ID não existe mais diretamente, foi substituído
       "efficiencyHelperBtnVehicle"
     ),
+    // Os helpers de eficiência agora são específicos por combustível no formulário de veículo
+    // efficiencyHelperBtnVehicleGasoline e efficiencyHelperBtnVehicleAlcohol já foram adicionados.
     efficiencyHelperBtnTrip: document.getElementById("efficiencyHelperBtnTrip"),
     efficiencyHelperModalOverlay: document.getElementById(
       "efficiencyHelperModalOverlay"
@@ -109,6 +120,25 @@ document.addEventListener("DOMContentLoaded", () => {
     efficiencyHelperResult: document.getElementById("efficiencyHelperResult"),
     efficiencyResultValue: document.getElementById("efficiencyResultValue"),
     useEfficiencyValueBtn: document.getElementById("useEfficiencyValueBtn"),
+
+    // Elementos para Metas de Gastos
+    goalSection: document.getElementById("goalSection"),
+    goalForm: document.getElementById("goalForm"),
+    goalAmountInput: document.getElementById("goalAmountInput"),
+    setGoalBtn: document.getElementById("setGoalBtn"),
+    deleteGoalBtn: document.getElementById("deleteGoalBtn"),
+    currentGoalDisplay: document.getElementById("currentGoalDisplay"),
+    goalProgressText: document.getElementById("goalProgressText"),
+    goalProgressBar: document.getElementById("goalProgressBar"),
+    goalProgressBarInner: document.getElementById("goalProgressBarInner"),
+    goalProgressPercentage: document.getElementById("goalProgressPercentage"),
+
+    // Elementos para Lembretes de Manutenção (Simplificado)
+    vehicleNextOilChangeKmInput: document.getElementById("vehicleNextOilChangeKm"),
+    maintenanceReminderSection: document.getElementById("maintenanceReminderSection"),
+    oilChangeReminderCard: document.getElementById("oilChangeReminderCard"),
+    oilChangeReminderText: document.getElementById("oilChangeReminderText"),
+    noActiveMaintenanceReminder: document.getElementById("noActiveMaintenanceReminder"),
   };
 
   // ===== INÍCIO DAS CLASSES DA APLICAÇÃO =====
@@ -170,6 +200,50 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       } catch (e) {
         return "--";
+      }
+    }
+
+    static jsonToCsv(jsonData, fileName = "export.csv") {
+      if (!jsonData || jsonData.length === 0) {
+        console.warn("Nenhum dado fornecido para exportação CSV.");
+        // Considerar mostrar uma notificação ao usuário aqui através do UIManager, se ele for acessível.
+        return;
+      }
+
+      const keys = Object.keys(jsonData[0]);
+      const csvRows = [keys.join(",")]; // Cabeçalho CSV
+
+      jsonData.forEach(row => {
+        const values = keys.map(key => {
+          let cellValue = row[key] === null || row[key] === undefined ? "" : String(row[key]);
+          // Escapar aspas duplas dentro dos valores
+          cellValue = cellValue.replace(/"/g, '""');
+          // Se o valor contiver vírgula, aspas duplas ou quebra de linha, envolvê-lo em aspas duplas
+          if (/[",\n]/.test(cellValue)) {
+            cellValue = `"${cellValue}"`;
+          }
+          return cellValue;
+        });
+        csvRows.push(values.join(","));
+      });
+
+      const csvString = csvRows.join("\n");
+      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+
+      if (link.download !== undefined) { // Feature detection
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", fileName);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // Fallback para IE ou navegadores antigos (pode não funcionar bem com nomes de arquivo ou forçar download)
+        // Considerar notificar o usuário que o download direto não é suportado.
+        navigator.msSaveBlob(blob, fileName);
       }
     }
   }
@@ -837,7 +911,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const valueStr = Utils.convertCommaToPoint(rawValue);
-      // Verifica se há mais casas decimais do que o permitido ANTES de parseFloat
       if (maxDecimals !== undefined && valueStr.includes('.')) {
         const decimals = valueStr.split('.')[1];
         if (decimals && decimals.length > maxDecimals) {
@@ -856,12 +929,15 @@ document.addEventListener("DOMContentLoaded", () => {
         this.uiManager.displayInlineError(inputEl, this.langManager.get(`${fieldNameKey}NotIntegerError`));
         return { value: null, isValid: false };
       }
-      if (numValue < min || numValue > max) {
+      // Permitir que o campo seja zero se min for zero (ex: kmUltimaRealizacao)
+      if ((numValue < min && !(min === 0 && numValue === 0)) || numValue > max) {
         let errorParams = { min, max };
-        if (fieldNameKey === "fuelPrice" || fieldNameKey === "tripGain") { // Exemplo para formatar como moeda
+        if (fieldNameKey === "fuelPrice" || fieldNameKey === "tripGain" || fieldNameKey === "goalAmount") {
             errorParams = { min: min.toFixed(2), max: max.toFixed(2) };
-        } else if (fieldNameKey === "vehicleEfficiency" || fieldNameKey === "tripEfficiency"){
+        } else if (fieldNameKey === "vehicleEfficiency" || fieldNameKey === "tripEfficiency") {
             errorParams = { min: min.toFixed(1), max: max.toFixed(1) };
+        } else if (fieldNameKey === "nextOilChangeKm") {
+             errorParams = { min: min, max: max }; // Inteiros
         }
         this.uiManager.displayInlineError(inputEl, this.langManager.get(`${fieldNameKey}RangeError`, errorParams));
         return { value: null, isValid: false };
@@ -871,10 +947,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return { value: numValue, isValid: true };
     }
 
-    validateVehicle({ nameInput, efficiencyInput, type }) {
-      this.uiManager.clearAllInlineErrors(nameInput.form);
+    validateVehicle({ nameInput, fuelsData, type, form, nextOilChangeKmInput }) {
+      this.uiManager.clearAllInlineErrors(form);
       let overallIsValid = true;
-      // const validatedData = {}; // validatedData não é usado, pode ser removido ou usado posteriormente.
+      const validatedFuels = [];
+      let validatedNextOilChangeKm = null;
 
       // Validação do nome
       const nome = nameInput.value.trim();
@@ -889,40 +966,89 @@ document.addEventListener("DOMContentLoaded", () => {
         overallIsValid = false;
       }
 
-      // Validação da eficiência
-      const eficienciaStr = Utils.convertCommaToPoint(efficiencyInput.value.trim());
-      const eficienciaValue = parseFloat(eficienciaStr);
-
-      if (
-        !Utils.validateNumber(
-          eficienciaValue,
-          CONFIG.VALIDATION.MIN_EFFICIENCY,
-          CONFIG.VALIDATION.MAX_EFFICIENCY
-        )
-      ) {
-        this.uiManager.displayInlineError(
-          efficiencyInput,
-          this.langManager.get("vehicleEfficiencyError", {
-            min: CONFIG.VALIDATION.MIN_EFFICIENCY,
-            max: CONFIG.VALIDATION.MAX_EFFICIENCY,
-          })
-        );
+      // Validação dos combustíveis
+      if (!fuelsData || fuelsData.length === 0) {
+        // Se o sistema exigir pelo menos um combustível, adicione erro aqui.
+        // Por agora, vamos permitir veículos sem combustíveis, embora não seja prático.
+        // Considerar um erro se nenhum combustível for fornecido e for obrigatório.
+        // this.uiManager.showNotification("vehicleNoFuelsError", "error");
+        // overallIsValid = false;
+        // Para este exemplo, vamos exigir pelo menos um combustível.
+        this.uiManager.showNotification("atLeastOneFuelError", "error");
         overallIsValid = false;
+
+      } else {
+        fuelsData.forEach((fuel, index) => {
+          let fuelIsValid = true;
+          const fuelName = fuel.name.trim();
+          // Supondo que os inputs de eficiência dos combustíveis tenham um ID ou classe que permita selecioná-los
+          // Para simplificar, vamos assumir que `fuel.efficiencyInput` é o elemento input HTML
+          const efficiencyInput = fuel.efficiencyInput; // Este é um placeholder, precisará ser ajustado
+
+          if (!fuelName) {
+            // Poderia tentar encontrar o input do nome do combustível para mostrar o erro nele
+            this.uiManager.showNotification("fuelNameRequiredError", "error", { index: index + 1 });
+            fuelIsValid = false;
+            overallIsValid = false;
+          }
+
+          const eficienciaStr = Utils.convertCommaToPoint(fuel.efficiency.trim());
+          const eficienciaValue = parseFloat(eficienciaStr);
+
+          if (!Utils.validateNumber(eficienciaValue, CONFIG.VALIDATION.MIN_EFFICIENCY, CONFIG.VALIDATION.MAX_EFFICIENCY)) {
+            if (efficiencyInput) { // Se tivermos o input associado
+              this.uiManager.displayInlineError(
+                efficiencyInput,
+                this.langManager.get("vehicleEfficiencyError", {
+                  min: CONFIG.VALIDATION.MIN_EFFICIENCY,
+                  max: CONFIG.VALIDATION.MAX_EFFICIENCY,
+                })
+              );
+            } else { // Notificação genérica se o input não estiver acessível
+              this.uiManager.showNotification("fuelEfficiencyError", "error", { name: fuelName || `Combustível ${index + 1}` });
+            }
+            fuelIsValid = false;
+            overallIsValid = false;
+          }
+
+          if (fuelIsValid) {
+            validatedFuels.push({ nome: fuelName, eficiencia: eficienciaValue });
+          }
+        });
+
+        if (overallIsValid && validatedFuels.length === 0) {
+            this.uiManager.showNotification("atLeastOneValidFuelError", "error");
+            overallIsValid = false;
+        }
       }
 
       // Validação do tipo
       if (!["carro", "moto"].includes(type)) {
         console.error("Tipo de veículo inválido fornecido:", type);
-        // Poderia adicionar uma notificação para o usuário aqui se fosse relevante
-        // this.uiManager.showNotification("vehicleTypeInvalidError", "error");
         overallIsValid = false;
       }
 
+      // Validação do KM da próxima troca de óleo
+      if (nextOilChangeKmInput && nextOilChangeKmInput.value.trim() !== "") {
+        const oilChangeValidation = this._validateNumericField(
+          nextOilChangeKmInput,
+          "nextOilChangeKm",
+          { min: 0, max: CONFIG.VALIDATION.MAX_KM, integer: true, allowEmpty: true, emptyValue: null }
+        );
+        if (!oilChangeValidation.isValid) {
+          overallIsValid = false;
+        } else {
+          validatedNextOilChangeKm = oilChangeValidation.value;
+        }
+      }
+
+
       return {
         isValid: overallIsValid,
-        data: overallIsValid ? { nome, eficiencia: eficienciaValue, tipo: type } : null,
+        data: overallIsValid ? { nome, combustiveis: validatedFuels, tipo: type, proximoKmTrocaOleo: validatedNextOilChangeKm } : null,
       };
     }
+
     validateTrip(inputs) {
       this.uiManager.clearAllInlineErrors(inputs.kmInicialInput.form);
       let isValid = true;
@@ -1100,15 +1226,45 @@ document.addEventListener("DOMContentLoaded", () => {
       this._bindEvents();
       document.addEventListener("languageChanged", () => {
         this.loadAndRenderVehicles();
-        // Se o formulário de veículo estiver visível quando o idioma mudar, atualiza o texto do botão
         if (this.dom.vehicleForm.style.display === 'block') {
             const submitButton = this.dom.vehicleForm.querySelector("button[type='submit']");
             const buttonTextKey = this.editingVehicleId ? "updateVehicleBtn" : "saveVehicleBtn";
             const translatedText = this.langManager.get(buttonTextKey);
             submitButton.textContent = translatedText;
-            submitButton.dataset.originalText = translatedText; // Para consistência com o spinner
+            submitButton.dataset.originalText = translatedText;
+            this._updateFuelFieldTranslations();
         }
       });
+    }
+
+    _updateFuelFieldTranslations() {
+        // Certifique-se de que DOM.vehicleEfficiencyGasolineInput e DOM.vehicleEfficiencyAlcoholInput estão definidos
+        // ou use document.getElementById dentro desta função se eles não estiverem sempre no DOM global.
+        const fuelFields = [
+            { input: this.dom.vehicleEfficiencyGasolineInput, nameKey: "fuelTypeGasoline", labelKeySuffix: "Gasoline" },
+            { input: this.dom.vehicleEfficiencyAlcoholInput, nameKey: "fuelTypeAlcohol", labelKeySuffix: "Alcohol" }
+        ];
+
+        fuelFields.forEach(field => {
+            if (field.input) {
+                const group = field.input.closest('.fuel-input-group') || field.input.closest('.input-group');
+                if (group) {
+                    const label = group.querySelector('label');
+                    const helperButton = group.querySelector('.input-helper-btn');
+
+                    if (label) {
+                        label.textContent = this.langManager.get("vehicleEfficiencyLabelForFuel", { fuel: this.langManager.get(field.nameKey) });
+                    }
+                    field.input.placeholder = this.langManager.get("vehicleEfficiencyPlaceholder");
+                    if (helperButton) {
+                        helperButton.textContent = this.langManager.get("efficiencyHelperLabel");
+                        // Atualizar aria-label do helper se necessário
+                         const ariaLabelKey = field.input.id === "vehicleEfficiencyGasoline" ? "efficiencyHelperLabelAriaGasoline" : "efficiencyHelperLabelAriaAlcohol";
+                         helperButton.setAttribute("aria-label", this.langManager.get(ariaLabelKey, {fuel: this.langManager.get(field.nameKey)}));
+                    }
+                }
+            }
+        });
     }
 
     _handleVehicleListClick(event) {
@@ -1117,7 +1273,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!vehicleCard) return;
 
       const vehicleId = vehicleCard.dataset.vehicleId;
-      const vehicleName = vehicleCard.querySelector("h4").textContent;
+      // Tenta pegar o nome de um atributo de dados para evitar problemas se o h4 for alterado
+      const vehicleName = vehicleCard.dataset.vehicleName || vehicleCard.querySelector("h4")?.textContent || this.langManager.get("thisVehicle");
+
 
       const editButton = target.closest(".edit-button");
       const deleteButton = target.closest(".delete-button");
@@ -1129,13 +1287,12 @@ document.addEventListener("DOMContentLoaded", () => {
         event.stopPropagation();
         this.uiManager
           .showConfirm(
-            this.langManager.get("confirmDeleteVehicle", { name: vehicleName })
+            this.langManager.get("confirmDeleteVehicle", { name: Utils.sanitizeHTML(vehicleName) })
           )
           .then((confirmed) => {
             if (confirmed) this.deleteVehicle(vehicleId);
           });
       } else {
-        // Click no card em si (fora dos botões de ação)
         this.selectVehicle(vehicleId);
       }
     }
@@ -1183,11 +1340,9 @@ document.addEventListener("DOMContentLoaded", () => {
         b.setAttribute("aria-pressed", String(b.dataset.vehicleType === type));
       });
       this.currentVehicle = null;
-      this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
-      this.dom.kmPorLitroInput.value = "";
-      this.dom.kmPorLitroInput.placeholder = this.langManager.get(
-        "tripEfficiencyPlaceholder"
-      );
+      // A responsabilidade de limpar/atualizar kmPorLitroInput agora é do FuelCalculator
+      // com base no evento 'vehicleDeselected' ou 'vehicleSelected'.
+      document.dispatchEvent(new CustomEvent("vehicleDeselected"));
       this.loadAndRenderVehicles();
       document.dispatchEvent(
         new CustomEvent("vehicleTypeChanged", { detail: { type } })
@@ -1223,16 +1378,39 @@ document.addEventListener("DOMContentLoaded", () => {
       const c = document.createElement("div");
       c.className = "vehicle-card";
       c.dataset.vehicleId = v.id;
+      c.dataset.vehicleName = v.nome; // Guardar nome para confirmação de exclusão
       c.setAttribute("role", "button");
       c.setAttribute("tabindex", "0");
       const vs = Utils.sanitizeHTML(v.nome);
+
+      let displayEfficiency = this.langManager.get("notApplicableAbbreviation");
+      let hoverText = "";
+
+      if (v.combustiveis && v.combustiveis.length > 0) {
+        const primaryFuel = v.combustiveis[0];
+        displayEfficiency = `${primaryFuel.eficiencia} km/L (${Utils.sanitizeHTML(primaryFuel.nome)})`;
+        if (v.combustiveis.length > 1) {
+          displayEfficiency += ` / ...`; // Indica que há mais
+          hoverText = v.combustiveis.map(f => `${Utils.sanitizeHTML(f.nome)}: ${f.eficiencia} km/L`).join('\n');
+        } else {
+          hoverText = `${Utils.sanitizeHTML(primaryFuel.nome)}: ${primaryFuel.eficiencia} km/L`;
+        }
+      } else if (v.eficiencia) { // Fallback para estrutura antiga (deve ser removido após migração)
+        displayEfficiency = `${v.eficiencia} km/L`;
+        hoverText = displayEfficiency;
+      }
+
       c.setAttribute(
         "aria-label",
         this.langManager.get("selectVehicleAriaLabel", {
           name: vs,
-          efficiency: v.eficiencia,
+          efficiency: hoverText || displayEfficiency,
         })
       );
+      if (hoverText) {
+        c.title = hoverText;
+      }
+
       if (this.currentVehicle && this.currentVehicle.id === v.id)
         c.classList.add("active");
 
@@ -1240,7 +1418,8 @@ document.addEventListener("DOMContentLoaded", () => {
       title.textContent = vs;
 
       const efficiencySpan = document.createElement("span");
-      efficiencySpan.textContent = `${v.eficiencia} km/L`; // TODO: Adicionar unidade de medida da linguagem
+      efficiencySpan.className = 'vehicle-card-efficiency';
+      efficiencySpan.textContent = displayEfficiency;
 
       const actionsDiv = document.createElement("div");
       actionsDiv.className = "card-actions";
@@ -1249,13 +1428,11 @@ document.addEventListener("DOMContentLoaded", () => {
       editButton.type = "button";
       editButton.className = "action-button edit-button";
       editButton.setAttribute("aria-label", this.langManager.get("editVehicleAriaLabel", { name: vs }));
-      // SVG para ícone de editar (lápis)
       editButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
 
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.className = "action-button delete-button";
-      // SVG para ícone de excluir (lixeira)
       deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
       deleteButton.setAttribute("aria-label", this.langManager.get("deleteVehicleAriaLabel", { name: vs }));
 
@@ -1274,10 +1451,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       const v = av.find((v) => v.id === id);
       if (v) {
-        this.currentVehicle = v;
-        // this.dom.kmPorLitroInput.value = String(v.eficiencia).replace(".", ","); // Movido para o event listener em FuelCalculator
-        // this.uiManager.clearInlineError(this.dom.kmPorLitroInput); // Também será tratado lá
-
+        this.currentVehicle = v; // Agora v pode ter v.combustiveis
         this.dom.vehicleListContainer
           .querySelectorAll(".vehicle-card")
           .forEach((c) =>
@@ -1286,30 +1460,8 @@ document.addEventListener("DOMContentLoaded", () => {
         this.uiManager.showNotification("vehicleSelected", "info", {
           name: Utils.sanitizeHTML(v.nome),
         });
-        // Dispara um evento customizado para que FuelCalculator possa ouvir e atualizar seu estado
         document.dispatchEvent(new CustomEvent("vehicleSelected", { detail: { vehicle: v } }));
       }
-    }
-
-    // Modificar selectVehicleType e deleteVehicle para também limpar o estado de override se necessário
-    selectVehicleType(type) {
-      if (type !== "carro" && type !== "moto") return;
-      this.currentVehicleType = type;
-      this.dom.vehicleTypeButtons.forEach((b) => {
-        b.classList.toggle("selected", b.dataset.vehicleType === type); // Classe 'selected' pode não existir, mas aria-pressed é mais importante
-        b.setAttribute("aria-pressed", String(b.dataset.vehicleType === type));
-      });
-      this.currentVehicle = null; // Desseleciona veículo atual
-      this.dom.kmPorLitroInput.value = ""; // Limpa o campo de eficiência
-      this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
-      this.dom.kmPorLitroInput.placeholder = this.langManager.get(
-        "tripEfficiencyPlaceholder"
-      );
-      document.dispatchEvent(new CustomEvent("vehicleDeselected")); // Notifica que um veículo foi deselecionado
-      this.loadAndRenderVehicles();
-      document.dispatchEvent(
-        new CustomEvent("vehicleTypeChanged", { detail: { type } })
-      );
     }
 
     deleteVehicle(id) {
@@ -1324,38 +1476,32 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         if (this.currentVehicle && this.currentVehicle.id === id) {
           this.currentVehicle = null;
-          this.dom.kmPorLitroInput.value = "";
           document.dispatchEvent(new CustomEvent("vehicleDeselected"));
         }
         this.loadAndRenderVehicles();
-        if (vArray.filter((vh) => vh.tipo === this.currentVehicleType).length === 0) {
-          this.dom.kmPorLitroInput.placeholder = this.langManager.get(
-            "tripEfficiencyPlaceholder"
-          );
-        }
+        // A lógica de placeholder do kmPorLitroInput é agora tratada pelo FuelCalculator
       }
     }
 
     resetState() {
       this.currentVehicle = null;
       this.editingVehicleId = null;
-      this.dom.kmPorLitroInput.value = "";
-      this.dom.kmPorLitroInput.placeholder = this.langManager.get(
-        "tripEfficiencyPlaceholder"
-      );
+      // this.dom.kmPorLitroInput.value = ""; // Tratado por FuelCalculator
+      // this.dom.kmPorLitroInput.placeholder = this.langManager.get("tripEfficiencyPlaceholder"); // Tratado por FuelCalculator
       document.dispatchEvent(new CustomEvent("vehicleDeselected"));
       this.selectVehicleType("carro"); // Isso já chama loadAndRenderVehicles
     }
 
     showVehicleForm(vehicleIdToEdit = null) {
       this.uiManager.clearAllInlineErrors(this.dom.vehicleForm);
-      // const formTitleKey = vehicleIdToEdit ? "editVehicleTitle" : "addVehicleTitle";
-      // Se você tiver um elemento de título dedicado para o formulário, descomente e use:
-      // const formTitleEl = this.dom.vehicleForm.querySelector_(".form-title"); // Supondo que você adicione uma classe .form-title
-      // if(formTitleEl) formTitleEl.textContent = this.langManager.get(formTitleKey);
-
       const submitButton = this.dom.vehicleForm.querySelector("button[type='submit']");
       let buttonTextKey = "saveVehicleBtn";
+
+      // Limpar campos
+      if (this.dom.vehicleEfficiencyGasolineInput) this.dom.vehicleEfficiencyGasolineInput.value = "";
+      if (this.dom.vehicleEfficiencyAlcoholInput) this.dom.vehicleEfficiencyAlcoholInput.value = "";
+      if (this.dom.vehicleNextOilChangeKmInput) this.dom.vehicleNextOilChangeKmInput.value = "";
+
 
       if (vehicleIdToEdit) {
         const vehicles = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []);
@@ -1364,26 +1510,39 @@ document.addEventListener("DOMContentLoaded", () => {
           this.editingVehicleId = vehicleIdToEdit;
           this.dom.vehicleTypeInput.value = vehicle.tipo;
           this.dom.vehicleNameInput.value = vehicle.nome;
-          this.dom.vehicleEfficiencyInput.value = String(vehicle.eficiencia).replace(".", ",");
           buttonTextKey = "updateVehicleBtn";
+
+          if (vehicle.combustiveis) {
+            vehicle.combustiveis.forEach(fuel => {
+              const efficiencyStr = String(fuel.eficiencia).replace(".", ",");
+              if (fuel.nome.toLowerCase() === 'gasolina' && this.dom.vehicleEfficiencyGasolineInput) {
+                this.dom.vehicleEfficiencyGasolineInput.value = efficiencyStr;
+              } else if (fuel.nome.toLowerCase() === 'álcool' && this.dom.vehicleEfficiencyAlcoholInput) {
+                this.dom.vehicleEfficiencyAlcoholInput.value = efficiencyStr;
+              }
+            });
+          }
+          if (this.dom.vehicleNextOilChangeKmInput && vehicle.proximoKmTrocaOleo !== null && vehicle.proximoKmTrocaOleo !== undefined) {
+            this.dom.vehicleNextOilChangeKmInput.value = vehicle.proximoKmTrocaOleo;
+          }
+
         } else {
           this.editingVehicleId = null;
           this.dom.vehicleTypeInput.value = this.currentVehicleType;
           this.dom.vehicleNameInput.value = "";
-          this.dom.vehicleEfficiencyInput.value = "";
-          // buttonTextKey já é "saveVehicleBtn"
         }
       } else {
         this.editingVehicleId = null;
         this.dom.vehicleTypeInput.value = this.currentVehicleType;
         this.dom.vehicleNameInput.value = "";
-        this.dom.vehicleEfficiencyInput.value = "";
-        // buttonTextKey já é "saveVehicleBtn"
       }
+
+      this._updateFuelFieldTranslations();
+      // Se houver outros campos que precisam de atualização de tradução no form, chamar aqui
 
       const translatedText = this.langManager.get(buttonTextKey);
       submitButton.textContent = translatedText;
-      submitButton.dataset.originalText = translatedText; // Atualiza para o spinner
+      submitButton.dataset.originalText = translatedText;
 
       this.dom.vehicleForm.style.display = "block";
       this.dom.vehicleNameInput.focus();
@@ -1397,31 +1556,51 @@ document.addEventListener("DOMContentLoaded", () => {
       const submitButton = this.dom.vehicleForm.querySelector("button[type='submit']");
       const saveText = this.langManager.get("saveVehicleBtn");
       submitButton.textContent = saveText;
-      submitButton.dataset.originalText = saveText; // Atualiza para o spinner
+      submitButton.dataset.originalText = saveText;
+
+      if (this.dom.vehicleEfficiencyGasolineInput) this.dom.vehicleEfficiencyGasolineInput.value = "";
+      if (this.dom.vehicleEfficiencyAlcoholInput) this.dom.vehicleEfficiencyAlcoholInput.value = "";
+      if (this.dom.vehicleNextOilChangeKmInput) this.dom.vehicleNextOilChangeKmInput.value = "";
     }
 
     saveVehicle() {
       const submitButton = this.dom.vehicleForm.querySelector("button[type='submit']");
-      const originalButtonText = submitButton.innerHTML; // Salva o HTML interno para preservar ícones/SVG
+      const originalButtonText = submitButton.innerHTML;
       this.uiManager.showButtonSpinner(submitButton, originalButtonText);
 
-      // Usar um pequeno timeout para permitir que o spinner renderize antes de operações síncronas pesadas
       setTimeout(() => {
+        const fuelsData = [];
+        if (this.dom.vehicleEfficiencyGasolineInput && this.dom.vehicleEfficiencyGasolineInput.value.trim() !== "") {
+          fuelsData.push({
+            name: "Gasolina",
+            efficiency: this.dom.vehicleEfficiencyGasolineInput.value,
+            efficiencyInput: this.dom.vehicleEfficiencyGasolineInput
+          });
+        }
+        if (this.dom.vehicleEfficiencyAlcoholInput && this.dom.vehicleEfficiencyAlcoholInput.value.trim() !== "") {
+          fuelsData.push({
+            name: "Álcool",
+            efficiency: this.dom.vehicleEfficiencyAlcoholInput.value,
+            efficiencyInput: this.dom.vehicleEfficiencyAlcoholInput
+          });
+        }
+
         const validationInputs = {
           nameInput: this.dom.vehicleNameInput,
-          efficiencyInput: this.dom.vehicleEfficiencyInput,
+          fuelsData: fuelsData,
           type: this.dom.vehicleTypeInput.value,
+          form: this.dom.vehicleForm,
+          nextOilChangeKmInput: this.dom.vehicleNextOilChangeKmInput // Passar o input para validação
         };
         const validationResult = this.validator.validateVehicle(validationInputs);
 
         if (!validationResult.isValid) {
           this.uiManager.hideButtonSpinner(submitButton);
-          // Restaurar o texto original do botão, pois hideButtonSpinner pode não fazer isso se o CSS esconde o texto
           submitButton.innerHTML = originalButtonText;
           return;
         }
 
-        const { nome, eficiencia, tipo } = validationResult.data;
+        const { nome, combustiveis, tipo, proximoKmTrocaOleo } = validationResult.data;
         let vehicles = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []);
         let notificationKey = "vehicleSaved";
         let notificationParams = { name: nome };
@@ -1449,23 +1628,25 @@ document.addEventListener("DOMContentLoaded", () => {
             vehicles[vehicleIndex] = {
               ...vehicles[vehicleIndex],
               nome,
-              eficiencia,
+              combustiveis,
+              tipo: tipo,
+              proximoKmTrocaOleo: proximoKmTrocaOleo, // Salvar o KM da troca de óleo
               updatedAt: new Date().toISOString(),
             };
             notificationKey = "vehicleUpdated";
           } else {
-            this.editingVehicleId = null; // Erro: veículo de edição não encontrado
+            this.editingVehicleId = null;
             this.uiManager.hideButtonSpinner(submitButton);
             submitButton.innerHTML = originalButtonText;
-            // Poderia mostrar um erro aqui
-            return; // Evita chamada recursiva problemática
+            return;
           }
         } else {
           const newVehicle = {
             id: `vehicle_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             nome,
-            eficiencia,
+            combustiveis,
             tipo,
+            proximoKmTrocaOleo: proximoKmTrocaOleo, // Salvar o KM da troca de óleo
             createdAt: new Date().toISOString(),
           };
           vehicles.push(newVehicle);
@@ -1473,50 +1654,45 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, vehicles)) {
           this.uiManager.showNotification(notificationKey, "success", notificationParams);
-          this.hideVehicleForm(); // Limpa o form e o estado de edição, também restaura o texto do botão
+          this.hideVehicleForm();
           this.loadAndRenderVehicles();
 
-          if (this.editingVehicleId && this.currentVehicle && this.currentVehicle.id === this.editingVehicleId) {
-            const updatedVehicle = vehicles.find(v => v.id === this.editingVehicleId);
-            if (updatedVehicle) this.selectVehicle(updatedVehicle.id);
+          const vehicleInQuestionId = this.editingVehicleId || newVehicle.id;
+          const vehicleInQuestion = vehicles.find(v => v.id === vehicleInQuestionId);
+
+          if (this.currentVehicle && this.currentVehicle.id === vehicleInQuestionId) {
+             if (vehicleInQuestion) this.selectVehicle(vehicleInQuestion.id); // Reseleciona para atualizar dados, inclusive de manutenção
           } else if (!this.editingVehicleId) {
-            const addedVehicle = vehicles.find(vh => vh.nome === nome && vh.tipo === tipo && !vh.updatedAt);
-            if (addedVehicle && vehicles.filter(vh => vh.tipo === this.currentVehicleType).length === 1) {
-              this.selectVehicle(addedVehicle.id);
+            if (vehicleInQuestion && vehicles.filter(vh => vh.tipo === this.currentVehicleType).length === 1) {
+              this.selectVehicle(vehicleInQuestion.id);
             }
           }
+          document.dispatchEvent(new CustomEvent("vehicleDataChanged", {detail: {vehicleId: vehicleInQuestionId}}));
           this.editingVehicleId = null;
         }
         this.uiManager.hideButtonSpinner(submitButton);
-        // hideVehicleForm já deve ter restaurado o texto do botão ao seu estado padrão "Salvar Veículo"
-        // Mas se o botão for atualizado (ex: para "Atualizar"), e a operação falhar antes de hideVehicleForm,
-        // precisamos garantir que o texto correto seja restaurado.
-        // A lógica em hideVehicleForm e showVehicleForm já lida com o texto do botão para "Salvar" vs "Atualizar".
-        // Se a operação falha e o formulário não é escondido, o texto original (antes do spinner) deve ser restaurado.
-        if (this.dom.vehicleForm.style.display === 'block') { // Se o form ainda estiver visível
+        if (this.dom.vehicleForm.style.display === 'block') {
             submitButton.innerHTML = this.editingVehicleId ? this.langManager.get("updateVehicleBtn") : this.langManager.get("saveVehicleBtn");
         }
 
-      }, 50); // Timeout de 50ms para o spinner
+      }, 50);
     }
     deleteVehicle(id) {
-      let v = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []);
-      const vt = v.find((vh) => vh.id === id);
-      if (!vt) return;
-      v = v.filter((vh) => vh.id !== id);
-      if (this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, v)) {
+      let vArray = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []);
+      const vehicleToDelete = vArray.find((vh) => vh.id === id);
+      if (!vehicleToDelete) return;
+
+      vArray = vArray.filter((vh) => vh.id !== id);
+      if (this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, vArray)) {
         this.uiManager.showNotification("vehicleDeleted", "success", {
-          name: Utils.sanitizeHTML(vt.nome),
+          name: Utils.sanitizeHTML(vehicleToDelete.nome),
         });
         if (this.currentVehicle && this.currentVehicle.id === id) {
           this.currentVehicle = null;
-          this.dom.kmPorLitroInput.value = "";
+          document.dispatchEvent(new CustomEvent("vehicleDeselected"));
         }
         this.loadAndRenderVehicles();
-        if (v.filter((vh) => vh.tipo === this.currentVehicleType).length === 0)
-          this.dom.kmPorLitroInput.placeholder = this.langManager.get(
-            "tripEfficiencyPlaceholder"
-          );
+        // A lógica de placeholder do kmPorLitroInput é agora tratada pelo FuelCalculator
       }
     }
     getCurrentVehicleName() {
@@ -1542,21 +1718,44 @@ document.addEventListener("DOMContentLoaded", () => {
       this.dom = dom;
       this.selectedVehicleCache = null; // Cache para dados do veículo selecionado (nome, eficiência)
       this.dom.resetEfficiencyBtn = document.getElementById("resetEfficiencyBtn");
+      this.selectedTripFuelName = null; // Novo: rastreia o combustível selecionado para a viagem
       this._bindEvents();
 
       document.addEventListener("languageChanged", () => {
         this._updateResultCardCurrency();
         this._updateResetEfficiencyButtonText();
+        // Repopular o select de combustível se estiver visível, para traduzir nomes
+        if (this.currentVehicle && this.currentVehicle.combustiveis && this.currentVehicle.combustiveis.length > 0) {
+            this._populateTripFuelSelect(this.currentVehicle.combustiveis);
+        }
       });
 
-      // Ouvir evento de seleção de veículo disparado pelo VehicleManager
       document.addEventListener("vehicleSelected", (e) => {
         if (e.detail && e.detail.vehicle) {
-          this.selectedVehicleCache = {
-            nome: e.detail.vehicle.nome,
-            eficiencia: parseFloat(e.detail.vehicle.eficiencia)
-          };
-          this.dom.kmPorLitroInput.value = String(this.selectedVehicleCache.eficiencia).replace(".", ",");
+          const vehicle = e.detail.vehicle;
+          this.currentVehicle = vehicle; // Armazena o veículo atual completo
+          this.selectedVehicleCache = { nome: vehicle.nome, combustiveis: vehicle.combustiveis };
+
+          if (vehicle.combustiveis && vehicle.combustiveis.length > 0) {
+            if (vehicle.combustiveis.length > 1) { // Veículo Flex
+              this.dom.tripFuelTypeGroup.style.display = "block";
+              this._populateTripFuelSelect(vehicle.combustiveis);
+              // Seleciona o primeiro combustível por padrão e atualiza a eficiência
+              this.dom.tripFuelTypeSelect.value = vehicle.combustiveis[0].nome;
+              this._updateEfficiencyFromSelectedTripFuel();
+            } else { // Veículo com apenas um tipo de combustível
+              this.dom.tripFuelTypeGroup.style.display = "none";
+              this.dom.tripFuelTypeSelect.innerHTML = "";
+              this.selectedTripFuelName = vehicle.combustiveis[0].nome;
+              this.dom.kmPorLitroInput.value = String(vehicle.combustiveis[0].eficiencia).replace(".", ",");
+            }
+          } else { // Veículo sem dados de combustível (estrutura antiga ou erro)
+            this.dom.tripFuelTypeGroup.style.display = "none";
+            this.dom.tripFuelTypeSelect.innerHTML = "";
+            this.selectedTripFuelName = null;
+            // Tenta usar a 'eficiencia' legada se existir, senão limpa
+            this.dom.kmPorLitroInput.value = vehicle.eficiencia ? String(vehicle.eficiencia).replace(".", ",") : "";
+          }
           this.dom.kmPorLitroInput.classList.remove("manual-override");
           this.dom.resetEfficiencyBtn.style.display = "none";
           this._updateResetEfficiencyButtonText();
@@ -1564,21 +1763,70 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      // Ouvir se o veículo selecionado foi desmarcado (ex: excluído ou tipo de veículo mudou)
       document.addEventListener("vehicleDeselected", () => {
+        this.currentVehicle = null;
         this.selectedVehicleCache = null;
-        // Não limpar o input kmPorLitro aqui, pois o usuário pode querer manter um valor manual.
-        // Apenas garante que o botão de reset e o override sejam limpos.
+        this.selectedTripFuelName = null;
+        this.dom.kmPorLitroInput.value = ""; // Limpa ao deselecionar
+        this.dom.kmPorLitroInput.placeholder = this.langManager.get("tripEfficiencyPlaceholder");
         this.dom.kmPorLitroInput.classList.remove("manual-override");
         this.dom.resetEfficiencyBtn.style.display = "none";
+        this.dom.tripFuelTypeGroup.style.display = "none";
+        this.dom.tripFuelTypeSelect.innerHTML = "";
         this._updateResetEfficiencyButtonText();
       });
     }
 
+    _populateTripFuelSelect(fuels) {
+        this.dom.tripFuelTypeSelect.innerHTML = ""; // Limpa opções existentes
+        fuels.forEach(fuel => {
+            const option = document.createElement("option");
+            option.value = fuel.nome;
+            // Para tradução, idealmente os nomes dos combustíveis (Gasolina, Álcool) seriam chaves
+            // ex: this.langManager.get(`fuelName${fuel.nome}`)
+            // Por simplicidade, usando o nome direto por enquanto.
+            option.textContent = Utils.sanitizeHTML(fuel.nome);
+            this.dom.tripFuelTypeSelect.appendChild(option);
+        });
+    }
+
+    _updateEfficiencyFromSelectedTripFuel() {
+        if (!this.currentVehicle || !this.currentVehicle.combustiveis) return;
+
+        const selectedFuelName = this.dom.tripFuelTypeSelect.value;
+        const selectedFuelData = this.currentVehicle.combustiveis.find(f => f.nome === selectedFuelName);
+
+        if (selectedFuelData) {
+            this.selectedTripFuelName = selectedFuelData.nome;
+            this.dom.kmPorLitroInput.value = String(selectedFuelData.eficiencia).replace(".", ",");
+            this.dom.kmPorLitroInput.classList.remove("manual-override");
+            this.dom.resetEfficiencyBtn.style.display = "none";
+            this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
+            this._updateResetEfficiencyButtonText(); // Atualiza texto do botão de reset
+        }
+    }
+
+
     _updateResetEfficiencyButtonText() {
       if (this.dom.resetEfficiencyBtn) {
-        if (this.selectedVehicleCache && this.selectedVehicleCache.nome) {
-          this.dom.resetEfficiencyBtn.innerHTML = this.langManager.get("resetToVehicleEfficiency", { vehicleName: `<strong>${Utils.sanitizeHTML(this.selectedVehicleCache.nome)}</strong>` });
+        let vehicleDisplayName = this.langManager.get("thisVehicle");
+        if (this.currentVehicle && this.currentVehicle.nome) {
+            vehicleDisplayName = `<strong>${Utils.sanitizeHTML(this.currentVehicle.nome)}</strong>`;
+        }
+
+        if (this.selectedTripFuelName && this.currentVehicle) {
+            // Se um combustível específico está selecionado para a viagem
+            this.dom.resetEfficiencyBtn.innerHTML = this.langManager.get("resetToSelectedFuelEfficiency", {
+                fuelName: Utils.sanitizeHTML(this.selectedTripFuelName),
+                vehicleName: vehicleDisplayName
+            });
+        } else if (this.currentVehicle && this.currentVehicle.combustiveis && this.currentVehicle.combustiveis.length > 0) {
+            // Se um veículo está selecionado, mas nenhum combustível específico (ex: mono-combustível)
+            const fuelName = this.currentVehicle.combustiveis[0].nome;
+             this.dom.resetEfficiencyBtn.innerHTML = this.langManager.get("resetToSelectedFuelEfficiency", {
+                fuelName: Utils.sanitizeHTML(fuelName),
+                vehicleName: vehicleDisplayName
+            });
         } else {
           this.dom.resetEfficiencyBtn.textContent = this.langManager.get("resetToVehicleEfficiencyShort");
         }
@@ -1589,33 +1837,48 @@ document.addEventListener("DOMContentLoaded", () => {
       const currentValueStr = Utils.convertCommaToPoint(this.dom.kmPorLitroInput.value);
       const currentValue = parseFloat(currentValueStr);
 
-      if (this.selectedVehicleCache && this.selectedVehicleCache.eficiencia !== null) {
-        // Verifica se o valor é número e diferente do cacheado (com tolerância para floats)
-        if (!isNaN(currentValue) && Math.abs(currentValue - this.selectedVehicleCache.eficiencia) > 0.001) {
+      let efficiencyToCompare = null;
+      if (this.currentVehicle && this.currentVehicle.combustiveis) {
+          const fuelNameToCompare = this.selectedTripFuelName || (this.currentVehicle.combustiveis[0] ? this.currentVehicle.combustiveis[0].nome : null);
+          if (fuelNameToCompare) {
+              const fuelData = this.currentVehicle.combustiveis.find(f => f.nome === fuelNameToCompare);
+              if (fuelData) {
+                  efficiencyToCompare = parseFloat(fuelData.eficiencia);
+              }
+          }
+      }
+
+
+      if (efficiencyToCompare !== null) {
+        if (!isNaN(currentValue) && Math.abs(currentValue - efficiencyToCompare) > 0.001) {
           this.dom.kmPorLitroInput.classList.add("manual-override");
           this.dom.resetEfficiencyBtn.style.display = "block";
-        } else if (isNaN(currentValue) || Math.abs(currentValue - this.selectedVehicleCache.eficiencia) <= 0.001) {
-          // Se igual ao do veículo ou não é um número válido (ex: apagado), remove o override.
+        } else if (isNaN(currentValue) || Math.abs(currentValue - efficiencyToCompare) <= 0.001) {
           this.dom.kmPorLitroInput.classList.remove("manual-override");
           this.dom.resetEfficiencyBtn.style.display = "none";
-          if(!isNaN(currentValue)) { // Se for um número válido igual, garante que esteja formatado corretamente
-            this.dom.kmPorLitroInput.value = String(this.selectedVehicleCache.eficiencia).replace(".",",");
+          if(!isNaN(currentValue)) {
+            this.dom.kmPorLitroInput.value = String(efficiencyToCompare).replace(".",",");
           }
         }
       } else {
-        // Se não há veículo selecionado, não há override.
         this.dom.kmPorLitroInput.classList.remove("manual-override");
         this.dom.resetEfficiencyBtn.style.display = "none";
       }
     }
 
     _resetEfficiencyToVehicle() {
-      if (this.selectedVehicleCache && this.selectedVehicleCache.eficiencia !== null) {
-        this.dom.kmPorLitroInput.value = String(this.selectedVehicleCache.eficiencia).replace(".", ",");
-        this.dom.kmPorLitroInput.classList.remove("manual-override");
-        this.dom.resetEfficiencyBtn.style.display = "none";
-        this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
-        this.dom.kmPorLitroInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+      if (this.currentVehicle && this.currentVehicle.combustiveis) {
+        const fuelNameToReset = this.selectedTripFuelName || (this.currentVehicle.combustiveis[0] ? this.currentVehicle.combustiveis[0].nome : null);
+        if (fuelNameToReset) {
+            const fuelData = this.currentVehicle.combustiveis.find(f => f.nome === fuelNameToReset);
+            if (fuelData) {
+                this.dom.kmPorLitroInput.value = String(fuelData.eficiencia).replace(".", ",");
+                this.dom.kmPorLitroInput.classList.remove("manual-override");
+                this.dom.resetEfficiencyBtn.style.display = "none";
+                this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
+                this.dom.kmPorLitroInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+            }
+        }
       }
     }
 
@@ -1665,6 +1928,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (this.dom.kmInicialInput && this.dom.kmFinalInput) {
         this.dom.kmInicialInput.addEventListener("input", () => this._calculateAndDisplayLiveDistance());
         this.dom.kmFinalInput.addEventListener("input", () => this._calculateAndDisplayLiveDistance());
+      }
+      if (this.dom.tripFuelTypeSelect) { // Novo listener
+        this.dom.tripFuelTypeSelect.addEventListener("change", () => this._updateEfficiencyFromSelectedTripFuel());
       }
     }
 
@@ -1760,7 +2026,18 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       this.uiManager.hideButtonSpinner(submitButton);
-      submitButton.innerHTML = originalButtonText; // Restaura o texto original após o cálculo
+      submitButton.innerHTML = originalButtonText;
+
+      let combustivelUtilizadoNome = null;
+      if (this.currentVehicle && this.currentVehicle.combustiveis) {
+          if (this.dom.tripFuelTypeGroup.style.display === "block" && this.dom.tripFuelTypeSelect.value) {
+              combustivelUtilizadoNome = this.dom.tripFuelTypeSelect.value;
+          } else if (this.currentVehicle.combustiveis.length === 1) {
+              combustivelUtilizadoNome = this.currentVehicle.combustiveis[0].nome;
+          }
+      }
+      // Se combustivelUtilizadoNome ainda for null, pode ser uma entrada manual sem veículo selecionado,
+      // ou um veículo antigo sem a estrutura `combustiveis`.
 
       this._saveTripToHistory({
         kmInicial,
@@ -1772,20 +2049,22 @@ document.addEventListener("DOMContentLoaded", () => {
         litrosConsumidos: lc,
         custoTotal: ct,
         lucroLiquido: ll,
+        combustivelUtilizadoNome: combustivelUtilizadoNome
       });
       this._clearTripForm();
       document.dispatchEvent(new CustomEvent("tripCalculated"));
     }
+
     _saveTripToHistory(td) {
       const h = this.storageManager.safeGetItem(
         CONFIG.STORAGE_KEYS.HISTORY,
         []
       );
-      const cv = this.vehicleManager.currentVehicle;
+      const cv = this.currentVehicle; // Usar this.currentVehicle em vez de this.vehicleManager.currentVehicle
       const nr = {
         id: `trip_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
         dataISO: new Date().toISOString(),
-        tipoVeiculo: this.vehicleManager.currentVehicleType,
+        tipoVeiculo: cv ? cv.tipo : this.vehicleManager.currentVehicleType, // Usa o tipo do veículo atual se disponível
         veiculoId: cv ? cv.id : null,
         veiculoNome: cv ? cv.nome : this.langManager.get("manualOrUnspecified"),
         kmInicial: td.kmInicial,
@@ -1795,6 +2074,7 @@ document.addEventListener("DOMContentLoaded", () => {
         litrosConsumidos: td.litrosConsumidos.toFixed(1),
         precoPorLitro: td.precoCombustivel,
         custoTotalCombustivel: td.custoTotal.toFixed(2),
+        combustivelUtilizado: td.combustivelUtilizadoNome || this.langManager.get("notApplicableAbbreviation"), // Novo campo
         ganhoBrutoInformado:
           td.ganhoBrutoUber !== null ? td.ganhoBrutoUber.toFixed(2) : null,
         lucroLiquidoViagem:
@@ -1804,19 +2084,27 @@ document.addEventListener("DOMContentLoaded", () => {
       if (h.length > CONFIG.HISTORY_LIMIT) h.pop();
       this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.HISTORY, h);
     }
+
     _clearTripForm() {
       this.dom.kmInicialInput.value = "";
       this.dom.kmFinalInput.value = "";
-      if (!this.vehicleManager.currentVehicle)
-        this.dom.kmPorLitroInput.value = "";
+      // kmPorLitroInput é limpo/atualizado pelos listeners de vehicleSelected/Deselected
+      if (!this.currentVehicle) { // Limpa apenas se nenhum veículo estiver selecionado
+          this.dom.kmPorLitroInput.value = "";
+          this.dom.kmPorLitroInput.placeholder = this.langManager.get("tripEfficiencyPlaceholder");
+      }
       this.dom.precoCombustivelInput.value = "";
       this.dom.ganhoUberInput.value = "";
+
+      this.dom.tripFuelTypeGroup.style.display = "none";
+      this.dom.tripFuelTypeSelect.innerHTML = "";
+      this.selectedTripFuelName = null;
     }
+
     resetState() {
-      this._clearTripForm();
+      this._clearTripForm(); // Já lida com o select de combustível
       this.dom.resultCard.style.display = "none";
-      if (!this.vehicleManager.currentVehicle)
-        this.dom.kmPorLitroInput.value = "";
+      // Não precisa limpar kmPorLitroInput aqui explicitamente, _clearTripForm e os eventos de veículo cuidam disso.
     }
   }
 
@@ -1879,7 +2167,51 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       document.addEventListener("tripCalculated", () => this.renderHistory());
       document.addEventListener("allDataCleared", () => this.renderHistory());
+
+      if (this.dom.exportHistoryCsvBtn) {
+        this.dom.exportHistoryCsvBtn.addEventListener("click", () => this.exportHistoryToCsv());
+      }
     }
+
+    exportHistoryToCsv() {
+      const historyData = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY, []);
+      const filteredHistory = historyData.filter(
+        (item) => item.tipoVeiculo === this.vehicleManager.currentVehicleType
+      );
+
+      if (filteredHistory.length === 0) {
+        this.uiManager.showNotification("noHistoryToExport", "info");
+        return;
+      }
+
+      // Mapear para um formato mais "legível" e selecionar/ordenar colunas
+      const dataToExport = filteredHistory.map(r => ({
+        [this.langManager.get("csvHeaderDate")]: Utils.formatLocalDate(r.dataISO, this.langManager.currentLanguage),
+        [this.langManager.get("csvHeaderVehicleName")]: r.veiculoNome,
+        [this.langManager.get("csvHeaderInitialKm")]: r.kmInicial,
+        [this.langManager.get("csvHeaderFinalKm")]: r.kmFinal,
+        [this.langManager.get("csvHeaderDistance")]: r.distancia,
+        [this.langManager.get("csvHeaderFuelType")]: r.combustivelUtilizado || this.langManager.get("notApplicableAbbreviation"),
+        [this.langManager.get("csvHeaderEfficiencyUsed")]: r.kmPorLitroUtilizado,
+        [this.langManager.get("csvHeaderFuelConsumed")]: r.litrosConsumidos,
+        [this.langManager.get("csvHeaderPricePerLiter")]: r.precoPorLitro, // Já está formatado como número, mas CSV pode querer sem R$
+        [this.langManager.get("csvHeaderTotalFuelCost")]: r.custoTotalCombustivel,
+        [this.langManager.get("csvHeaderGrossGain")]: r.ganhoBrutoInformado !== null ? r.ganhoBrutoInformado : "",
+        [this.langManager.get("csvHeaderNetProfit")]: r.lucroLiquidoViagem !== null ? r.lucroLiquidoViagem : "",
+      }));
+
+      const vehicleTypeName = this.langManager.get(this.vehicleManager.currentVehicleType === "carro" ? "vehicleTypeCar" : "vehicleTypeMotorcycle");
+      const fileName = `historico_viagens_${vehicleTypeName.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
+
+      try {
+        Utils.jsonToCsv(dataToExport, fileName);
+        this.uiManager.showNotification("exportCsvSuccess", "success", {fileName});
+      } catch (e) {
+        console.error("Erro ao exportar histórico para CSV:", e);
+        this.uiManager.showNotification("exportCsvError", "error");
+      }
+    }
+
     toggleFullHistory(showFull) {
       this.isFullHistoryVisible = showFull;
       this.renderHistory();
@@ -1945,7 +2277,6 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       li.dataset.recordId = r.id;
 
-      // Usar textContent para segurança e performance em vez de innerHTML onde possível
       const dateSpan = document.createElement("span");
       dateSpan.textContent = fd;
 
@@ -1961,6 +2292,9 @@ document.addEventListener("DOMContentLoaded", () => {
           parseFloat(r.lucroLiquidoViagem),
           this.langManager.currentLanguage
         )}`;
+      }
+      if (r.combustivelUtilizado && r.combustivelUtilizado !== this.langManager.get("notApplicableAbbreviation")) {
+        summaryText += ` (${Utils.sanitizeHTML(r.combustivelUtilizado)})`;
       }
       summaryStrong.textContent = summaryText;
 
@@ -1979,12 +2313,11 @@ document.addEventListener("DOMContentLoaded", () => {
         (i) => i.tipoVeiculo === this.vehicleManager.currentVehicleType
       );
 
-      // Usar DocumentFragment para minimizar reflows/repaints
       const fragment = document.createDocumentFragment();
 
       if (fh.length === 0) {
         this.dom.historySection.style.display = "none";
-        this.dom.historyList.innerHTML = ""; // Limpa a lista
+        this.dom.historyList.innerHTML = "";
         return;
       }
       this.dom.historySection.style.display = "block";
@@ -2016,8 +2349,8 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       }
 
-      this.dom.historyList.innerHTML = ""; // Limpa a lista antes de adicionar novos itens
-      this.dom.historyList.appendChild(fragment); // Adiciona todos os itens de uma vez
+      this.dom.historyList.innerHTML = "";
+      this.dom.historyList.appendChild(fragment);
 
       const tf = fh.length;
       if (this.dom.seeMoreBtn)
@@ -2048,7 +2381,7 @@ document.addEventListener("DOMContentLoaded", () => {
           labelKey: "detailLabelDate",
           value: Utils.formatLocalDate(r.dataISO, cl),
         },
-        { labelKey: "detailLabelVehicle", value: r.veiculoNome },
+        { labelKey: "detailLabelVehicle", value: Utils.sanitizeHTML(r.veiculoNome) },
         {
           labelKey: "detailLabelType",
           value: this.langManager.get(
@@ -2064,6 +2397,16 @@ document.addEventListener("DOMContentLoaded", () => {
           labelKey: "detailLabelEfficiencyUsed",
           value: `${r.kmPorLitroUtilizado} km/L`,
         },
+      ];
+
+      if (r.combustivelUtilizado && r.combustivelUtilizado !== this.langManager.get("notApplicableAbbreviation")) {
+        d.push({
+            labelKey: "detailLabelFuelTypeUsed",
+            value: Utils.sanitizeHTML(r.combustivelUtilizado)
+        });
+      }
+
+      d.push(
         {
           labelKey: "detailLabelFuelConsumed",
           value: `${r.litrosConsumidos} L`,
@@ -2075,8 +2418,9 @@ document.addEventListener("DOMContentLoaded", () => {
         {
           labelKey: "detailLabelTotalFuelCost",
           value: Utils.formatCurrency(r.custoTotalCombustivel, cl),
-        },
-      ];
+        }
+      );
+
       if (r.ganhoBrutoInformado !== null) {
         d.push({
           labelKey: "detailLabelGrossGain",
@@ -2139,6 +2483,43 @@ document.addEventListener("DOMContentLoaded", () => {
       document.addEventListener("historyCleared", () => this.debouncedUpdate());
       document.addEventListener("allDataCleared", () => this.debouncedUpdate());
       document.addEventListener("themeChanged", () => this.debouncedUpdate());
+
+      if (this.dom.exportStatsCsvBtn) {
+        this.dom.exportStatsCsvBtn.addEventListener("click", () => this.exportStatisticsToCsv());
+      }
+    }
+
+    exportStatisticsToCsv() {
+      const vehicleTypeName = this.langManager.get(this.vehicleManager.currentVehicleType === "carro" ? "vehicleTypeCar" : "vehicleTypeMotorcycle");
+      const fileName = `estatisticas_${vehicleTypeName.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
+
+      const summaryData = [
+        {
+          [this.langManager.get("csvHeaderStatistic")]: this.langManager.get("totalKmStatLabel"),
+          [this.langManager.get("csvHeaderValue")]: this.dom.totalKmStat.textContent
+        },
+        {
+          [this.langManager.get("csvHeaderStatistic")]: this.langManager.get("totalFuelCostStatLabel"),
+          [this.langManager.get("csvHeaderValue")]: this.dom.totalGastoStat.textContent
+        },
+        {
+          [this.langManager.get("csvHeaderStatistic")]: this.langManager.get("avgConsumptionStatLabel"),
+          [this.langManager.get("csvHeaderValue")]: this.dom.mediaConsumoStat.textContent
+        }
+      ];
+
+      // Opcional: Exportar dados do gráfico (gastos diários)
+      // Isso exigiria que _prepareChartData retorne os dados de forma acessível
+      // ou que recalculemos aqui. Para simplificar, vamos focar no sumário por agora.
+      // Se this.chartInstance e this.chartInstance.config.data existirem, poderíamos extraí-los.
+
+      try {
+        Utils.jsonToCsv(summaryData, fileName);
+        this.uiManager.showNotification("exportCsvSuccess", "success", {fileName});
+      } catch (e) {
+        console.error("Erro ao exportar estatísticas para CSV:", e);
+        this.uiManager.showNotification("exportCsvError", "error");
+      }
     }
 
     _loadChartLibraryIfNeeded() {
@@ -2341,6 +2722,207 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+class GoalManager {
+  constructor(storageManager, uiManager, languageManager, vehicleManager, dom) {
+      this.storageManager = storageManager;
+      this.uiManager = uiManager;
+      this.langManager = languageManager;
+      this.vehicleManager = vehicleManager;
+      this.dom = dom; // Elementos DOM da seção de metas serão adicionados aqui
+      this.currentGoals = this._loadGoals();
+
+      // Elementos DOM esperados (a serem definidos na constante DOM global e adicionados ao HTML)
+      // this.dom.goalSection = document.getElementById("goalSection");
+      // this.dom.goalForm = document.getElementById("goalForm");
+      // this.dom.goalAmountInput = document.getElementById("goalAmountInput");
+      // this.dom.setGoalBtn = document.getElementById("setGoalBtn");
+      // this.dom.deleteGoalBtn = document.getElementById("deleteGoalBtn");
+      // this.dom.currentGoalDisplay = document.getElementById("currentGoalDisplay");
+      // this.dom.goalProgressText = document.getElementById("goalProgressText");
+      // this.dom.goalProgressBarInner = document.getElementById("goalProgressBarInner");
+      // this.dom.goalProgressPercentage = document.getElementById("goalProgressPercentage");
+  }
+
+  init() {
+      this._bindEvents();
+      this.renderGoalUI();
+      // Adicionar listeners para eventos que podem afetar o progresso da meta
+      document.addEventListener("tripCalculated", () => this.renderGoalUI());
+      document.addEventListener("historyCleared", () => this.renderGoalUI()); // Se o histórico for limpo
+      document.addEventListener("vehicleTypeChanged", () => this.renderGoalUI());
+      document.addEventListener("languageChanged", () => this.renderGoalUI(true)); // Force re-render com traduções
+  }
+
+  _bindEvents() {
+      if (this.dom.setGoalBtn && this.dom.goalForm) {
+          this.dom.goalForm.addEventListener("submit", (e) => {
+              e.preventDefault();
+              this.setSpendingCapGoal();
+          });
+      }
+      if (this.dom.deleteGoalBtn) {
+          this.dom.deleteGoalBtn.addEventListener("click", () => {
+              this.deleteCurrentGoalConfirm();
+          });
+      }
+  }
+
+  _loadGoals() {
+      // Estrutura: [{ vehicleType: "carro", monthYear: "2023-11", amount: 500, id: "goal_xxx" }]
+      // Vamos simplificar para ter apenas UMA meta por tipo de veículo por mês.
+      // Poderia ser um objeto: { "carro_2023-11": { amount: 500, id: "..." } }
+      // Por enquanto, um array filtrável é mais simples.
+      return this.storageManager.safeGetItem(CONFIG.GOALS_STORAGE_KEY, []);
+  }
+
+  _saveGoals() {
+      this.storageManager.safeSetItem(CONFIG.GOALS_STORAGE_KEY, this.currentGoals);
+  }
+
+  getCurrentVehicleTypeAndMonth() {
+      const vehicleType = this.vehicleManager.currentVehicleType;
+      const now = new Date();
+      const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      return { vehicleType, monthYear };
+  }
+
+  setSpendingCapGoal() {
+      const { vehicleType, monthYear } = this.getCurrentVehicleTypeAndMonth();
+      const amountStr = Utils.convertCommaToPoint(this.dom.goalAmountInput.value);
+      const amount = parseFloat(amountStr);
+
+      if (isNaN(amount) || amount <= 0) {
+          this.uiManager.displayInlineError(this.dom.goalAmountInput, this.langManager.get("goalAmountErrorInvalid"));
+          return;
+      }
+      this.uiManager.clearInlineError(this.dom.goalAmountInput);
+
+      // Remove qualquer meta existente para este tipo de veículo e mês
+      this.currentGoals = this.currentGoals.filter(
+          goal => !(goal.vehicleType === vehicleType && goal.monthYear === monthYear)
+      );
+
+      const newGoal = {
+          id: `goal_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          vehicleType,
+          monthYear,
+          amount: parseFloat(amount.toFixed(2)), // Garante duas casas decimais
+          type: "spendingCap", // Fixo por enquanto
+          createdAt: new Date().toISOString(),
+      };
+      this.currentGoals.push(newGoal);
+      this._saveGoals();
+      this.dom.goalAmountInput.value = "";
+      this.uiManager.showNotification("goalSetSuccess", "success", { amount: Utils.formatCurrency(newGoal.amount, this.langManager.currentLanguage)});
+      this.renderGoalUI();
+  }
+
+  deleteCurrentGoalConfirm() {
+      const { vehicleType, monthYear } = this.getCurrentVehicleTypeAndMonth();
+      const currentGoal = this.currentGoals.find(
+          g => g.vehicleType === vehicleType && g.monthYear === monthYear
+      );
+
+      if (currentGoal) {
+          this.uiManager.showConfirm(this.langManager.get("confirmDeleteGoal"))
+              .then(confirmed => {
+                  if (confirmed) {
+                      this.currentGoals = this.currentGoals.filter(g => g.id !== currentGoal.id);
+                      this._saveGoals();
+                      this.uiManager.showNotification("goalDeletedSuccess", "success");
+                      this.renderGoalUI();
+                  }
+              });
+      }
+  }
+
+
+  calculateProgress() {
+      const { vehicleType, monthYear } = this.getCurrentVehicleTypeAndMonth();
+      const currentGoal = this.currentGoals.find(
+          g => g.vehicleType === vehicleType && g.monthYear === monthYear
+      );
+
+      if (!currentGoal) {
+          return null; // Nenhuma meta definida para o contexto atual
+      }
+
+      const history = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY, []);
+      const [year, month] = monthYear.split("-").map(Number);
+
+      const totalSpentThisMonth = history
+          .filter(item => {
+              const itemDate = new Date(item.dataISO);
+              return item.tipoVeiculo === vehicleType &&
+                     itemDate.getFullYear() === year &&
+                     (itemDate.getMonth() + 1) === month;
+          })
+          .reduce((sum, item) => sum + parseFloat(item.custoTotalCombustivel), 0);
+
+      const percentage = Math.min((totalSpentThisMonth / currentGoal.amount) * 100, 100);
+
+      return {
+          goalAmount: currentGoal.amount,
+          spentAmount: totalSpentThisMonth,
+          percentage: percentage,
+          isOverBudget: totalSpentThisMonth > currentGoal.amount,
+      };
+  }
+
+  renderGoalUI(forceRetranslate = false) {
+      if (!this.dom.goalSection) return; // Se a seção de metas não estiver no DOM, não faz nada
+
+      const { vehicleType, monthYear } = this.getCurrentVehicleTypeAndMonth();
+      const currentGoal = this.currentGoals.find(
+          g => g.vehicleType === vehicleType && g.monthYear === monthYear
+      );
+
+      // Atualiza textos fixos do formulário se necessário (ex: ao mudar idioma)
+      if (forceRetranslate) {
+          if (this.dom.goalAmountInput) this.dom.goalAmountInput.placeholder = this.langManager.get("goalAmountPlaceholder");
+          if (this.dom.setGoalBtn) {
+            const text = this.langManager.get("setGoalBtn");
+            this.dom.setGoalBtn.textContent = text;
+            this.dom.setGoalBtn.dataset.originalText = text;
+          }
+      }
+
+
+      if (currentGoal) {
+          this.dom.goalForm.style.display = "none";
+          this.dom.currentGoalDisplay.style.display = "block";
+          this.dom.deleteGoalBtn.style.display = "inline-block";
+
+          const progress = this.calculateProgress();
+          const lang = this.langManager.currentLanguage;
+
+          const goalAmountFormatted = Utils.formatCurrency(progress.goalAmount, lang);
+          const spentAmountFormatted = Utils.formatCurrency(progress.spentAmount, lang);
+
+          this.dom.goalProgressText.innerHTML = this.langManager.get("goalProgressText", {
+              spent: spentAmountFormatted,
+              total: goalAmountFormatted
+          });
+
+          this.dom.goalProgressBarInner.style.width = `${progress.percentage}%`;
+          this.dom.goalProgressPercentage.textContent = `${progress.percentage.toFixed(0)}%`;
+
+          this.dom.goalProgressBarInner.classList.toggle("overbudget", progress.isOverBudget);
+          if (progress.isOverBudget) {
+              this.dom.goalProgressText.innerHTML += ` <span class="danger-text">(${this.langManager.get("goalOverBudgetWarning")})</span>`;
+          }
+
+      } else {
+          this.dom.goalForm.style.display = "block";
+          this.dom.currentGoalDisplay.style.display = "none";
+          this.dom.deleteGoalBtn.style.display = "none";
+          if (this.dom.goalAmountInput) this.dom.goalAmountInput.value = ""; // Limpa input se não há meta
+          this.uiManager.clearInlineError(this.dom.goalAmountInput);
+      }
+  }
+}
+
+
   class AppManager {
     constructor(dom) {
       this.dom = dom;
@@ -2380,6 +2962,14 @@ document.addEventListener("DOMContentLoaded", () => {
         this.languageManager,
         this.dom
       );
+    this.goalManager = new GoalManager( // Instanciar GoalManager
+        this.storageManager,
+        this.uiManager,
+        this.languageManager,
+        this.vehicleManager,
+        // this.historyManager, // HistoryManager não é necessário no construtor se buscamos direto do storage
+        this.dom
+    );
       this.qrInstance = null;
       this.qriousLoaded = false; // Flag para controlar o carregamento do QRious
       this._init();
@@ -2387,10 +2977,17 @@ document.addEventListener("DOMContentLoaded", () => {
     _init() {
       this._displayAppInfo();
       this.themeManager.init();
-      this.languageManager.init();
+    this.languageManager.init();
       this.inputFormatter.initialize();
+
+    if (this.goalManager) {
+        this.goalManager.init();
+    }
       this._bindGlobalAppEvents();
       this._bindHelperEvents();
+    this._bindMaintenanceEvents(); // Novo
+    this._updateMaintenanceReminders(); // Chamada inicial
+
       this._handleViewport();
       window.addEventListener(
         "resize",
@@ -2399,6 +2996,76 @@ document.addEventListener("DOMContentLoaded", () => {
       this._hideSplashScreen();
       this._registerServiceWorker();
     }
+
+  _bindMaintenanceEvents() {
+    document.addEventListener("vehicleSelected", () => this._updateMaintenanceReminders());
+    document.addEventListener("tripCalculated", () => this._updateMaintenanceReminders());
+    document.addEventListener("vehicleTypeChanged", () => this._updateMaintenanceReminders());
+    document.addEventListener("vehicleDataChanged", () => this._updateMaintenanceReminders()); // Quando proximoKmTrocaOleo é salvo
+    document.addEventListener("languageChanged", () => this._updateMaintenanceReminders(true));
+  }
+
+  _updateMaintenanceReminders(forceRetranslate = false) {
+    if (!this.dom.maintenanceReminderSection || !this.vehicleManager || !this.storageManager) {
+        return;
+    }
+
+    const currentVehicle = this.vehicleManager.currentVehicle;
+    this.dom.maintenanceReminderSection.style.display = "none";
+    this.dom.oilChangeReminderCard.style.display = "none";
+    this.dom.noActiveMaintenanceReminder.style.display = "block"; // Padrão é não ter lembretes
+
+    if (forceRetranslate) {
+        // Atualizar textos fixos da seção de lembretes, se houver, ao mudar idioma
+        const titleEl = this.dom.maintenanceReminderSection.querySelector("h3");
+        if(titleEl) titleEl.textContent = this.langManager.get("maintenanceReminderTitle");
+        const cardTitleEl = this.dom.oilChangeReminderCard.querySelector("h4");
+        if(cardTitleEl) cardTitleEl.textContent = this.langManager.get("oilChangeCardTitle");
+        const noteEl = this.dom.oilChangeReminderCard.querySelector(".reminder-note");
+        if(noteEl) noteEl.textContent = this.langManager.get("oilChangeReminderNote");
+        if(this.dom.noActiveMaintenanceReminder) this.dom.noActiveMaintenanceReminder.textContent = this.langManager.get("noActiveMaintenanceReminder");
+    }
+
+
+    if (!currentVehicle || currentVehicle.proximoKmTrocaOleo === null || currentVehicle.proximoKmTrocaOleo === undefined || currentVehicle.proximoKmTrocaOleo <= 0) {
+        return; // Sem veículo, sem meta de KM para troca de óleo, ou valor inválido
+    }
+
+    const history = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY, []);
+    const vehicleHistory = history.filter(item => item.veiculoId === currentVehicle.id && item.kmFinal)
+                                .sort((a,b) => new Date(b.dataISO) - new Date(a.dataISO)); // Ordena por mais recente
+
+    if (vehicleHistory.length === 0) {
+        return; // Sem histórico de KM para este veículo
+    }
+
+    const lastKmFinal = parseFloat(vehicleHistory[0].kmFinal);
+    const nextOilChangeAtKm = parseFloat(currentVehicle.proximoKmTrocaOleo);
+    const kmToOilChange = nextOilChangeAtKm - lastKmFinal;
+    const warningThreshold = 1000; // Avisar 1000km antes
+
+    this.dom.maintenanceReminderSection.style.display = "block";
+    this.dom.noActiveMaintenanceReminder.style.display = "none"; // Esconde msg padrão
+    this.dom.oilChangeReminderCard.style.display = "block";
+    this.dom.oilChangeReminderCard.classList.remove("status-ok", "status-warning", "status-danger");
+
+
+    if (kmToOilChange <= 0) {
+        // Atrasado
+        this.dom.oilChangeReminderText.textContent = this.langManager.get("oilChangeOverdue", {km: Math.abs(kmToOilChange).toFixed(0) });
+        this.dom.oilChangeReminderCard.classList.add("status-danger");
+    } else if (kmToOilChange <= warningThreshold) {
+        // Próximo
+        this.dom.oilChangeReminderText.textContent = this.langManager.get("oilChangeSoon", {km: kmToOilChange.toFixed(0) });
+        this.dom.oilChangeReminderCard.classList.add("status-warning");
+    } else {
+        // OK
+        this.dom.oilChangeReminderText.textContent = this.langManager.get("oilChangeOk", {km: kmToOilChange.toFixed(0) });
+        this.dom.oilChangeReminderCard.classList.add("status-ok");
+    }
+  }
+
+
     _handleViewport() {
       const isDesktop = window.innerWidth > CONFIG.MAX_MOBILE_WIDTH;
       this.dom.body.classList.toggle("desktop-view", isDesktop);
