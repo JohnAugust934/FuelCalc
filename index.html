@@ -49,15 +49,18 @@
                     data-translate-key-aria-label="helpButtonAriaLabel" aria-label="Ajuda">?</button>
                 <div class="language-switcher">
                     <button type="button" class="lang-button" data-lang="pt-BR" aria-pressed="true"
-                        title="Mudar para Português (Brasil)">🇧🇷</button>
+                        data-translate-key-title="langBtnPt" title="Mudar para Português (Brasil)"
+                        data-translate-key-aria-label="langBtnPtAriaLabel" aria-label="Mudar idioma para Português (Brasil)">🇧🇷</button>
                     <button type="button" class="lang-button" data-lang="en" aria-pressed="false"
-                        title="Switch to English">🇬🇧</button>
+                        data-translate-key-title="langBtnEn" title="Switch to English"
+                        data-translate-key-aria-label="langBtnEnAriaLabel" aria-label="Switch language to English">🇬🇧</button>
                 </div>
                 <div class="theme-switcher">
                     <button type="button" class="theme-button" data-theme-toggle="light"
-                        data-translate-key-title="themeLight" title="Tema Claro">
+                        data-translate-key-title="themeLight" title="Tema Claro"
+                        data-translate-key-aria-label="themeLightAriaLabel" aria-label="Mudar para Tema Claro">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <circle cx="12" cy="12" r="5"></circle>
                             <line x1="12" y1="1" x2="12" y2="3"></line>
                             <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -70,16 +73,18 @@
                         </svg>
                     </button>
                     <button type="button" class="theme-button" data-theme-toggle="dark"
-                        data-translate-key-title="themeDark" title="Tema Escuro">
+                        data-translate-key-title="themeDark" title="Tema Escuro"
+                        data-translate-key-aria-label="themeDarkAriaLabel" aria-label="Mudar para Tema Escuro">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                         </svg>
                     </button>
                     <button type="button" class="theme-button active" data-theme-toggle="system"
-                        data-translate-key-title="themeSystem" title="Tema do Sistema">
+                        data-translate-key-title="themeSystem" title="Tema do Sistema"
+                        data-translate-key-aria-label="themeSystemAriaLabel" aria-label="Mudar para Tema do Sistema">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                             <line x1="8" y1="21" x2="16" y2="21"></line>
                             <line x1="12" y1="17" x2="12" y2="21"></line>
@@ -186,8 +191,8 @@
             </form>
         </main>
         <section id="resultCard" class="result-card content-section" style="display:none;"
-            aria-labelledby="result-title">
-            <h3 id="result-title" data-translate-key="calculationResultTitle">Resultado do Cálculo</h3>
+            aria-labelledby="result-title" aria-live="polite" aria-atomic="true">
+            <h3 id="result-title" data-translate-key="calculationResultTitle" tabindex="-1">Resultado do Cálculo</h3>
             <div class="result-item"> <span data-translate-key="distanceTraveledLabel">Distância Percorrida:</span>
                 <strong id="distanciaResult">-- km</strong>
             </div>
@@ -226,14 +231,14 @@
             </div>
             <div class="chart-container"> <canvas id="fuelChartCanvas"
                     data-translate-key-aria-label="fuelChartAriaLabel"
-                    aria-label="Gráfico de gastos diários com combustível"></canvas> </div>
+                    aria-label="Gráfico de gastos diários com combustível" role="img"></canvas> </div>
         </section>
         <section class="backup-section content-section" aria-labelledby="backup-title">
             <h3 id="backup-title" data-translate-key="backupRestoreTitle">Backup e Restauração de Dados</h3>
             <div class="backup-buttons">
                 <button type="button" id="exportDataBtn" class="btn btn-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -242,7 +247,7 @@
                 </button>
                 <button type="button" id="importDataBtn" class="btn btn-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="17 8 12 3 7 8"></polyline>
                         <line x1="12" y1="3" x2="12" y2="15"></line>
