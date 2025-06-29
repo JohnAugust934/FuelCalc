@@ -264,6 +264,41 @@ body.desktop-view #desktop-notice-overlay {
   margin-top: 0.3rem;
   min-height: 1.2em;
 }
+
+.trip-distance-info {
+  font-size: 0.9rem;
+  color: var(--c-text-secondary);
+  text-align: right;
+  margin-top: -0.5rem; /* Puxa para mais perto dos inputs de KM */
+  margin-bottom: 1rem; /* Espaço antes do próximo input group */
+  padding-right: 0.25rem; /* Pequeno padding para não colar na borda */
+}
+.trip-distance-info strong {
+  color: var(--c-text-primary);
+  font-weight: 500;
+}
+
+/* Estilo para input de eficiência modificado manualmente */
+.input-group input#kmPorLitro.manual-override {
+  border-left-width: 3px;
+  border-left-color: var(--c-info); /* Usando uma cor de informação/aviso */
+}
+.efficiency-reset-btn {
+  background: none;
+  border: none;
+  color: var(--c-accent);
+  text-decoration: underline;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.2rem 0; /* Ajuste no padding */
+  font-family: inherit;
+  display: block; /* Para ocupar a linha abaixo do input */
+  text-align: right; /* Alinha à direita abaixo do input */
+  margin-top: -0.5rem; /* Leve ajuste para aproximar do input */
+  margin-bottom: 0.5rem; /* Espaço antes do próximo elemento */
+  display: none; /* Escondido por padrão */
+}
+
 .label-with-helper {
   display: flex;
   justify-content: space-between;
@@ -342,26 +377,39 @@ body.desktop-view #desktop-notice-overlay {
   font-size: 0.9rem;
   color: var(--c-text-secondary);
 }
-.vehicle-card .delete-button {
+.vehicle-card .card-actions {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+}
+.vehicle-card .action-button {
   background: transparent;
   color: var(--c-text-secondary);
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.2rem; /* Ajustado para caber melhor dois ícones */
   line-height: 1;
-  width: 30px;
-  height: 30px;
+  width: 28px; /* Ajustado */
+  height: 28px; /* Ajustado */
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: var(--transition-fast);
+  padding: 0;
 }
-.vehicle-card .delete-button:hover {
+.vehicle-card .action-button svg {
+  width: 16px; /* Tamanho do ícone SVG */
+  height: 16px;
+}
+.vehicle-card .action-button.delete-button:hover {
   color: var(--c-danger);
   background-color: var(--c-danger-light);
+}
+.vehicle-card .action-button.edit-button:hover {
+  color: var(--c-accent);
+  background-color: var(--c-accent-light);
 }
 
 .result-card {
@@ -549,14 +597,17 @@ body.desktop-view #desktop-notice-overlay {
   background-color: var(--c-bg-primary);
 }
 .result-card-mini p {
-  font-size: 0.9rem;
+  font-size: 0.95rem; /* Levemente maior */
   color: var(--c-text-secondary);
   margin-bottom: 0.5rem;
 }
-.result-card-mini strong {
-  font-size: 1.5rem;
+.result-card-mini strong#efficiencyResultValue { /* Mais específico */
+  font-size: 2rem; /* Significativamente maior */
   font-weight: bold;
   color: var(--c-success);
+  display: block; /* Para ocupar a linha inteira e permitir margem */
+  margin-top: 0.25rem;
+  margin-bottom: 1rem; /* Mais espaço antes do botão */
 }
 .result-card-mini .btn {
   width: 100%;

@@ -569,6 +569,28 @@ document.addEventListener("DOMContentLoaded", () => {
     hideHelpModal() {
       this._hideModal(this.dom.helpModalOverlay);
     }
+
+    // Funções para feedback de carregamento em botões
+    showButtonSpinner(buttonElement, originalText = null) {
+      if (!buttonElement) return;
+      // Salva o texto original se não foi salvo ainda, ou se um novo foi fornecido
+      if (originalText || !buttonElement.dataset.originalText) {
+        buttonElement.dataset.originalText = originalText || buttonElement.innerHTML; // Salva innerHTML para manter ícones
+      }
+      buttonElement.classList.add("loading");
+      buttonElement.disabled = true;
+      // O CSS cuida de esconder o texto e mostrar o spinner
+    }
+
+    hideButtonSpinner(buttonElement) {
+      if (!buttonElement) return;
+      buttonElement.classList.remove("loading");
+      buttonElement.disabled = false;
+      // Não é necessário restaurar o texto aqui se o CSS esconde o conteúdo original
+      // e o spinner é um pseudo-elemento. Se o spinner substituísse o conteúdo,
+      // a restauração seria buttonElement.innerHTML = buttonElement.dataset.originalText;
+    }
+
     showConfirm(key, titleKey = "confirmActionModalTitle", params = {}) {
       return new Promise((resolve) => {
         if (!this.dom.confirmModalOverlay) {
@@ -1009,19 +1031,37 @@ document.addEventListener("DOMContentLoaded", () => {
       this.dom = dom;
       this.currentVehicle = null;
       this.currentVehicleType = "carro";
+      this.editingVehicleId = null; // Novo estado para rastrear edição
       this._bindEvents();
-      document.addEventListener("languageChanged", () =>
-        this.loadAndRenderVehicles()
-      );
+      document.addEventListener("languageChanged", () => {
+        this.loadAndRenderVehicles();
+        // Se o formulário de veículo estiver visível quando o idioma mudar, atualiza o texto do botão
+        if (this.dom.vehicleForm.style.display === 'block') {
+            const submitButton = this.dom.vehicleForm.querySelector("button[type='submit']");
+            const buttonTextKey = this.editingVehicleId ? "updateVehicleBtn" : "saveVehicleBtn";
+            const translatedText = this.langManager.get(buttonTextKey);
+            submitButton.textContent = translatedText;
+            submitButton.dataset.originalText = translatedText; // Para consistência com o spinner
+        }
+      });
     }
+
     _handleVehicleListClick(event) {
       const target = event.target;
       const vehicleCard = target.closest(".vehicle-card");
+      if (!vehicleCard) return;
+
+      const vehicleId = vehicleCard.dataset.vehicleId;
+      const vehicleName = vehicleCard.querySelector("h4").textContent;
+
+      const editButton = target.closest(".edit-button");
       const deleteButton = target.closest(".delete-button");
-      if (deleteButton && vehicleCard) {
+
+      if (editButton) {
         event.stopPropagation();
-        const vehicleId = vehicleCard.dataset.vehicleId;
-        const vehicleName = vehicleCard.querySelector("h4").textContent;
+        this.showVehicleForm(vehicleId);
+      } else if (deleteButton) {
+        event.stopPropagation();
         this.uiManager
           .showConfirm(
             this.langManager.get("confirmDeleteVehicle", { name: vehicleName })
@@ -1029,12 +1069,12 @@ document.addEventListener("DOMContentLoaded", () => {
           .then((confirmed) => {
             if (confirmed) this.deleteVehicle(vehicleId);
           });
-        return;
-      }
-      if (vehicleCard) {
-        this.selectVehicle(vehicleCard.dataset.vehicleId);
+      } else {
+        // Click no card em si (fora dos botões de ação)
+        this.selectVehicle(vehicleId);
       }
     }
+
     _bindEvents() {
       this.dom.vehicleTypeButtons.forEach((b) =>
         b.addEventListener("click", (e) =>
@@ -1130,20 +1170,36 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       if (this.currentVehicle && this.currentVehicle.id === v.id)
         c.classList.add("active");
-      const t = document.createElement("h4");
-      t.textContent = vs;
-      const es = document.createElement("span");
-      es.textContent = `${v.eficiencia} km/L`;
-      const db = document.createElement("button");
-      db.className = "delete-button";
-      db.innerHTML = "&times;";
-      db.setAttribute(
-        "aria-label",
-        this.langManager.get("deleteVehicleAriaLabel", { name: vs })
-      );
-      c.appendChild(t);
-      c.appendChild(es);
-      c.appendChild(db);
+
+      const title = document.createElement("h4");
+      title.textContent = vs;
+
+      const efficiencySpan = document.createElement("span");
+      efficiencySpan.textContent = `${v.eficiencia} km/L`; // TODO: Adicionar unidade de medida da linguagem
+
+      const actionsDiv = document.createElement("div");
+      actionsDiv.className = "card-actions";
+
+      const editButton = document.createElement("button");
+      editButton.type = "button";
+      editButton.className = "action-button edit-button";
+      editButton.setAttribute("aria-label", this.langManager.get("editVehicleAriaLabel", { name: vs }));
+      // SVG para ícone de editar (lápis)
+      editButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "action-button delete-button";
+      // SVG para ícone de excluir (lixeira)
+      deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+      deleteButton.setAttribute("aria-label", this.langManager.get("deleteVehicleAriaLabel", { name: vs }));
+
+      actionsDiv.appendChild(editButton);
+      actionsDiv.appendChild(deleteButton);
+
+      c.appendChild(title);
+      c.appendChild(efficiencySpan);
+      c.appendChild(actionsDiv);
       return c;
     }
     selectVehicle(id) {
@@ -1154,8 +1210,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const v = av.find((v) => v.id === id);
       if (v) {
         this.currentVehicle = v;
-        this.dom.kmPorLitroInput.value = v.eficiencia;
-        this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
+        // this.dom.kmPorLitroInput.value = String(v.eficiencia).replace(".", ","); // Movido para o event listener em FuelCalculator
+        // this.uiManager.clearInlineError(this.dom.kmPorLitroInput); // Também será tratado lá
+
         this.dom.vehicleListContainer
           .querySelectorAll(".vehicle-card")
           .forEach((c) =>
@@ -1164,67 +1221,218 @@ document.addEventListener("DOMContentLoaded", () => {
         this.uiManager.showNotification("vehicleSelected", "info", {
           name: Utils.sanitizeHTML(v.nome),
         });
+        // Dispara um evento customizado para que FuelCalculator possa ouvir e atualizar seu estado
+        document.dispatchEvent(new CustomEvent("vehicleSelected", { detail: { vehicle: v } }));
       }
     }
-    showVehicleForm() {
+
+    // Modificar selectVehicleType e deleteVehicle para também limpar o estado de override se necessário
+    selectVehicleType(type) {
+      if (type !== "carro" && type !== "moto") return;
+      this.currentVehicleType = type;
+      this.dom.vehicleTypeButtons.forEach((b) => {
+        b.classList.toggle("selected", b.dataset.vehicleType === type); // Classe 'selected' pode não existir, mas aria-pressed é mais importante
+        b.setAttribute("aria-pressed", String(b.dataset.vehicleType === type));
+      });
+      this.currentVehicle = null; // Desseleciona veículo atual
+      this.dom.kmPorLitroInput.value = ""; // Limpa o campo de eficiência
+      this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
+      this.dom.kmPorLitroInput.placeholder = this.langManager.get(
+        "tripEfficiencyPlaceholder"
+      );
+      document.dispatchEvent(new CustomEvent("vehicleDeselected")); // Notifica que um veículo foi deselecionado
+      this.loadAndRenderVehicles();
+      document.dispatchEvent(
+        new CustomEvent("vehicleTypeChanged", { detail: { type } })
+      );
+    }
+
+    deleteVehicle(id) {
+      let vArray = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []);
+      const vehicleToDelete = vArray.find((vh) => vh.id === id);
+      if (!vehicleToDelete) return;
+
+      vArray = vArray.filter((vh) => vh.id !== id);
+      if (this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, vArray)) {
+        this.uiManager.showNotification("vehicleDeleted", "success", {
+          name: Utils.sanitizeHTML(vehicleToDelete.nome),
+        });
+        if (this.currentVehicle && this.currentVehicle.id === id) {
+          this.currentVehicle = null;
+          this.dom.kmPorLitroInput.value = "";
+          document.dispatchEvent(new CustomEvent("vehicleDeselected"));
+        }
+        this.loadAndRenderVehicles();
+        if (vArray.filter((vh) => vh.tipo === this.currentVehicleType).length === 0) {
+          this.dom.kmPorLitroInput.placeholder = this.langManager.get(
+            "tripEfficiencyPlaceholder"
+          );
+        }
+      }
+    }
+
+    resetState() {
+      this.currentVehicle = null;
+      this.editingVehicleId = null;
+      this.dom.kmPorLitroInput.value = "";
+      this.dom.kmPorLitroInput.placeholder = this.langManager.get(
+        "tripEfficiencyPlaceholder"
+      );
+      document.dispatchEvent(new CustomEvent("vehicleDeselected"));
+      this.selectVehicleType("carro"); // Isso já chama loadAndRenderVehicles
+    }
+
+    showVehicleForm(vehicleIdToEdit = null) {
       this.uiManager.clearAllInlineErrors(this.dom.vehicleForm);
-      this.dom.vehicleTypeInput.value = this.currentVehicleType;
-      this.dom.vehicleNameInput.value = "";
-      this.dom.vehicleEfficiencyInput.value = "";
+      // const formTitleKey = vehicleIdToEdit ? "editVehicleTitle" : "addVehicleTitle";
+      // Se você tiver um elemento de título dedicado para o formulário, descomente e use:
+      // const formTitleEl = this.dom.vehicleForm.querySelector_(".form-title"); // Supondo que você adicione uma classe .form-title
+      // if(formTitleEl) formTitleEl.textContent = this.langManager.get(formTitleKey);
+
+      const submitButton = this.dom.vehicleForm.querySelector("button[type='submit']");
+      let buttonTextKey = "saveVehicleBtn";
+
+      if (vehicleIdToEdit) {
+        const vehicles = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []);
+        const vehicle = vehicles.find(v => v.id === vehicleIdToEdit);
+        if (vehicle) {
+          this.editingVehicleId = vehicleIdToEdit;
+          this.dom.vehicleTypeInput.value = vehicle.tipo;
+          this.dom.vehicleNameInput.value = vehicle.nome;
+          this.dom.vehicleEfficiencyInput.value = String(vehicle.eficiencia).replace(".", ",");
+          buttonTextKey = "updateVehicleBtn";
+        } else {
+          this.editingVehicleId = null;
+          this.dom.vehicleTypeInput.value = this.currentVehicleType;
+          this.dom.vehicleNameInput.value = "";
+          this.dom.vehicleEfficiencyInput.value = "";
+          // buttonTextKey já é "saveVehicleBtn"
+        }
+      } else {
+        this.editingVehicleId = null;
+        this.dom.vehicleTypeInput.value = this.currentVehicleType;
+        this.dom.vehicleNameInput.value = "";
+        this.dom.vehicleEfficiencyInput.value = "";
+        // buttonTextKey já é "saveVehicleBtn"
+      }
+
+      const translatedText = this.langManager.get(buttonTextKey);
+      submitButton.textContent = translatedText;
+      submitButton.dataset.originalText = translatedText; // Atualiza para o spinner
+
       this.dom.vehicleForm.style.display = "block";
       this.dom.vehicleNameInput.focus();
-      this.dom.vehicleForm.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-      });
+      this.dom.vehicleForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
+
     hideVehicleForm() {
       this.uiManager.clearAllInlineErrors(this.dom.vehicleForm);
       this.dom.vehicleForm.style.display = "none";
+      this.editingVehicleId = null;
+      const submitButton = this.dom.vehicleForm.querySelector("button[type='submit']");
+      const saveText = this.langManager.get("saveVehicleBtn");
+      submitButton.textContent = saveText;
+      submitButton.dataset.originalText = saveText; // Atualiza para o spinner
     }
+
     saveVehicle() {
-      const validationInputs = {
-        nameInput: this.dom.vehicleNameInput,
-        efficiencyInput: this.dom.vehicleEfficiencyInput,
-        type: this.dom.vehicleTypeInput.value,
-      };
-      const vr = this.validator.validateVehicle(validationInputs);
-      if (!vr.isValid) return;
-      const { nome, eficiencia, tipo } = vr.data;
-      const nv = {
-        id: `vehicle_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-        nome,
-        eficiencia,
-        tipo,
-        createdAt: new Date().toISOString(),
-      };
-      const v = this.storageManager.safeGetItem(
-        CONFIG.STORAGE_KEYS.VEHICLES,
-        []
-      );
-      const ev = v.find(
-        (vh) => vh.nome.toLowerCase() === nome.toLowerCase() && vh.tipo === tipo
-      );
-      if (ev) {
-        const vt = this.langManager.get(
-          tipo === "carro" ? "vehicleTypeCar" : "vehicleTypeMotorcycle"
+      const submitButton = this.dom.vehicleForm.querySelector("button[type='submit']");
+      const originalButtonText = submitButton.innerHTML; // Salva o HTML interno para preservar ícones/SVG
+      this.uiManager.showButtonSpinner(submitButton, originalButtonText);
+
+      // Usar um pequeno timeout para permitir que o spinner renderize antes de operações síncronas pesadas
+      setTimeout(() => {
+        const validationInputs = {
+          nameInput: this.dom.vehicleNameInput,
+          efficiencyInput: this.dom.vehicleEfficiencyInput,
+          type: this.dom.vehicleTypeInput.value,
+        };
+        const validationResult = this.validator.validateVehicle(validationInputs);
+
+        if (!validationResult.isValid) {
+          this.uiManager.hideButtonSpinner(submitButton);
+          // Restaurar o texto original do botão, pois hideButtonSpinner pode não fazer isso se o CSS esconde o texto
+          submitButton.innerHTML = originalButtonText;
+          return;
+        }
+
+        const { nome, eficiencia, tipo } = validationResult.data;
+        let vehicles = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []);
+        let notificationKey = "vehicleSaved";
+        let notificationParams = { name: nome };
+
+        const existingVehicleByName = vehicles.find(
+          (vh) => vh.nome.toLowerCase() === nome.toLowerCase() &&
+            vh.tipo === tipo &&
+            vh.id !== this.editingVehicleId
         );
-        this.uiManager.showNotification("vehicleExistsError", "error", {
-          type: vt.toLowerCase(),
-          name: nome,
-        });
-        return;
-      }
-      v.push(nv);
-      if (this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, v)) {
-        this.uiManager.showNotification("vehicleSaved", "success", {
-          name: nome,
-        });
-        this.hideVehicleForm();
-        this.loadAndRenderVehicles();
-        if (v.filter((vh) => vh.tipo === this.currentVehicleType).length === 1)
-          this.selectVehicle(nv.id);
-      }
+
+        if (existingVehicleByName) {
+          const vehicleTypeName = this.langManager.get(tipo === "carro" ? "vehicleTypeCar" : "vehicleTypeMotorcycle");
+          this.uiManager.showNotification("vehicleExistsError", "error", {
+            type: vehicleTypeName.toLowerCase(),
+            name: nome,
+          });
+          this.uiManager.hideButtonSpinner(submitButton);
+          submitButton.innerHTML = originalButtonText;
+          return;
+        }
+
+        if (this.editingVehicleId) {
+          const vehicleIndex = vehicles.findIndex(v => v.id === this.editingVehicleId);
+          if (vehicleIndex > -1) {
+            vehicles[vehicleIndex] = {
+              ...vehicles[vehicleIndex],
+              nome,
+              eficiencia,
+              updatedAt: new Date().toISOString(),
+            };
+            notificationKey = "vehicleUpdated";
+          } else {
+            this.editingVehicleId = null; // Erro: veículo de edição não encontrado
+            this.uiManager.hideButtonSpinner(submitButton);
+            submitButton.innerHTML = originalButtonText;
+            // Poderia mostrar um erro aqui
+            return; // Evita chamada recursiva problemática
+          }
+        } else {
+          const newVehicle = {
+            id: `vehicle_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            nome,
+            eficiencia,
+            tipo,
+            createdAt: new Date().toISOString(),
+          };
+          vehicles.push(newVehicle);
+        }
+
+        if (this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.VEHICLES, vehicles)) {
+          this.uiManager.showNotification(notificationKey, "success", notificationParams);
+          this.hideVehicleForm(); // Limpa o form e o estado de edição, também restaura o texto do botão
+          this.loadAndRenderVehicles();
+
+          if (this.editingVehicleId && this.currentVehicle && this.currentVehicle.id === this.editingVehicleId) {
+            const updatedVehicle = vehicles.find(v => v.id === this.editingVehicleId);
+            if (updatedVehicle) this.selectVehicle(updatedVehicle.id);
+          } else if (!this.editingVehicleId) {
+            const addedVehicle = vehicles.find(vh => vh.nome === nome && vh.tipo === tipo && !vh.updatedAt);
+            if (addedVehicle && vehicles.filter(vh => vh.tipo === this.currentVehicleType).length === 1) {
+              this.selectVehicle(addedVehicle.id);
+            }
+          }
+          this.editingVehicleId = null;
+        }
+        this.uiManager.hideButtonSpinner(submitButton);
+        // hideVehicleForm já deve ter restaurado o texto do botão ao seu estado padrão "Salvar Veículo"
+        // Mas se o botão for atualizado (ex: para "Atualizar"), e a operação falhar antes de hideVehicleForm,
+        // precisamos garantir que o texto correto seja restaurado.
+        // A lógica em hideVehicleForm e showVehicleForm já lida com o texto do botão para "Salvar" vs "Atualizar".
+        // Se a operação falha e o formulário não é escondido, o texto original (antes do spinner) deve ser restaurado.
+        if (this.dom.vehicleForm.style.display === 'block') { // Se o form ainda estiver visível
+            submitButton.innerHTML = this.editingVehicleId ? this.langManager.get("updateVehicleBtn") : this.langManager.get("saveVehicleBtn");
+        }
+
+      }, 50); // Timeout de 50ms para o spinner
     }
     deleteVehicle(id) {
       let v = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []);
@@ -1267,11 +1475,85 @@ document.addEventListener("DOMContentLoaded", () => {
       this.vehicleManager = vm;
       this.langManager = lm;
       this.dom = dom;
+      this.selectedVehicleCache = null; // Cache para dados do veículo selecionado (nome, eficiência)
+      this.dom.resetEfficiencyBtn = document.getElementById("resetEfficiencyBtn");
       this._bindEvents();
-      document.addEventListener("languageChanged", () =>
-        this._updateResultCardCurrency()
-      );
+
+      document.addEventListener("languageChanged", () => {
+        this._updateResultCardCurrency();
+        this._updateResetEfficiencyButtonText();
+      });
+
+      // Ouvir evento de seleção de veículo disparado pelo VehicleManager
+      document.addEventListener("vehicleSelected", (e) => {
+        if (e.detail && e.detail.vehicle) {
+          this.selectedVehicleCache = {
+            nome: e.detail.vehicle.nome,
+            eficiencia: parseFloat(e.detail.vehicle.eficiencia)
+          };
+          this.dom.kmPorLitroInput.value = String(this.selectedVehicleCache.eficiencia).replace(".", ",");
+          this.dom.kmPorLitroInput.classList.remove("manual-override");
+          this.dom.resetEfficiencyBtn.style.display = "none";
+          this._updateResetEfficiencyButtonText();
+          this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
+        }
+      });
+
+      // Ouvir se o veículo selecionado foi desmarcado (ex: excluído ou tipo de veículo mudou)
+      document.addEventListener("vehicleDeselected", () => {
+        this.selectedVehicleCache = null;
+        // Não limpar o input kmPorLitro aqui, pois o usuário pode querer manter um valor manual.
+        // Apenas garante que o botão de reset e o override sejam limpos.
+        this.dom.kmPorLitroInput.classList.remove("manual-override");
+        this.dom.resetEfficiencyBtn.style.display = "none";
+        this._updateResetEfficiencyButtonText();
+      });
     }
+
+    _updateResetEfficiencyButtonText() {
+      if (this.dom.resetEfficiencyBtn) {
+        if (this.selectedVehicleCache && this.selectedVehicleCache.nome) {
+          this.dom.resetEfficiencyBtn.innerHTML = this.langManager.get("resetToVehicleEfficiency", { vehicleName: `<strong>${Utils.sanitizeHTML(this.selectedVehicleCache.nome)}</strong>` });
+        } else {
+          this.dom.resetEfficiencyBtn.textContent = this.langManager.get("resetToVehicleEfficiencyShort");
+        }
+      }
+    }
+
+    _handleKmPorLitroInputChange() {
+      const currentValueStr = Utils.convertCommaToPoint(this.dom.kmPorLitroInput.value);
+      const currentValue = parseFloat(currentValueStr);
+
+      if (this.selectedVehicleCache && this.selectedVehicleCache.eficiencia !== null) {
+        // Verifica se o valor é número e diferente do cacheado (com tolerância para floats)
+        if (!isNaN(currentValue) && Math.abs(currentValue - this.selectedVehicleCache.eficiencia) > 0.001) {
+          this.dom.kmPorLitroInput.classList.add("manual-override");
+          this.dom.resetEfficiencyBtn.style.display = "block";
+        } else if (isNaN(currentValue) || Math.abs(currentValue - this.selectedVehicleCache.eficiencia) <= 0.001) {
+          // Se igual ao do veículo ou não é um número válido (ex: apagado), remove o override.
+          this.dom.kmPorLitroInput.classList.remove("manual-override");
+          this.dom.resetEfficiencyBtn.style.display = "none";
+          if(!isNaN(currentValue)) { // Se for um número válido igual, garante que esteja formatado corretamente
+            this.dom.kmPorLitroInput.value = String(this.selectedVehicleCache.eficiencia).replace(".",",");
+          }
+        }
+      } else {
+        // Se não há veículo selecionado, não há override.
+        this.dom.kmPorLitroInput.classList.remove("manual-override");
+        this.dom.resetEfficiencyBtn.style.display = "none";
+      }
+    }
+
+    _resetEfficiencyToVehicle() {
+      if (this.selectedVehicleCache && this.selectedVehicleCache.eficiencia !== null) {
+        this.dom.kmPorLitroInput.value = String(this.selectedVehicleCache.eficiencia).replace(".", ",");
+        this.dom.kmPorLitroInput.classList.remove("manual-override");
+        this.dom.resetEfficiencyBtn.style.display = "none";
+        this.uiManager.clearInlineError(this.dom.kmPorLitroInput);
+        this.dom.kmPorLitroInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+      }
+    }
+
     _updateResultCardCurrency() {
       if (this.dom.resultCard.style.display === "block") {
         const custoText = this.dom.custoResult.textContent;
@@ -1298,13 +1580,74 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     _bindEvents() {
-      if (this.dom.fuelForm)
+      if (this.dom.fuelForm) {
         this.dom.fuelForm.addEventListener("submit", (e) => {
           e.preventDefault();
-          this.calculateAndDisplayTrip();
+          const submitButton = this.dom.fuelForm.querySelector("button[type='submit']");
+          const originalButtonText = submitButton.innerHTML;
+          this.uiManager.showButtonSpinner(submitButton, originalButtonText);
+          setTimeout(() => {
+            this.calculateAndDisplayTrip(submitButton, originalButtonText);
+          }, 10);
         });
+      }
+      if (this.dom.kmPorLitroInput) {
+        this.dom.kmPorLitroInput.addEventListener("input", () => this._handleKmPorLitroInputChange());
+      }
+      if (this.dom.resetEfficiencyBtn) {
+        this.dom.resetEfficiencyBtn.addEventListener("click", () => this._resetEfficiencyToVehicle());
+      }
+      if (this.dom.kmInicialInput && this.dom.kmFinalInput) {
+        this.dom.kmInicialInput.addEventListener("input", () => this._calculateAndDisplayLiveDistance());
+        this.dom.kmFinalInput.addEventListener("input", () => this._calculateAndDisplayLiveDistance());
+      }
     }
-    calculateAndDisplayTrip() {
+
+    _calculateAndDisplayLiveDistance() {
+      const kmInicialVal = Utils.convertCommaToPoint(this.dom.kmInicialInput.value);
+      const kmFinalVal = Utils.convertCommaToPoint(this.dom.kmFinalInput.value);
+
+      const kmInicial = parseFloat(kmInicialVal);
+      const kmFinal = parseFloat(kmFinalVal);
+
+      const distanceInfoEl = document.getElementById("tripDistanceInfo");
+      const distanceDisplayEl = document.getElementById("calculatedTripDistance");
+
+      if (!distanceInfoEl || !distanceDisplayEl) {
+        console.warn("Elementos de display de distância não encontrados no DOM.");
+        return;
+      }
+
+      if (kmInicialVal === "" && kmFinalVal === "") {
+        distanceInfoEl.style.display = "none";
+        return;
+      }
+
+      distanceInfoEl.style.display = "block"; // Mostra o campo de info se houver qualquer input
+
+      if (!isNaN(kmInicial) && !isNaN(kmFinal) && Number.isInteger(kmInicial) && Number.isInteger(kmFinal)) {
+        if (kmFinal > kmInicial) {
+          const distance = kmFinal - kmInicial;
+          if (distance > CONFIG.VALIDATION.MAX_TRIP_DISTANCE) {
+            distanceDisplayEl.textContent = this.langManager.get("maxTripDistanceErrorShort");
+            distanceDisplayEl.style.color = 'var(--c-danger)';
+          } else {
+            distanceDisplayEl.textContent = `${distance} km`;
+            distanceDisplayEl.style.color = ''; // Reset color
+          }
+        } else {
+          // KM Final menor ou igual ao inicial (mas ambos são números inteiros)
+          distanceDisplayEl.textContent = "-- km";
+          distanceDisplayEl.style.color = 'var(--c-danger)'; // Indica um problema
+        }
+      } else {
+        // Um ou ambos os campos não são números inteiros válidos
+        distanceDisplayEl.textContent = "-- km";
+        distanceDisplayEl.style.color = ''; // Reset color
+      }
+    }
+
+    calculateAndDisplayTrip(submitButton, originalButtonText) {
       const validationInputs = {
         kmInicialInput: this.dom.kmInicialInput,
         kmFinalInput: this.dom.kmFinalInput,
@@ -1313,7 +1656,11 @@ document.addEventListener("DOMContentLoaded", () => {
         ganhoUberInput: this.dom.ganhoUberInput,
       };
       const vr = this.validator.validateTrip(validationInputs);
-      if (!vr.isValid) return;
+      if (!vr.isValid) {
+        this.uiManager.hideButtonSpinner(submitButton);
+        submitButton.innerHTML = originalButtonText; // Restaura texto em caso de falha de validação
+        return;
+      }
       const { kmInicial, kmFinal, kmPorLitro, precoCombustivel, ganhoUber } =
         vr.data;
       const d = kmFinal - kmInicial;
@@ -1342,6 +1689,10 @@ document.addEventListener("DOMContentLoaded", () => {
         behavior: "smooth",
         block: "start",
       });
+
+      this.uiManager.hideButtonSpinner(submitButton);
+      submitButton.innerHTML = originalButtonText; // Restaura o texto original após o cálculo
+
       this._saveTripToHistory({
         kmInicial,
         kmFinal,

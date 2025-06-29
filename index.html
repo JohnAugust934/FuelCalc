@@ -147,6 +147,7 @@
                     <input type="text" inputmode="decimal" id="kmPorLitro" name="kmPorLitro"
                         data-translate-key-placeholder="tripEfficiencyPlaceholder"
                         placeholder="Selecione um veículo ou informe" required>
+                    <button type="button" id="resetEfficiencyBtn" class="efficiency-reset-btn" data-translate-key="resetToVehicleEfficiencyShort">Resetar para eficiência do veículo</button>
                     <div class="error-message"></div>
                 </div>
                 <div class="input-group">
@@ -155,6 +156,10 @@
                         data-translate-key-placeholder="initialKmPlaceholder" placeholder="Ex: 150000" required
                         maxlength="6">
                     <div class="error-message"></div>
+                </div>
+                <div id="tripDistanceInfo" class="trip-distance-info" style="display: none;">
+                    <span data-translate-key="tripDistanceLabel">Distância da Viagem:</span>
+                    <strong id="calculatedTripDistance">-- km</strong>
                 </div>
                 <div class="input-group">
                     <label for="kmFinal" data-translate-key="finalKmLabel">KM Final:</label>
