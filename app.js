@@ -139,6 +139,23 @@ document.addEventListener("DOMContentLoaded", () => {
     oilChangeReminderCard: document.getElementById("oilChangeReminderCard"),
     oilChangeReminderText: document.getElementById("oilChangeReminderText"),
     noActiveMaintenanceReminder: document.getElementById("noActiveMaintenanceReminder"),
+
+    // Elementos de Navegação e Telas
+    mainContentWrapper: document.getElementById("mainContentWrapper"),
+    bottomNav: document.querySelector(".bottom-nav"),
+    navButtons: document.querySelectorAll(".nav-button"), // Usado no AppManager para binding inicial
+    // As telas individuais são referenciadas pelo UIManager e não precisam estar no DOM global aqui,
+    // pois o UIManager pode obtê-las por ID quando necessário.
+    // screenHome: document.getElementById("screenHome"), // Removido do DOM global
+    // screenVehicles: document.getElementById("screenVehicles"), // Removido do DOM global
+    // screenReports: document.getElementById("screenReports"), // Removido do DOM global
+    // screenSettings: document.getElementById("screenSettings"), // Removido do DOM global
+
+    // Elementos específicos da tela de Configurações (já que o header foi simplificado)
+    settingsLanguageSwitcher: document.querySelector("#screenSettings .language-switcher"),
+    settingsThemeSwitcher: document.querySelector("#screenSettings .theme-switcher"),
+    settingsHelpButton: document.querySelector("#screenSettings #helpButton"), // Precisa de ID único ou seletor mais específico se houver outros
+    settingsAppFooter: document.querySelector("#screenSettings .app-footer"),
   };
 
   // ===== INÍCIO DAS CLASSES DA APLICAÇÃO =====
@@ -251,14 +268,16 @@ document.addEventListener("DOMContentLoaded", () => {
   class LanguageManager {
     constructor(storageManager, dom) {
       this.storageManager = storageManager;
-      this.dom = dom;
+      this.dom = dom; // DOM global
       this.currentLanguage =
         this._loadLanguagePreference() || CONFIG.DEFAULT_LANGUAGE;
       this.translationData = translations;
     }
     init() {
-      this._bindLanguageButtons();
-      this.setLanguage(this.currentLanguage);
+      // Os botões de idioma agora estão apenas na tela de configurações.
+      // O binding será feito pelo AppManager ou por um método específico chamado por ele.
+      // Este init pode ser usado para definir o idioma inicial e aplicar traduções.
+      this.setLanguage(this.currentLanguage, true); // true para forçar a tradução inicial
     }
     _loadLanguagePreference() {
       const s = this.storageManager.safeGetItem(
@@ -275,25 +294,33 @@ document.addEventListener("DOMContentLoaded", () => {
       s.language = lang;
       this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.APP_SETTINGS, s);
     }
-    _bindLanguageButtons() {
-      this.dom.langButtons.forEach((b) => {
-        b.addEventListener("click", (e) =>
-          this.setLanguage(e.currentTarget.dataset.lang)
-        );
-      });
-    }
-    setLanguage(lang) {
+    // _bindLanguageButtons() agora é tratado pelo AppManager/_bindSettingsScreenEvents
+    // para os botões específicos da tela de configurações.
+
+    setLanguage(lang, isInitialCall = false) {
       if (this.translationData[lang]) {
         this.currentLanguage = lang;
         this._saveLanguagePreference(lang);
         this.applyTranslationsToPage();
         document.documentElement.lang = lang;
-        this.dom.langButtons.forEach((b) =>
-          b.setAttribute("aria-pressed", b.dataset.lang === lang)
-        );
-        document.dispatchEvent(
-          new CustomEvent("languageChanged", { detail: { lang } })
-        );
+
+        // Atualiza botões de idioma na tela de configurações (se eles existirem)
+        // Este é um ponto de acoplamento, mas necessário se o LanguageManager for responsável por isso.
+        // Uma alternativa seria o AppManager ouvir 'languageChanged' e atualizar os botões.
+        // Por enquanto, vamos deixar o AppManager cuidar disso no _bindSettingsScreenEvents e no listener de 'languageChanged'.
+
+        // if (this.dom.settingsLanguageSwitcher) { // Verifica se o elemento existe
+        //     const settingsLangButtons = this.dom.settingsLanguageSwitcher.querySelectorAll(".lang-button");
+        //     settingsLangButtons.forEach((b) =>
+        //         b.setAttribute("aria-pressed", b.dataset.lang === lang)
+        //     );
+        // }
+
+        if (!isInitialCall) { // Evita dispatch duplo na inicialização
+            document.dispatchEvent(
+              new CustomEvent("languageChanged", { detail: { lang } })
+            );
+        }
       }
     }
     get(key, params = {}) {
@@ -339,16 +366,15 @@ document.addEventListener("DOMContentLoaded", () => {
   class ThemeManager {
     constructor(storageManager, dom) {
       this.storageManager = storageManager;
-      this.dom = dom;
+      this.dom = dom; // DOM Global
       this.systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
     }
     init() {
-      this.dom.themeButtons.forEach((button) => {
-        button.addEventListener("click", () =>
-          this.setTheme(button.dataset.themeToggle)
-        );
-      });
-      this.systemThemeQuery.addEventListener("change", () => this.applyTheme());
+      // Os botões de tema agora estão apenas na tela de configurações.
+      // O binding será feito pelo AppManager ou por um método específico.
+      // Este init pode ser usado para aplicar o tema inicial e adicionar o listener do sistema.
+      this.systemThemeQuery.addEventListener("change", () => this.applyTheme(true)); // true para indicar que é uma mudança de sistema
+      this.systemThemeQuery.addEventListener("change", () => this.applyTheme(true)); // true para indicar que é uma mudança de sistema
       this.applyTheme();
     }
     _getPreference() {
@@ -371,22 +397,34 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     setTheme(theme) {
       this._savePreference(theme);
-      this.applyTheme();
+      this.applyTheme(); // applyTheme agora pode lidar com a atualização dos botões via evento
     }
-    applyTheme() {
+    applyTheme(isSystemChange = false) {
       const preference = this._getPreference();
       let effectiveTheme = preference;
+
       if (preference === "system") {
         effectiveTheme = this.systemThemeQuery.matches ? "dark" : "light";
       }
+
       this.dom.html.setAttribute("data-theme", effectiveTheme);
-      this.dom.themeButtons.forEach((button) => {
-        button.classList.toggle(
-          "active",
-          button.dataset.themeToggle === preference
-        );
-      });
-      document.dispatchEvent(new CustomEvent("themeChanged"));
+
+      // Atualiza os botões de tema na tela de configurações
+      // O AppManager ouvirá 'themeChanged' e atualizará os botões.
+      // if (this.dom.settingsThemeSwitcher) { // Verifica se o elemento existe
+      //   const settingsThemeButtons = this.dom.settingsThemeSwitcher.querySelectorAll(".theme-button");
+      //   settingsThemeButtons.forEach((button) => {
+      //       button.classList.toggle(
+      //           "active",
+      //           button.dataset.themeToggle === preference
+      //       );
+      //   });
+      // }
+
+      // Dispara o evento apenas se não for uma mudança de tema do sistema que já vai ser ouvida
+      // ou se for uma chamada direta a applyTheme (ex: no init).
+      // A lógica de atualização dos botões na tela de settings será feita pelo AppManager ouvindo este evento.
+      document.dispatchEvent(new CustomEvent("themeChanged", {detail: {preference, effectiveTheme}}));
     }
   }
 
@@ -707,6 +745,58 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     hideEfficiencyHelperModal() {
       this._hideModal(this.dom.efficiencyHelperModalOverlay);
+    }
+
+    navigateTo(screenId) {
+      const screens = [
+        this.dom.appContainer.querySelector("#screenHome"),
+        this.dom.appContainer.querySelector("#screenVehicles"),
+        this.dom.appContainer.querySelector("#screenReports"),
+        this.dom.appContainer.querySelector("#screenSettings")
+      ];
+
+      screens.forEach(screen => {
+        if (screen) {
+          screen.classList.remove("screen-active");
+          screen.classList.add("screen-hidden");
+        }
+      });
+
+      const targetScreen = this.dom.appContainer.querySelector(`#${screenId}`);
+      if (targetScreen) {
+        targetScreen.classList.remove("screen-hidden");
+        targetScreen.classList.add("screen-active");
+
+        // Atualiza o título da página (opcional, mas bom para UX)
+        // const screenTitleElement = targetScreen.querySelector("h1[data-translate-key], h2[data-translate-key]");
+        // if (screenTitleElement && screenTitleElement.dataset.translateKey) {
+        //    document.title = `${this.langManager.get(screenTitleElement.dataset.translateKey)} - FuelCalc`;
+        // } else {
+        //    document.title = this.langManager.get("appTitle");
+        // }
+
+      } else {
+        console.warn(`Screen with ID ${screenId} not found.`);
+      }
+
+      // Atualiza o botão ativo na navegação (DOM.navButtons é definido no AppManager)
+       if (this.dom.navButtons) {
+            this.dom.navButtons.forEach(button => {
+                button.classList.toggle("active", button.dataset.screen === screenId);
+            });
+        }
+
+
+      // Foca no título da nova tela para acessibilidade
+      const activeScreenTitle = targetScreen ? targetScreen.querySelector('h1, h2, h3') : null;
+      if (activeScreenTitle) {
+        activeScreenTitle.setAttribute('tabindex', '-1');
+        activeScreenTitle.focus();
+         // Rola para o topo da nova tela, especialmente útil se as telas forem longas
+        targetScreen.scrollTop = 0;
+      }
+
+      document.dispatchEvent(new CustomEvent("screenChanged", { detail: { screenId } }));
     }
   }
 
@@ -2972,22 +3062,51 @@ class GoalManager {
     );
       this.qrInstance = null;
       this.qriousLoaded = false; // Flag para controlar o carregamento do QRious
+      this.activeScreen = "screenHome"; // Tela inicial padrão
       this._init();
     }
     _init() {
-      this._displayAppInfo();
-      this.themeManager.init();
-    this.languageManager.init();
+      // this._displayAppInfo(); // Movido para _bindSettingsScreenEvents ou render da tela de Ajustes
+
       this.inputFormatter.initialize();
 
-    if (this.goalManager) {
+      // Managers que dependem de elementos DOM específicos de suas telas
+      // serão inicializados ou terão seus bindings refeitos quando a tela for ativada
+      // ou podemos fazer bindings mais genéricos se os elementos existirem sempre.
+
+      this.inputFormatter.initialize(); // Formatação de inputs é global
+
+      // Managers principais são instanciados
+      this.vehicleManager = new VehicleManager(this.storageManager, this.uiManager, this.validator, this.languageManager, this.dom);
+      this.fuelCalculator = new FuelCalculator(this.storageManager, this.uiManager, this.validator, this.vehicleManager, this.languageManager, this.dom);
+      this.historyManager = new HistoryManager(this.storageManager, this.uiManager, this.vehicleManager, this.languageManager, this.dom);
+      this.statisticsManager = new StatisticsManager(this.storageManager, this.uiManager, this.vehicleManager, this.languageManager, this.dom);
+      this.goalManager = new GoalManager(this.storageManager, this.uiManager, this.languageManager, this.vehicleManager, this.dom);
+
+      // LanguageManager e ThemeManager são inicializados primeiro para que as traduções e temas estejam disponíveis
+      this.languageManager.init();
+      this.themeManager.init();
+
+      // Inicializa os módulos que dependem de elementos DOM
+      this.inputFormatter.initialize(); // Formatação de inputs é global
+      if (this.goalManager) {
         this.goalManager.init();
-    }
+      }
+
+      // Bind de eventos globais e específicos de telas
       this._bindGlobalAppEvents();
       this._bindHelperEvents();
-    this._bindMaintenanceEvents(); // Novo
-    this._updateMaintenanceReminders(); // Chamada inicial
+      this._bindMaintenanceEvents();
+      this._bindNavigationEvents();
+      this._bindSettingsScreenEvents();
 
+      // Renderização/atualização inicial de componentes que dependem de dados ou estado
+      this.vehicleManager.selectVehicleType(this.vehicleManager.currentVehicleType);
+      this.historyManager.renderHistory();
+      this.statisticsManager.updateStatistics();
+
+      this.uiManager.navigateTo(this.activeScreen);
+      this._updateMaintenanceReminders();
       this._handleViewport();
       window.addEventListener(
         "resize",
@@ -2997,12 +3116,86 @@ class GoalManager {
       this._registerServiceWorker();
     }
 
+  _bindNavigationEvents() {
+    if (this.dom.navButtons) {
+      this.dom.navButtons.forEach(button => {
+        button.addEventListener("click", () => {
+          const screenId = button.dataset.screen;
+          if (screenId) {
+            this.activeScreen = screenId;
+            this.uiManager.navigateTo(screenId);
+          }
+        });
+      });
+    }
+  }
+
+  _bindSettingsScreenEvents() {
+    // Os botões de idioma e tema na tela de Ajustes já são os elementos que
+    // LanguageManager e ThemeManager usam através do seletor global ".lang-button" e ".theme-button"
+    // Portanto, o this.languageManager.init() e this.themeManager.init() no _init do AppManager
+    // já devem cuidar de adicionar os listeners corretos a eles, desde que os seletores
+    // em LanguageManager e ThemeManager sejam suficientemente gerais ou que passemos os elementos corretos.
+
+    // No entanto, precisamos garantir que os estados (aria-pressed, active class) sejam atualizados
+    // especificamente para OS BOTÕES DENTRO DA TELA DE AJUSTES quando o idioma/tema muda.
+    // Os próprios managers já disparam eventos 'languageChanged' e 'themeChanged'.
+    // Podemos ouvir esses eventos aqui para atualizar os botões da tela de Ajustes.
+
+    document.addEventListener("languageChanged", () => {
+        const settingsLangButtons = this.dom.settingsLanguageSwitcher ? this.dom.settingsLanguageSwitcher.querySelectorAll(".lang-button") : [];
+        settingsLangButtons.forEach(btn => {
+             btn.setAttribute("aria-pressed", btn.dataset.lang === this.languageManager.currentLanguage);
+             // Atualiza o texto dentro do botão (ex: "Português", "Inglês") se eles tiverem spans com data-translate-key
+             const textSpan = btn.querySelector("span[data-translate-key]");
+             if (textSpan) {
+                 textSpan.textContent = this.languageManager.get(textSpan.dataset.translateKey);
+             }
+        });
+    });
+
+    document.addEventListener("themeChanged", () => {
+        const settingsThemeButtons = this.dom.settingsThemeSwitcher ? this.dom.settingsThemeSwitcher.querySelectorAll(".theme-button") : [];
+        const currentThemePreference = this.themeManager._getPreference();
+        settingsThemeButtons.forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.themeToggle === currentThemePreference);
+             const textSpan = btn.querySelector("span[data-translate-key]");
+             if (textSpan) { // Atualiza o texto se houver
+                 textSpan.textContent = this.languageManager.get(textSpan.dataset.translateKey);
+             }
+        });
+    });
+
+    // Chamar _displayAppInfo aqui para garantir que o rodapé (agora na tela de ajustes) seja populado
+    this._displayAppInfo();
+
+    // Botão de Ajuda na tela de Ajustes
+    // O ID "helpButton" agora é usado na tela de Ajustes.
+    // O seletor em DOM.settingsHelpButton deve ser `document.querySelector("#screenSettings #helpButton")`
+    // ou simplesmente `document.getElementById("helpButton")` se garantirmos que o ID é único para o botão de ajuda na tela de Ajustes.
+    // Assumindo que `this.dom.settingsHelpButton` está correto:
+    if (this.dom.settingsHelpButton) {
+        this.dom.settingsHelpButton.addEventListener("click", () => this.uiManager.showHelpModal());
+    } else {
+        // Fallback se o seletor global ainda for usado e o botão de ajuda do header antigo não foi removido
+        // Este fallback pode ser removido se o DOM.helpButton for retirado da constante DOM.
+        if(this.dom.helpButton && this.dom.helpButton.closest("#screenSettings")){
+             this.dom.helpButton.addEventListener("click", () => this.uiManager.showHelpModal());
+        }
+    }
+  }
+
   _bindMaintenanceEvents() {
     document.addEventListener("vehicleSelected", () => this._updateMaintenanceReminders());
     document.addEventListener("tripCalculated", () => this._updateMaintenanceReminders());
     document.addEventListener("vehicleTypeChanged", () => this._updateMaintenanceReminders());
     document.addEventListener("vehicleDataChanged", () => this._updateMaintenanceReminders()); // Quando proximoKmTrocaOleo é salvo
     document.addEventListener("languageChanged", () => this._updateMaintenanceReminders(true));
+    document.addEventListener("screenChanged", (e) => { // Atualiza lembretes ao mudar para tela Home
+        if (e.detail.screenId === "screenHome") {
+            this._updateMaintenanceReminders();
+        }
+    });
   }
 
   _updateMaintenanceReminders(forceRetranslate = false) {

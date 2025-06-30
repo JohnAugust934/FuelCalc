@@ -814,9 +814,7 @@ html[data-theme="dark"] .input-group select {
 }
 
 /* Goal progress bar styling */
-.goal-section {
-    /* Estilos para a seção de metas, se necessário */
-}
+/* .goal-section agora é usado dentro de screenSettings, pode não precisar de estilos específicos aqui se já for .content-section */
 
 .goal-progress-text {
     font-size: 0.9rem;
@@ -862,3 +860,119 @@ html[data-theme="dark"] .input-group select {
     text-shadow: 1px 1px 1px rgba(0,0,0,0.2); /* Sombra para legibilidade */
 }
 /* Se a barra for muito pequena, o texto pode não caber bem. Poderia ser ajustado com JS ou media queries. */
+
+
+/* ===== 4. NAVEGAÇÃO INFERIOR E TELAS ===== */
+.screen-hidden {
+  display: none !important; /* Garante que a tela seja ocultada */
+}
+.screen-active {
+  display: block; /* Garante que a tela ativa seja exibida */
+  animation: fadeInScreen 0.3s ease-in-out; /* Animação suave para entrada da tela */
+}
+
+@keyframes fadeInScreen {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#mainContentWrapper {
+  padding-bottom: 70px; /* Espaço para a barra de navegação inferior. Ajustar conforme altura da nav. */
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 450px; /* Mantém a largura da navegação consistente com o container */
+  margin: 0 auto; /* Centraliza a navegação se a tela for maior que max-width */
+  background-color: var(--c-bg-secondary);
+  box-shadow: 0 -2px 8px var(--c-shadow);
+  border-top: 1px solid var(--c-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch; /* Faz os botões preencherem a altura */
+  padding: 0.5rem 0; /* Padding vertical */
+  z-index: 100; /* Garante que fique acima do conteúdo */
+  height: 60px; /* Altura fixa para a barra de navegação */
+}
+
+.nav-button {
+  flex: 1; /* Distribui o espaço igualmente */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* Centraliza ícone e texto */
+  background: none;
+  border: none;
+  color: var(--c-text-secondary);
+  font-size: 0.7rem; /* Tamanho do texto do rótulo */
+  padding: 0.3rem 0.2rem; /* Padding interno do botão */
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  gap: 2px; /* Espaço entre ícone e texto */
+  border-radius: var(--radius-sm); /* Para feedback de foco/hover */
+}
+
+.nav-button .nav-icon {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2; /* Espessura padrão do ícone */
+}
+
+.nav-button:hover {
+  color: var(--c-text-primary);
+  background-color: var(--c-bg-tertiary); /* Feedback visual no hover */
+}
+/* Estilo de foco para botões de navegação */
+.nav-button:focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: -2px; /* Foco interno para não aumentar o tamanho */
+    background-color: var(--c-accent-light);
+}
+
+.nav-button.active {
+  color: var(--c-accent);
+  font-weight: 500; /* Destaca o texto do botão ativo */
+}
+
+.nav-button.active .nav-icon {
+  stroke: var(--c-accent); /* Ícone ativo com cor de destaque */
+}
+
+/* Header simplificado para telas internas */
+.app-header.simple-header {
+    padding: 1rem; /* Menor padding */
+    padding-top: 1rem; /* Ajusta o topo */
+    border-bottom: 1px solid var(--c-border);
+}
+.app-header.simple-header .app-header-content {
+    display: none; /* Esconde logo e subtítulo no header simplificado */
+}
+.app-header.simple-header h1 {
+    font-size: 1.25rem; /* Tamanho do título para telas internas */
+    color: var(--c-text-primary);
+    margin: 0;
+}
+
+/* Ajustes para Switchers na tela de Configurações */
+.settings-switcher {
+    display: flex;
+    flex-direction: column; /* Empilha os botões */
+    gap: 0.75rem; /* Espaço entre os botões */
+}
+.settings-switcher .btn {
+    width: 100%; /* Faz os botões ocuparem a largura total */
+    justify-content: flex-start; /* Alinha conteúdo (ícone + texto) à esquerda */
+    padding-left: 1rem; /* Adiciona padding à esquerda para alinhar com outros inputs */
+    padding-right: 1rem;
+}
+.settings-switcher .btn svg {
+    margin-right: 0.5rem; /* Espaço entre ícone e texto no botão */
+}
+/* Ajuste para botões de idioma na tela de configurações */
+.settings-switcher .lang-button span {
+    margin-left: 0.5rem; /* Espaço entre bandeira e texto do idioma */
+}

@@ -43,300 +43,367 @@
     </div>
 
     <div class="container" id="appContainer">
-        <header class="app-header">
-            <div class="header-controls">
-                <button type="button" class="header-icon-button" id="helpButton"
-                    data-translate-key-aria-label="helpButtonAriaLabel" aria-label="Ajuda">?</button>
-                <div class="language-switcher">
-                    <button type="button" class="lang-button" data-lang="pt-BR" aria-pressed="true"
-                        data-translate-key-title="langBtnPt" title="Mudar para Português (Brasil)"
-                        data-translate-key-aria-label="langBtnPtAriaLabel" aria-label="Mudar idioma para Português (Brasil)">🇧🇷</button>
-                    <button type="button" class="lang-button" data-lang="en" aria-pressed="false"
-                        data-translate-key-title="langBtnEn" title="Switch to English"
-                        data-translate-key-aria-label="langBtnEnAriaLabel" aria-label="Switch language to English">🇬🇧</button>
-                </div>
-                <div class="theme-switcher">
-                    <button type="button" class="theme-button" data-theme-toggle="light"
-                        data-translate-key-title="themeLight" title="Tema Claro"
-                        data-translate-key-aria-label="themeLightAriaLabel" aria-label="Mudar para Tema Claro">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="5"></circle>
-                            <line x1="12" y1="1" x2="12" y2="3"></line>
-                            <line x1="12" y1="21" x2="12" y2="23"></line>
-                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                            <line x1="1" y1="12" x2="3" y2="12"></line>
-                            <line x1="21" y1="12" x2="23" y2="12"></line>
-                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                        </svg>
-                    </button>
-                    <button type="button" class="theme-button" data-theme-toggle="dark"
-                        data-translate-key-title="themeDark" title="Tema Escuro"
-                        data-translate-key-aria-label="themeDarkAriaLabel" aria-label="Mudar para Tema Escuro">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                        </svg>
-                    </button>
-                    <button type="button" class="theme-button active" data-theme-toggle="system"
-                        data-translate-key-title="themeSystem" title="Tema do Sistema"
-                        data-translate-key-aria-label="themeSystemAriaLabel" aria-label="Mudar para Tema do Sistema">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                            <line x1="8" y1="21" x2="16" y2="21"></line>
-                            <line x1="12" y1="17" x2="12" y2="21"></line>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <div class="app-header-content">
-                <img src="icons/icon-192x192.png" alt="Logo FuelCalc" class="logo">
-                <h1 data-translate-key="appName">FuelCalc</h1>
-                <p data-translate-key="appSubtitle">Sua calculadora de combustível inteligente</p>
-            </div>
-        </header>
-        <section class="content-section" aria-labelledby="vehicle-selector-title">
-            <h2 id="vehicle-selector-title" data-translate-key="manageVehiclesTitle">Gerenciar Veículos</h2>
-            <div class="vehicle-type-buttons">
-                <button type="button" class="btn" data-vehicle-type="carro" aria-pressed="true"
-                    data-translate-key="vehicleTypeCar">Carro</button>
-                <button type="button" class="btn" data-vehicle-type="moto" aria-pressed="false"
-                    data-translate-key="vehicleTypeMotorcycle">Moto</button>
-            </div>
-            <div class="vehicle-cards" id="vehicleList" aria-live="polite"></div>
-            <button type="button" class="btn btn-secondary full-width" id="addVehicleBtn"
-                data-translate-key="addVehicleBtn" aria-label="Adicionar Novo Veículo">+ Adicionar Veículo</button>
-            <form id="vehicleForm" class="form-section" style="display:none;" novalidate>
-                <input type="hidden" id="vehicleType" name="vehicleType">
-                <div class="input-group">
-                    <label for="vehicleName" data-translate-key="vehicleNameLabel">Nome do Veículo:</label>
-                    <input type="text" id="vehicleName" name="vehicleName"
-                        data-translate-key-placeholder="vehicleNamePlaceholder" placeholder="Ex: Onix 1.0" required
-                        minlength="2" maxlength="40">
-                    <div class="error-message"></div>
-                </div>
-
-                <!-- Container para os campos de combustível -->
-                <div id="fuelInputGroupContainer">
-                    <div class="input-group fuel-input-group">
-                        <div class="label-with-helper">
-                            <label for="vehicleEfficiencyGasoline" data-translate-key="vehicleEfficiencyLabelForFuel"
-                                data-translate-options='{"fuel": "Gasolina"}'>Eficiência Gasolina (km/L):</label>
-                            <button type="button" class="input-helper-btn" id="efficiencyHelperBtnVehicleGasoline"
-                                data-translate-key="efficiencyHelperLabel"
-                                data-translate-key-aria-label="efficiencyHelperLabelAriaGasoline"
-                                aria-label="Calcular eficiência para Gasolina">Não sabe? Calcule</button>
-                        </div>
-                        <input type="text" inputmode="decimal" id="vehicleEfficiencyGasoline"
-                            name="vehicleEfficiencyGasoline"
-                            data-translate-key-placeholder="vehicleEfficiencyPlaceholder" placeholder="Ex: 12.5">
-                        <div class="error-message"></div>
+        <div id="mainContentWrapper">
+            <!-- Tela de Início (Calculadora) -->
+            <div id="screenHome" class="screen-active">
+                <header class="app-header">
+                    <!-- Controles de header (idioma, tema, ajuda) serão movidos para a tela de Ajustes -->
+                    <div class="app-header-content">
+                        <img src="icons/icon-192x192.png" alt="Logo FuelCalc" class="logo">
+                        <h1 data-translate-key="appName">FuelCalc</h1>
+                        <p data-translate-key="appSubtitle">Sua calculadora de combustível inteligente</p>
                     </div>
-
-                    <div class="input-group fuel-input-group">
-                        <div class="label-with-helper">
-                            <label for="vehicleEfficiencyAlcohol" data-translate-key="vehicleEfficiencyLabelForFuel"
-                                data-translate-options='{"fuel": "Álcool"}'>Eficiência Álcool (km/L):</label>
-                            <button type="button" class="input-helper-btn" id="efficiencyHelperBtnVehicleAlcohol"
-                                data-translate-key="efficiencyHelperLabel"
-                                data-translate-key-aria-label="efficiencyHelperLabelAriaAlcohol"
-                                aria-label="Calcular eficiência para Álcool">Não sabe? Calcule</button>
+                </header>
+                <main class="content-section" aria-labelledby="calculator-title">
+                    <h2 id="calculator-title" data-translate-key="calculateTripTitle">Calcular Gastos da Viagem</h2>
+                    <form id="fuelForm" novalidate>
+                        <!-- Novo seletor de tipo de combustível para a viagem (aparece para veículos flex) -->
+                        <div class="input-group" id="tripFuelTypeGroup" style="display: none;">
+                            <label for="tripFuelTypeSelect" data-translate-key="tripFuelTypeLabel">Tipo de Combustível
+                                Usado:</label>
+                            <select id="tripFuelTypeSelect" name="tripFuelTypeSelect">
+                                <!-- Opções serão populadas dinamicamente -->
+                            </select>
+                            <div class="error-message"></div>
                         </div>
-                        <input type="text" inputmode="decimal" id="vehicleEfficiencyAlcohol" name="vehicleEfficiencyAlcohol"
-                            data-translate-key-placeholder="vehicleEfficiencyPlaceholder" placeholder="Ex: 8.7">
-                        <div class="error-message"></div>
-                    </div>
-                </div>
-                <!-- Fim do container para os campos de combustível -->
 
-                <div class="button-group">
-                    <button type="submit" class="btn btn-primary" data-translate-key="saveVehicleBtn">Salvar
+                        <div class="input-group">
+                            <div class="label-with-helper">
+                                <label for="kmPorLitro" data-translate-key="tripEfficiencyLabel">Eficiência do Veículo
+                                    (km/L):</label>
+                                <button type="button" class="input-helper-btn" id="efficiencyHelperBtnTrip"
+                                    data-translate-key-aria-label="efficiencyHelperLabelAria"
+                                    data-translate-key="efficiencyHelperLabel">Não sabe a sua? Calcule</button>
+                            </div>
+                            <input type="text" inputmode="decimal" id="kmPorLitro" name="kmPorLitro"
+                                data-translate-key-placeholder="tripEfficiencyPlaceholder"
+                                placeholder="Selecione um veículo ou informe" required>
+                            <button type="button" id="resetEfficiencyBtn" class="efficiency-reset-btn"
+                                data-translate-key="resetToVehicleEfficiencyShort">Resetar para eficiência do
+                                veículo</button>
+                            <div class="error-message"></div>
+                        </div>
+                        <div class="input-group">
+                            <label for="kmInicial" data-translate-key="initialKmLabel">KM Inicial:</label>
+                            <input type="text" inputmode="numeric" pattern="[0-9]*" id="kmInicial" name="kmInicial"
+                                data-translate-key-placeholder="initialKmPlaceholder" placeholder="Ex: 150000" required
+                                maxlength="6">
+                            <div class="error-message"></div>
+                        </div>
+                        <div id="tripDistanceInfo" class="trip-distance-info" style="display: none;">
+                            <span data-translate-key="tripDistanceLabel">Distância da Viagem:</span>
+                            <strong id="calculatedTripDistance">-- km</strong>
+                        </div>
+                        <div class="input-group">
+                            <label for="kmFinal" data-translate-key="finalKmLabel">KM Final:</label>
+                            <input type="text" inputmode="numeric" pattern="[0-9]*" id="kmFinal" name="kmFinal"
+                                data-translate-key-placeholder="finalKmPlaceholder" placeholder="Ex: 150120" required
+                                maxlength="6">
+                            <div class="error-message"></div>
+                        </div>
+                        <div class="input-group">
+                            <label for="precoCombustivel" data-translate-key="fuelPriceLabel">Preço por Litro
+                                (R$):</label>
+                            <input type="text" inputmode="decimal" id="precoCombustivel" name="precoCombustivel"
+                                data-translate-key-placeholder="fuelPricePlaceholder" placeholder="Ex: 5.89" required>
+                            <div class="error-message"></div>
+                        </div>
+                        <div class="input-group">
+                            <label for="ganhoUber" data-translate-key="tripGrossGainLabel">Ganho Bruto da Viagem (R$,
+                                opcional):</label>
+                            <input type="text" inputmode="decimal" id="ganhoUber" name="ganhoUber"
+                                data-translate-key-placeholder="tripGrossGainPlaceholder" placeholder="Ex: 75.50">
+                            <div class="error-message"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary full-width"
+                            data-translate-key="calculateTripBtn">Calcular
+                            Gastos</button>
+                    </form>
+                </main>
+                <section id="resultCard" class="result-card content-section" style="display:none;"
+                    aria-labelledby="result-title" aria-live="polite" aria-atomic="true">
+                    <h3 id="result-title" data-translate-key="calculationResultTitle" tabindex="-1">Resultado do
+                        Cálculo</h3>
+                    <div class="result-item"> <span data-translate-key="distanceTraveledLabel">Distância
+                            Percorrida:</span>
+                        <strong id="distanciaResult">-- km</strong>
+                    </div>
+                    <div class="result-item"> <span data-translate-key="fuelConsumedLabel">Combustível
+                            Consumido:</span> <strong id="litrosResult">-- L</strong> </div>
+                    <div class="result-item"> <span data-translate-key="totalFuelCostLabel">Custo Total do
+                            Combustível:</span>
+                        <strong id="custoResult">R$ --</strong>
+                    </div>
+                    <div class="result-item total"> <span data-translate-key="netProfitLabel">Lucro Líquido da
+                            Viagem:</span>
+                        <strong id="lucroResult">R$ --</strong>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Tela de Veículos -->
+            <div id="screenVehicles" class="screen-hidden">
+                <header class="app-header simple-header">
+                     <h1 data-translate-key="vehiclesScreenTitle">Gerenciar Veículos</h1>
+                </header>
+                <section class="content-section" aria-labelledby="vehicle-selector-title-screen">
+                    <div class="vehicle-type-buttons">
+                        <button type="button" class="btn" data-vehicle-type="carro" aria-pressed="true"
+                            data-translate-key="vehicleTypeCar">Carro</button>
+                        <button type="button" class="btn" data-vehicle-type="moto" aria-pressed="false"
+                            data-translate-key="vehicleTypeMotorcycle">Moto</button>
+                    </div>
+                    <div class="vehicle-cards" id="vehicleList" aria-live="polite"></div>
+                    <button type="button" class="btn btn-secondary full-width" id="addVehicleBtn"
+                        data-translate-key="addVehicleBtn" aria-label="Adicionar Novo Veículo">+ Adicionar
                         Veículo</button>
-                    <button type="button" class="btn btn-secondary" id="cancelVehicleBtn"
-                        data-translate-key="cancelBtn">Cancelar</button>
-                </div>
-            </form>
-        </section>
-        <main class="content-section" aria-labelledby="calculator-title">
-            <h2 id="calculator-title" data-translate-key="calculateTripTitle">Calcular Gastos da Viagem</h2>
-            <form id="fuelForm" novalidate>
-                <!-- Novo seletor de tipo de combustível para a viagem (aparece para veículos flex) -->
-                <div class="input-group" id="tripFuelTypeGroup" style="display: none;">
-                    <label for="tripFuelTypeSelect" data-translate-key="tripFuelTypeLabel">Tipo de Combustível Usado:</label>
-                    <select id="tripFuelTypeSelect" name="tripFuelTypeSelect">
-                        <!-- Opções serão populadas dinamicamente -->
-                    </select>
-                    <div class="error-message"></div>
-                </div>
+                    <form id="vehicleForm" class="form-section" style="display:none;" novalidate>
+                        <input type="hidden" id="vehicleType" name="vehicleType">
+                        <div class="input-group">
+                            <label for="vehicleName" data-translate-key="vehicleNameLabel">Nome do Veículo:</label>
+                            <input type="text" id="vehicleName" name="vehicleName"
+                                data-translate-key-placeholder="vehicleNamePlaceholder" placeholder="Ex: Onix 1.0"
+                                required minlength="2" maxlength="40">
+                            <div class="error-message"></div>
+                        </div>
+                        <div id="fuelInputGroupContainer">
+                            <div class="input-group fuel-input-group">
+                                <div class="label-with-helper">
+                                    <label for="vehicleEfficiencyGasoline"
+                                        data-translate-key="vehicleEfficiencyLabelForFuel"
+                                        data-translate-options='{"fuel": "Gasolina"}'>Eficiência Gasolina
+                                        (km/L):</label>
+                                    <button type="button" class="input-helper-btn"
+                                        id="efficiencyHelperBtnVehicleGasoline"
+                                        data-translate-key="efficiencyHelperLabel"
+                                        data-translate-key-aria-label="efficiencyHelperLabelAriaGasoline"
+                                        aria-label="Calcular eficiência para Gasolina">Não sabe? Calcule</button>
+                                </div>
+                                <input type="text" inputmode="decimal" id="vehicleEfficiencyGasoline"
+                                    name="vehicleEfficiencyGasoline"
+                                    data-translate-key-placeholder="vehicleEfficiencyPlaceholder"
+                                    placeholder="Ex: 12.5">
+                                <div class="error-message"></div>
+                            </div>
+                            <div class="input-group fuel-input-group">
+                                <div class="label-with-helper">
+                                    <label for="vehicleEfficiencyAlcohol"
+                                        data-translate-key="vehicleEfficiencyLabelForFuel"
+                                        data-translate-options='{"fuel": "Álcool"}'>Eficiência Álcool (km/L):</label>
+                                    <button type="button" class="input-helper-btn"
+                                        id="efficiencyHelperBtnVehicleAlcohol"
+                                        data-translate-key="efficiencyHelperLabel"
+                                        data-translate-key-aria-label="efficiencyHelperLabelAriaAlcohol"
+                                        aria-label="Calcular eficiência para Álcool">Não sabe? Calcule</button>
+                                </div>
+                                <input type="text" inputmode="decimal" id="vehicleEfficiencyAlcohol"
+                                    name="vehicleEfficiencyAlcohol"
+                                    data-translate-key-placeholder="vehicleEfficiencyPlaceholder"
+                                    placeholder="Ex: 8.7">
+                                <div class="error-message"></div>
+                            </div>
+                        </div>
+                        <div class="button-group">
+                            <button type="submit" class="btn btn-primary"
+                                data-translate-key="saveVehicleBtn">Salvar Veículo</button>
+                            <button type="button" class="btn btn-secondary" id="cancelVehicleBtn"
+                                data-translate-key="cancelBtn">Cancelar</button>
+                        </div>
+                    </form>
+                </section>
+            </div>
 
-                <div class="input-group">
-                    <div class="label-with-helper">
-                        <label for="kmPorLitro" data-translate-key="tripEfficiencyLabel">Eficiência do Veículo
-                            (km/L):</label>
-                        <button type="button" class="input-helper-btn" id="efficiencyHelperBtnTrip"
-                            data-translate-key-aria-label="efficiencyHelperLabelAria"
-                            data-translate-key="efficiencyHelperLabel">Não sabe a sua? Calcule</button>
+            <!-- Tela de Relatórios (Histórico e Estatísticas) -->
+            <div id="screenReports" class="screen-hidden">
+                 <header class="app-header simple-header">
+                    <h1 data-translate-key="reportsTitle">Relatórios</h1>
+                </header>
+                <section id="historySection" class="history-section content-section" style="display:block;"
+                    aria-labelledby="history-title">
+                    <h3 id="history-title" data-translate-key="tripHistoryTitle">Histórico de Viagens</h3>
+                    <ul id="historyList" class="price-list" aria-live="polite"></ul>
+                    <div class="button-group">
+                        <button type="button" id="seeMoreHistoryBtn" class="btn btn-secondary" style="display:none;"
+                            data-translate-key="seeMoreBtn">Ver Mais</button>
+                        <button type="button" id="minimizeHistoryBtn" class="btn btn-secondary" style="display:none;"
+                            data-translate-key="minimizeBtn">Minimizar</button>
                     </div>
-                    <input type="text" inputmode="decimal" id="kmPorLitro" name="kmPorLitro"
-                        data-translate-key-placeholder="tripEfficiencyPlaceholder"
-                        placeholder="Selecione um veículo ou informe" required>
-                    <button type="button" id="resetEfficiencyBtn" class="efficiency-reset-btn" data-translate-key="resetToVehicleEfficiencyShort">Resetar para eficiência do veículo</button>
-                    <div class="error-message"></div>
-                </div>
-                <div class="input-group">
-                    <label for="kmInicial" data-translate-key="initialKmLabel">KM Inicial:</label>
-                    <input type="text" inputmode="numeric" pattern="[0-9]*" id="kmInicial" name="kmInicial"
-                        data-translate-key-placeholder="initialKmPlaceholder" placeholder="Ex: 150000" required
-                        maxlength="6">
-                    <div class="error-message"></div>
-                </div>
-                <div id="tripDistanceInfo" class="trip-distance-info" style="display: none;">
-                    <span data-translate-key="tripDistanceLabel">Distância da Viagem:</span>
-                    <strong id="calculatedTripDistance">-- km</strong>
-                </div>
-                <div class="input-group">
-                    <label for="kmFinal" data-translate-key="finalKmLabel">KM Final:</label>
-                    <input type="text" inputmode="numeric" pattern="[0-9]*" id="kmFinal" name="kmFinal"
-                        data-translate-key-placeholder="finalKmPlaceholder" placeholder="Ex: 150120" required
-                        maxlength="6">
-                    <div class="error-message"></div>
-                </div>
-                <div class="input-group">
-                    <label for="precoCombustivel" data-translate-key="fuelPriceLabel">Preço por Litro (R$):</label>
-                    <input type="text" inputmode="decimal" id="precoCombustivel" name="precoCombustivel"
-                        data-translate-key-placeholder="fuelPricePlaceholder" placeholder="Ex: 5.89" required>
-                    <div class="error-message"></div>
-                </div>
-                <div class="input-group">
-                    <label for="ganhoUber" data-translate-key="tripGrossGainLabel">Ganho Bruto da Viagem (R$,
-                        opcional):</label>
-                    <input type="text" inputmode="decimal" id="ganhoUber" name="ganhoUber"
-                        data-translate-key-placeholder="tripGrossGainPlaceholder" placeholder="Ex: 75.50">
-                    <div class="error-message"></div>
-                </div>
-                <button type="submit" class="btn btn-primary full-width" data-translate-key="calculateTripBtn">Calcular
-                    Gastos</button>
-            </form>
-        </main>
-        <section id="resultCard" class="result-card content-section" style="display:none;"
-            aria-labelledby="result-title" aria-live="polite" aria-atomic="true">
-            <h3 id="result-title" data-translate-key="calculationResultTitle" tabindex="-1">Resultado do Cálculo</h3>
-            <div class="result-item"> <span data-translate-key="distanceTraveledLabel">Distância Percorrida:</span>
-                <strong id="distanciaResult">-- km</strong>
-            </div>
-            <div class="result-item"> <span data-translate-key="fuelConsumedLabel">Combustível Consumido:</span> <strong
-                    id="litrosResult">-- L</strong> </div>
-            <div class="result-item"> <span data-translate-key="totalFuelCostLabel">Custo Total do Combustível:</span>
-                <strong id="custoResult">R$ --</strong>
-            </div>
-            <div class="result-item total"> <span data-translate-key="netProfitLabel">Lucro Líquido da Viagem:</span>
-                <strong id="lucroResult">R$ --</strong>
-            </div>
-        </section>
-        <section id="historySection" class="history-section content-section" style="display:none;"
-            aria-labelledby="history-title">
-            <h3 id="history-title" data-translate-key="tripHistoryTitle">Histórico de Viagens</h3>
-            <ul id="historyList" class="price-list" aria-live="polite"></ul>
-            <div class="button-group">
-                <button type="button" id="seeMoreHistoryBtn" class="btn btn-secondary" style="display:none;"
-                    data-translate-key="seeMoreBtn">Ver Mais</button>
-                <button type="button" id="minimizeHistoryBtn" class="btn btn-secondary" style="display:none;"
-                    data-translate-key="minimizeBtn">Minimizar</button>
-            </div>
-            <button type="button" id="exportHistoryCsvBtn" class="btn btn-secondary full-width" style="margin-top: 0.5rem;"
-                data-translate-key="exportHistoryCsvBtn">Exportar Histórico (CSV)</button>
-            <button type="button" id="clearHistoryBtn" class="btn btn-danger full-width" style="margin-top: 1rem;"
-                data-translate-key="clearTypeHistoryBtn">Limpar Histórico deste Tipo de Veículo</button>
-        </section>
-        <section id="statsSection" class="stats-section content-section" style="display:none;"
-        aria-labelledby="stats-title" role="region" aria-live="polite">
-            <h3 id="stats-title" data-translate-key="currentVehicleStatsTitle">Estatísticas do Tipo de Veículo Atual
-            </h3>
-            <div class="stat-item"> <span data-translate-key="totalKmStatLabel">Total de KM Rodados:</span> <strong
-                    id="totalKmStat">0 km</strong> </div>
-            <div class="stat-item"> <span data-translate-key="totalFuelCostStatLabel">Total Gasto com
-                    Combustível:</span> <strong id="totalGastoStat">R$ 0,00</strong> </div>
-            <div class="stat-item"> <span data-translate-key="avgConsumptionStatLabel">Média de Consumo Geral:</span>
-                <strong id="mediaConsumoStat">0 km/L</strong>
-            </div>
-            <div class="chart-container"> <canvas id="fuelChartCanvas"
-                    data-translate-key-aria-label="fuelChartAriaLabel"
-                    aria-label="Gráfico de gastos diários com combustível" role="img"></canvas> </div>
-            <button type="button" id="exportStatsCsvBtn" class="btn btn-secondary full-width" style="margin-top: 1rem;"
-                data-translate-key="exportStatsCsvBtn">Exportar Estatísticas (CSV)</button>
-        </section>
-
-        <!-- Seção de Metas de Gastos -->
-        <section id="goalSection" class="content-section goal-section" aria-labelledby="goal-section-title">
-            <h3 id="goal-section-title" data-translate-key="goalSectionTitle">Meta de Gastos Mensal</h3>
-
-            <form id="goalForm" class="form-section" novalidate>
-                <p data-translate-key="goalFormDescription">Defina um teto de gastos com combustível para o tipo de veículo atual neste mês.</p>
-                <div class="input-group">
-                    <label for="goalAmountInput" data-translate-key="goalAmountLabel">Valor da Meta (R$):</label>
-                    <input type="text" inputmode="decimal" id="goalAmountInput" name="goalAmountInput"
-                           data-translate-key-placeholder="goalAmountPlaceholder" placeholder="Ex: 300,00" required>
-                    <div class="error-message"></div>
-                </div>
-                <button type="submit" id="setGoalBtn" class="btn btn-primary full-width" data-translate-key="setGoalBtn">Definir Meta</button>
-            </form>
-
-            <div id="currentGoalDisplay" style="display:none;">
-                <p id="goalProgressText" class="goal-progress-text"></p>
-                <div id="goalProgressBar" class="goal-progress-bar">
-                    <div id="goalProgressBarInner">
-                        <span id="goalProgressPercentage"></span>
+                    <button type="button" id="exportHistoryCsvBtn" class="btn btn-secondary full-width"
+                        style="margin-top: 0.5rem;" data-translate-key="exportHistoryCsvBtn">Exportar Histórico
+                        (CSV)</button>
+                    <button type="button" id="clearHistoryBtn" class="btn btn-danger full-width"
+                        style="margin-top: 1rem;" data-translate-key="clearTypeHistoryBtn">Limpar Histórico deste Tipo
+                        de Veículo</button>
+                </section>
+                <section id="statsSection" class="stats-section content-section" style="display:block;"
+                    aria-labelledby="stats-title" role="region" aria-live="polite">
+                    <h3 id="stats-title" data-translate-key="currentVehicleStatsTitle">Estatísticas do Tipo de Veículo
+                        Atual</h3>
+                    <div class="stat-item"> <span data-translate-key="totalKmStatLabel">Total de KM Rodados:</span>
+                        <strong id="totalKmStat">0 km</strong>
                     </div>
-                </div>
-                <button type="button" id="deleteGoalBtn" class="btn btn-danger" style="margin-top: 0.75rem;"
-                        data-translate-key="deleteGoalBtn">Excluir Meta Atual</button>
+                    <div class="stat-item"> <span data-translate-key="totalFuelCostStatLabel">Total Gasto com
+                            Combustível:</span> <strong id="totalGastoStat">R$ 0,00</strong> </div>
+                    <div class="stat-item"> <span data-translate-key="avgConsumptionStatLabel">Média de Consumo
+                            Geral:</span>
+                        <strong id="mediaConsumoStat">0 km/L</strong>
+                    </div>
+                    <div class="chart-container"> <canvas id="fuelChartCanvas"
+                            data-translate-key-aria-label="fuelChartAriaLabel"
+                            aria-label="Gráfico de gastos diários com combustível" role="img"></canvas> </div>
+                    <button type="button" id="exportStatsCsvBtn" class="btn btn-secondary full-width"
+                        style="margin-top: 1rem;" data-translate-key="exportStatsCsvBtn">Exportar Estatísticas
+                        (CSV)</button>
+                </section>
             </div>
-        </section>
-        <!-- Fim da Seção de Metas de Gastos -->
 
-        <section class="backup-section content-section" aria-labelledby="backup-title">
-            <h3 id="backup-title" data-translate-key="backupRestoreTitle">Backup e Restauração de Dados</h3>
-            <div class="backup-buttons">
-                <button type="button" id="exportDataBtn" class="btn btn-secondary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    <span data-translate-key="exportDataBtn">Exportar Dados</span>
-                </button>
-                <button type="button" id="importDataBtn" class="btn btn-secondary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    <span data-translate-key="importDataBtn">Importar Dados</span>
-                </button>
-                <input type="file" id="importFileInput" accept=".json" style="display: none;" aria-hidden="true">
+            <!-- Tela de Ajustes -->
+            <div id="screenSettings" class="screen-hidden">
+                <header class="app-header simple-header">
+                    <h1 data-translate-key="settingsScreenTitle">Ajustes</h1>
+                </header>
+
+                <section class="content-section" aria-labelledby="language-settings-title">
+                    <h3 id="language-settings-title" data-translate-key="languageSettingsTitle">Idioma</h3>
+                    <div class="language-switcher settings-switcher">
+                        <button type="button" class="btn lang-button" data-lang="pt-BR" aria-pressed="true"
+                            data-translate-key-title="langBtnPt" title="Mudar para Português (Brasil)"
+                            data-translate-key-aria-label="langBtnPtAriaLabel"
+                            aria-label="Mudar idioma para Português (Brasil)">🇧🇷 <span data-translate-key="langPortuguese">Português</span></button>
+                        <button type="button" class="btn lang-button" data-lang="en" aria-pressed="false"
+                            data-translate-key-title="langBtnEn" title="Switch to English"
+                            data-translate-key-aria-label="langBtnEnAriaLabel"
+                            aria-label="Switch language to English">🇬🇧 <span data-translate-key="langEnglish">Inglês</span></button>
+                    </div>
+                </section>
+
+                <section class="content-section" aria-labelledby="theme-settings-title">
+                    <h3 id="theme-settings-title" data-translate-key="themeSettingsTitle">Tema</h3>
+                    <div class="theme-switcher settings-switcher">
+                         <button type="button" class="btn theme-button" data-theme-toggle="light"
+                            data-translate-key-title="themeLight" title="Tema Claro"
+                            data-translate-key-aria-label="themeLightAriaLabel" aria-label="Mudar para Tema Claro">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                            <span data-translate-key="themeLight">Tema Claro</span>
+                        </button>
+                        <button type="button" class="btn theme-button" data-theme-toggle="dark"
+                            data-translate-key-title="themeDark" title="Tema Escuro"
+                            data-translate-key-aria-label="themeDarkAriaLabel" aria-label="Mudar para Tema Escuro">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                            <span data-translate-key="themeDark">Tema Escuro</span>
+                        </button>
+                        <button type="button" class="btn theme-button active" data-theme-toggle="system"
+                            data-translate-key-title="themeSystem" title="Tema do Sistema"
+                            data-translate-key-aria-label="themeSystemAriaLabel"
+                            aria-label="Mudar para Tema do Sistema">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                            <span data-translate-key="themeSystem">Tema do Sistema</span>
+                        </button>
+                    </div>
+                </section>
+
+                <section id="goalSectionSettings" class="content-section goal-section"
+                    aria-labelledby="goal-section-title-settings">
+                    <h3 id="goal-section-title-settings" data-translate-key="goalSectionTitle">Meta de Gastos Mensal</h3>
+                    <form id="goalForm" class="form-section" novalidate>
+                        <p data-translate-key="goalFormDescription">Defina um teto de gastos com combustível para o
+                            tipo de veículo atual neste mês.</p>
+                        <div class="input-group">
+                            <label for="goalAmountInput" data-translate-key="goalAmountLabel">Valor da Meta
+                                (R$):</label>
+                            <input type="text" inputmode="decimal" id="goalAmountInput" name="goalAmountInput"
+                                data-translate-key-placeholder="goalAmountPlaceholder" placeholder="Ex: 300,00"
+                                required>
+                            <div class="error-message"></div>
+                        </div>
+                        <button type="submit" id="setGoalBtn" class="btn btn-primary full-width"
+                            data-translate-key="setGoalBtn">Definir Meta</button>
+                    </form>
+                    <div id="currentGoalDisplay" style="display:none;">
+                        <p id="goalProgressText" class="goal-progress-text"></p>
+                        <div id="goalProgressBar" class="goal-progress-bar">
+                            <div id="goalProgressBarInner">
+                                <span id="goalProgressPercentage"></span>
+                            </div>
+                        </div>
+                        <button type="button" id="deleteGoalBtn" class="btn btn-danger" style="margin-top: 0.75rem;"
+                            data-translate-key="deleteGoalBtn">Excluir Meta Atual</button>
+                    </div>
+                </section>
+
+                <section class="backup-section content-section" aria-labelledby="backup-title">
+                    <h3 id="backup-title" data-translate-key="backupRestoreTitle">Backup e Restauração de Dados</h3>
+                    <div class="backup-buttons">
+                        <button type="button" id="exportDataBtn" class="btn btn-secondary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span data-translate-key="exportDataBtn">Exportar Dados</span>
+                        </button>
+                        <button type="button" id="importDataBtn" class="btn btn-secondary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <span data-translate-key="importDataBtn">Importar Dados</span>
+                        </button>
+                        <input type="file" id="importFileInput" accept=".json" style="display: none;"
+                            aria-hidden="true">
+                    </div>
+                    <p class="backup-info" data-translate-key="backupInfoText">Exporte seus dados para um arquivo de
+                        backup ou importe de um arquivo salvo anteriormente.</p>
+                    <hr>
+                    <button type="button" id="clearAllDataBtn" class="btn btn-danger full-width"
+                        data-translate-key="clearAllDataBtn">⚠️ Limpar Todos os Dados da Aplicação</button>
+                    <p class="backup-info danger-text" data-translate-key="clearAllDataWarning">Atenção: Esta ação é
+                        irreversível e apagará todos os veículos e históricos.</p>
+                </section>
+
+                <section class="content-section" aria-labelledby="help-section-title">
+                     <h3 id="help-section-title" data-translate-key="helpTitle">Ajuda</h3>
+                     <button type="button" class="btn btn-secondary full-width" id="helpButton"
+                        data-translate-key-aria-label="helpButtonAriaLabel"
+                        aria-label="Ajuda e Guia Rápido"
+                        data-translate-key="helpButtonLabel">Ver Guia Rápido</button>
+                </section>
+
+                <footer class="app-footer">
+                    <p>&copy; <span id="currentYear"></span> FuelCalc. <span
+                            data-translate-key="allRightsReserved">Todos os direitos reservados.</span></p>
+                    <p data-translate-key="developedWithLove">Desenvolvido com ❤️</p>
+                    <p> <span data-translate-key="versionLabel">Versão:</span> <span id="appVersion"></span></p>
+                </footer>
             </div>
-            <p class="backup-info" data-translate-key="backupInfoText">Exporte seus dados para um arquivo de backup ou
-                importe de um arquivo salvo anteriormente.</p>
-            <hr>
-            <button type="button" id="clearAllDataBtn" class="btn btn-danger full-width"
-                data-translate-key="clearAllDataBtn">⚠️ Limpar Todos os Dados da Aplicação</button>
-            <p class="backup-info danger-text" data-translate-key="clearAllDataWarning">Atenção: Esta ação é
-                irreversível e apagará todos os veículos e
-                históricos.</p>
-        </section>
+        </div>
+
+        <nav class="bottom-nav">
+            <button class="nav-button active" data-screen="screenHome" aria-label="Início" data-translate-key-aria-label="navHomeAriaLabel">
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span class="nav-text" data-translate-key="navHome">Início</span>
+            </button>
+            <button class="nav-button" data-screen="screenVehicles" aria-label="Veículos" data-translate-key-aria-label="navVehiclesAriaLabel">
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16.5V14a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2v2.5"></path><path d="M14 16.5V14a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2v2.5"></path><path d="M10.5 16.5H6V9h12v7.5h-4.5"></path><path d="M16.5 16.5V9"></path><path d="M7.5 16.5V9"></path><circle cx="7.5" cy="6.5" r="0.5"></circle><circle cx="16.5" cy="6.5" r="0.5"></circle></svg>
+                <span class="nav-text" data-translate-key="navVehicles">Veículos</span>
+            </button>
+            <button class="nav-button" data-screen="screenReports" aria-label="Relatórios" data-translate-key-aria-label="navReportsAriaLabel">
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+                <span class="nav-text" data-translate-key="navReports">Relatórios</span>
+            </button>
+            <button class="nav-button" data-screen="screenSettings" aria-label="Ajustes" data-translate-key-aria-label="navSettingsAriaLabel">
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span class="nav-text" data-translate-key="navSettings">Ajustes</span>
+            </button>
+        </nav>
     </div>
-    <footer class="app-footer">
-        <p>&copy; <span id="currentYear"></span> FuelCalc. <span data-translate-key="allRightsReserved">Todos os
-                direitos reservados.</span></p>
-        <p data-translate-key="developedWithLove">Desenvolvido com ❤️</p>
-        <p> <span data-translate-key="versionLabel">Versão:</span> <span id="appVersion"></span></p>
-    </footer>
 
+    <!-- Modals permanecem no final do body para sobrepor tudo -->
     <div id="helpModalOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle"
         style="display:none;">
         <div class="modal-content help-modal-content">

@@ -261,6 +261,26 @@ const translations = {
     oilChangeSoon: "Próxima troca de óleo em aprox. {km} km.",
     oilChangeOk: "Próxima troca de óleo em aprox. {km} km. Tudo certo!",
     nextOilChangeKmRangeError: "KM da próxima troca de óleo deve ser um número inteiro positivo (até {max}).",
+
+    // Títulos das telas e navegação
+    navHome: "Início",
+    navVehicles: "Veículos",
+    navReports: "Relatórios",
+    navSettings: "Ajustes",
+    navHomeAriaLabel: "Navegar para Início",
+    navVehiclesAriaLabel: "Navegar para Veículos",
+    navReportsAriaLabel: "Navegar para Relatórios",
+    navSettingsAriaLabel: "Navegar para Ajustes",
+    homeScreenTitle: "Calculadora", // Usado se o header da home for alterado
+    vehiclesScreenTitle: "Gerenciar Veículos",
+    reportsTitle: "Relatórios",
+    settingsScreenTitle: "Ajustes e Informações",
+    languageSettingsTitle: "Idioma",
+    themeSettingsTitle: "Tema",
+    helpTitle: "Ajuda",
+    helpButtonLabel: "Ver Guia Rápido",
+    langPortuguese: "Português",
+    langEnglish: "Inglês",
   },
   en: {
     // Novas chaves para o helper de eficiência
@@ -515,5 +535,25 @@ const translations = {
     oilChangeSoon: "Next oil change in approx. {km} km/miles.",
     oilChangeOk: "Next oil change in approx. {km} km/miles. All good!",
     nextOilChangeKmRangeError: "Next oil change KM must be a positive integer (up to {max}).",
+
+    // Screen Titles & Navigation
+    navHome: "Home",
+    navVehicles: "Vehicles",
+    navReports: "Reports",
+    navSettings: "Settings",
+    navHomeAriaLabel: "Navigate to Home",
+    navVehiclesAriaLabel: "Navigate to Vehicles",
+    navReportsAriaLabel: "Navigate to Reports",
+    navSettingsAriaLabel: "Navigate to Settings",
+    homeScreenTitle: "Calculator",
+    vehiclesScreenTitle: "Manage Vehicles",
+    reportsTitle: "Reports",
+    settingsScreenTitle: "Settings & Info",
+    languageSettingsTitle: "Language",
+    themeSettingsTitle: "Theme",
+    helpTitle: "Help",
+    helpButtonLabel: "View Quick Guide",
+    langPortuguese: "Portuguese",
+    langEnglish: "English",
   },
 };
