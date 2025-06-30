@@ -47,7 +47,6 @@
             <!-- Tela de Início (Calculadora) -->
             <div id="screenHome" class="screen-active">
                 <header class="app-header">
-                    <!-- Controles de header (idioma, tema, ajuda) serão movidos para a tela de Ajustes -->
                     <div class="app-header-content">
                         <img src="icons/icon-192x192.png" alt="Logo FuelCalc" class="logo">
                         <h1 data-translate-key="appName">FuelCalc</h1>
@@ -57,12 +56,18 @@
                 <main class="content-section" aria-labelledby="calculator-title">
                     <h2 id="calculator-title" data-translate-key="calculateTripTitle">Calcular Gastos da Viagem</h2>
                     <form id="fuelForm" novalidate>
-                        <!-- Novo seletor de tipo de combustível para a viagem (aparece para veículos flex) -->
+                        <div class="input-group">
+                            <label for="homeVehicleSelect" data-translate-key="selectVehicleLabel">Selecionar Veículo:</label>
+                            <select id="homeVehicleSelect">
+                                <option value="" data-translate-key="noVehicleSelectedOption">Nenhum / Manual</option>
+                                <!-- Veículos serão populados por JS -->
+                            </select>
+                        </div>
+                        <p id="selectedVehicleInfo" class="selected-vehicle-info" style="display: none;"></p>
                         <div class="input-group" id="tripFuelTypeGroup" style="display: none;">
                             <label for="tripFuelTypeSelect" data-translate-key="tripFuelTypeLabel">Tipo de Combustível
                                 Usado:</label>
                             <select id="tripFuelTypeSelect" name="tripFuelTypeSelect">
-                                <!-- Opções serão populadas dinamicamente -->
                             </select>
                             <div class="error-message"></div>
                         </div>
@@ -139,6 +144,15 @@
                         <strong id="lucroResult">R$ --</strong>
                     </div>
                 </section>
+                 <section id="maintenanceReminderSection" class="content-section maintenance-reminder-section" style="display:none;" aria-labelledby="maintenance-reminder-title">
+                    <h3 id="maintenance-reminder-title" data-translate-key="maintenanceReminderTitle">Lembretes de Manutenção</h3>
+                    <div id="oilChangeReminderCard" class="maintenance-card" style="display:none;">
+                        <h4 data-translate-key="oilChangeCardTitle">Troca de Óleo</h4>
+                        <p id="oilChangeReminderText"></p>
+                        <p class="reminder-note" data-translate-key="oilChangeReminderNote">Baseado na KM final da última viagem registrada.</p>
+                    </div>
+                    <p id="noActiveMaintenanceReminder" data-translate-key="noActiveMaintenanceReminder" style="display:block;">Nenhum lembrete de manutenção ativo para o veículo selecionado.</p>
+                </section>
             </div>
 
             <!-- Tela de Veículos -->
@@ -203,6 +217,19 @@
                                 <div class="error-message"></div>
                             </div>
                         </div>
+
+                        <div class="input-group">
+                            <label for="vehicleGoalAmount" data-translate-key="vehicleGoalAmountLabel">Meta de Gasto Mensal (R$):</label>
+                            <input type="text" inputmode="decimal" id="vehicleGoalAmount" name="vehicleGoalAmount" data-translate-key-placeholder="goalAmountPlaceholder" placeholder="Ex: 300,00">
+                            <div class="error-message"></div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="vehicleNextOilChangeKm" data-translate-key="vehicleNextOilChangeKmLabel">KM Próxima Troca de Óleo (opcional):</label>
+                            <input type="text" inputmode="numeric" id="vehicleNextOilChangeKm" name="vehicleNextOilChangeKm" data-translate-key-placeholder="vehicleNextOilChangeKmPlaceholder" placeholder="Ex: 160000">
+                            <div class="error-message"></div>
+                        </div>
+
                         <div class="button-group">
                             <button type="submit" class="btn btn-primary"
                                 data-translate-key="saveVehicleBtn">Salvar Veículo</button>
@@ -218,6 +245,13 @@
                  <header class="app-header simple-header">
                     <h1 data-translate-key="reportsTitle">Relatórios</h1>
                 </header>
+                <div class="input-group report-vehicle-selector content-section" style="padding-bottom: 0; border-bottom: none;">
+                    <label for="reportVehicleSelect" data-translate-key="selectVehicleLabel">Selecionar Veículo:</label>
+                    <select id="reportVehicleSelect">
+                        <option value="" data-translate-key="allVehiclesTypeOption">Todos os Veículos do Tipo</option>
+                        <!-- Veículos serão populados por JS -->
+                    </select>
+                </div>
                 <section id="historySection" class="history-section content-section" style="display:block;"
                     aria-labelledby="history-title">
                     <h3 id="history-title" data-translate-key="tripHistoryTitle">Histórico de Viagens</h3>
@@ -255,6 +289,16 @@
                         style="margin-top: 1rem;" data-translate-key="exportStatsCsvBtn">Exportar Estatísticas
                         (CSV)</button>
                 </section>
+                <!-- Seção de Progresso da Meta (Movida para dentro da tela de Relatórios) -->
+                <div id="goalProgressReport" class="goal-progress-report content-section" style="display:none;">
+                    <h4 data-translate-key="goalProgressTitle">Progresso da Meta Mensal</h4>
+                    <p id="goalProgressTextReport" class="goal-progress-text"></p>
+                    <div id="goalProgressBarReport" class="goal-progress-bar">
+                        <div id="goalProgressBarInnerReport">
+                            <span id="goalProgressPercentageReport"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Tela de Ajustes -->
@@ -302,34 +346,7 @@
                     </div>
                 </section>
 
-                <section id="goalSectionSettings" class="content-section goal-section"
-                    aria-labelledby="goal-section-title-settings">
-                    <h3 id="goal-section-title-settings" data-translate-key="goalSectionTitle">Meta de Gastos Mensal</h3>
-                    <form id="goalForm" class="form-section" novalidate>
-                        <p data-translate-key="goalFormDescription">Defina um teto de gastos com combustível para o
-                            tipo de veículo atual neste mês.</p>
-                        <div class="input-group">
-                            <label for="goalAmountInput" data-translate-key="goalAmountLabel">Valor da Meta
-                                (R$):</label>
-                            <input type="text" inputmode="decimal" id="goalAmountInput" name="goalAmountInput"
-                                data-translate-key-placeholder="goalAmountPlaceholder" placeholder="Ex: 300,00"
-                                required>
-                            <div class="error-message"></div>
-                        </div>
-                        <button type="submit" id="setGoalBtn" class="btn btn-primary full-width"
-                            data-translate-key="setGoalBtn">Definir Meta</button>
-                    </form>
-                    <div id="currentGoalDisplay" style="display:none;">
-                        <p id="goalProgressText" class="goal-progress-text"></p>
-                        <div id="goalProgressBar" class="goal-progress-bar">
-                            <div id="goalProgressBarInner">
-                                <span id="goalProgressPercentage"></span>
-                            </div>
-                        </div>
-                        <button type="button" id="deleteGoalBtn" class="btn btn-danger" style="margin-top: 0.75rem;"
-                            data-translate-key="deleteGoalBtn">Excluir Meta Atual</button>
-                    </div>
-                </section>
+                <!-- Seção de Metas de Gastos foi removida daqui e será integrada ao formulário de veículos -->
 
                 <section class="backup-section content-section" aria-labelledby="backup-title">
                     <h3 id="backup-title" data-translate-key="backupRestoreTitle">Backup e Restauração de Dados</h3>

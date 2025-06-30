@@ -261,6 +261,16 @@ const translations = {
     oilChangeSoon: "Próxima troca de óleo em aprox. {km} km.",
     oilChangeOk: "Próxima troca de óleo em aprox. {km} km. Tudo certo!",
     nextOilChangeKmRangeError: "KM da próxima troca de óleo deve ser um número inteiro positivo (até {max}).",
+    selectedVehicleLabel: "Veículo: {name}",
+    selectVehicleLabel: "Selecionar Veículo:",
+    noVehicleSelectedOption: "Nenhum / Entrada Manual",
+    allVehiclesTypeOption: "Todos os Veículos ({type})",
+    vehicleGoalAmountLabel: "Meta de Gasto Mensal (R$):",
+    vehicleGoalAmountNotANumberError: "A meta de gasto deve ser um número.",
+    vehicleGoalAmountRangeError: "A meta de gasto deve ser entre {min} e {max}.",
+    vehicleGoalAmountMaxDecimalsError: "A meta de gasto pode ter no máximo {max} casas decimais.",
+    goalProgressTitle: "Progresso da Meta Mensal",
+
 
     // Títulos das telas e navegação
     navHome: "Início",
@@ -535,6 +545,16 @@ const translations = {
     oilChangeSoon: "Next oil change in approx. {km} km/miles.",
     oilChangeOk: "Next oil change in approx. {km} km/miles. All good!",
     nextOilChangeKmRangeError: "Next oil change KM must be a positive integer (up to {max}).",
+    selectedVehicleLabel: "Vehicle: {name}",
+    selectVehicleLabel: "Select Vehicle:",
+    noVehicleSelectedOption: "None / Manual Entry",
+    allVehiclesTypeOption: "All {type} Vehicles",
+    vehicleGoalAmountLabel: "Monthly Spending Goal ($):",
+    vehicleGoalAmountNotANumberError: "Spending goal must be a number.",
+    vehicleGoalAmountRangeError: "Spending goal must be between {min} and {max}.",
+    vehicleGoalAmountMaxDecimalsError: "Spending goal can have at most {max} decimal places.",
+    goalProgressTitle: "Monthly Goal Progress",
+
 
     // Screen Titles & Navigation
     navHome: "Home",

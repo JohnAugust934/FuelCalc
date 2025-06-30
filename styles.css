@@ -976,3 +976,13 @@ html[data-theme="dark"] .input-group select {
 .settings-switcher .lang-button span {
     margin-left: 0.5rem; /* Espaço entre bandeira e texto do idioma */
 }
+
+.selected-vehicle-info {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--c-text-secondary);
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background-color: var(--c-bg-tertiary);
+    border-radius: var(--radius-md);
+}
