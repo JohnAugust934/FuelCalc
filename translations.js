@@ -264,12 +264,19 @@ const translations = {
     selectedVehicleLabel: "Veículo: {name}",
     selectVehicleLabel: "Selecionar Veículo:",
     noVehicleSelectedOption: "Nenhum / Entrada Manual",
-    allVehiclesTypeOption: "Todos os Veículos ({type})",
+    allVehiclesTypeOption: "Todos os Veículos do Tipo", // Removido {type} pois o tipo já é contextual
     vehicleGoalAmountLabel: "Meta de Gasto Mensal (R$):",
     vehicleGoalAmountNotANumberError: "A meta de gasto deve ser um número.",
     vehicleGoalAmountRangeError: "A meta de gasto deve ser entre {min} e {max}.",
     vehicleGoalAmountMaxDecimalsError: "A meta de gasto pode ter no máximo {max} casas decimais.",
     goalProgressTitle: "Progresso da Meta Mensal",
+
+
+    goalProgressTitle: "Progresso da Meta Mensal",
+    specificVehicleStatsTitle: "Estatísticas de {vehicleName}",
+    confirmClearVehicleHistory: "Tem certeza que deseja limpar TODO o histórico de viagens para o veículo {name}? Esta ação não pode ser desfeita.",
+    noHistoryForVehicle: "Nenhum histórico para o veículo {name}.", // Nova chave
+    vehicleHistoryClearedSuccess: "Histórico do veículo {name} limpo com sucesso!", // Nova chave
 
 
     // Títulos das telas e navegação
@@ -548,12 +555,19 @@ const translations = {
     selectedVehicleLabel: "Vehicle: {name}",
     selectVehicleLabel: "Select Vehicle:",
     noVehicleSelectedOption: "None / Manual Entry",
-    allVehiclesTypeOption: "All {type} Vehicles",
+    allVehiclesTypeOption: "All Vehicles of Type", // Removido {type}
     vehicleGoalAmountLabel: "Monthly Spending Goal ($):",
     vehicleGoalAmountNotANumberError: "Spending goal must be a number.",
     vehicleGoalAmountRangeError: "Spending goal must be between {min} and {max}.",
     vehicleGoalAmountMaxDecimalsError: "Spending goal can have at most {max} decimal places.",
     goalProgressTitle: "Monthly Goal Progress",
+
+
+    goalProgressTitle: "Monthly Goal Progress",
+    specificVehicleStatsTitle: "Statistics for {vehicleName}",
+    confirmClearVehicleHistory: "Are you sure you want to clear ALL trip history for the vehicle {name}? This action cannot be undone.",
+    noHistoryForVehicle: "No history for vehicle {name}.", // Nova chave EN
+    vehicleHistoryClearedSuccess: "History for vehicle {name} cleared successfully!", // Nova chave EN
 
 
     // Screen Titles & Navigation

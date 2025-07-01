@@ -331,6 +331,10 @@ document.addEventListener("DOMContentLoaded", () => {
           // A lógica atual no _bindVehicleSelectChange parece ok.
       }
       this._updateSelectedVehicleInfoOnHome();
+
+    // Dispara um evento para indicar que os seletores foram atualizados
+    // Isso pode ser útil para outros módulos que dependem desses seletores populados.
+    document.dispatchEvent(new CustomEvent("vehicleSelectorsPopulated"));
     }
 
     _bindVehicleSelectChange() {
@@ -347,15 +351,24 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             // Apenas deseleciona se havia um veículo selecionado no manager
             if (previouslySelectedManagerVehicle) {
-                this.vehicleManager.currentVehicle = null;
+              this.vehicleManager.currentVehicle = null; // Limpa o veículo no manager
                 document.dispatchEvent(new CustomEvent("vehicleDeselected"));
             }
           }
           this._updateSelectedVehicleInfoOnHome();
         });
       }
-      // Listener para reportVehicleSelect pode ser adicionado aqui se necessário
-      // para atualizar algum estado global quando ele muda.
+
+    // Listener para reportVehicleSelect
+    if (this.dom.reportVehicleSelect) { // Não precisa mais checar historyManager e statisticsManager aqui
+        this.dom.reportVehicleSelect.addEventListener("change", (event) => {
+            const selectedVehicleId = event.target.value;
+            // Notifica o HistoryManager e StatisticsManager sobre a mudança.
+            // Eles podem então filtrar seus dados com base no selectedVehicleId.
+            // Se selectedVehicleId for "", significa "Todos os Veículos do Tipo".
+            document.dispatchEvent(new CustomEvent("reportVehicleChanged", { detail: { vehicleId: selectedVehicleId, vehicleType: this.vehicleManager.currentVehicleType } }));
+        });
+    }
     }
 
     _updateSelectedVehicleInfoOnHome() {
@@ -1431,7 +1444,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (confirmed) this.deleteVehicle(vehicleId);
           });
       } else {
-        this.selectVehicle(vehicleId);
+        // this.selectVehicle(vehicleId); // REMOVIDO: Seleção agora é via <select>
+        // Em vez disso, podemos abrir o formulário para edição como comportamento padrão do clique no card
+        this.showVehicleForm(vehicleId);
       }
     }
 
@@ -1801,11 +1816,14 @@ document.addEventListener("DOMContentLoaded", () => {
           if (this.currentVehicle && this.currentVehicle.id === vehicleInQuestionId) {
              if (vehicleInQuestion) this.selectVehicle(vehicleInQuestion.id); // Reseleciona para atualizar dados, inclusive de manutenção
           } else if (!this.editingVehicleId) {
-            if (vehicleInQuestion && vehicles.filter(vh => vh.tipo === this.currentVehicleType).length === 1) {
-              this.selectVehicle(vehicleInQuestion.id);
-            }
+            // Comentado para evitar seleção automática ao adicionar, a seleção será via <select>
+            // if (vehicleInQuestion && vehicles.filter(vh => vh.tipo === this.currentVehicleType).length === 1) {
+            //   this.selectVehicle(vehicleInQuestion.id);
+            // }
           }
           document.dispatchEvent(new CustomEvent("vehicleDataChanged", {detail: {vehicleId: vehicleInQuestionId}}));
+          // Dispara evento para que os seletores sejam repovoados
+          document.dispatchEvent(new CustomEvent("vehicleListChanged"));
           this.editingVehicleId = null;
         }
         this.uiManager.hideButtonSpinner(submitButton);
@@ -2254,6 +2272,8 @@ document.addEventListener("DOMContentLoaded", () => {
       this.langManager = lm;
       this.dom = dom;
       this.isFullHistoryVisible = false;
+      this.selectedReportVehicleId = null;
+      this.currentVehicleTypeForHistory = this.vehicleManager.currentVehicleType;
       this._bindEvents();
     }
     _handleHistoryListInteraction(event) {
@@ -2274,17 +2294,27 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       if (this.dom.clearHistoryBtn) {
         this.dom.clearHistoryBtn.addEventListener("click", async () => {
-          const vt = this.langManager.get(
-            this.vehicleManager.currentVehicleType === "carro"
-              ? "vehicleTypeCar"
-              : "vehicleTypeMotorcycle"
-          );
-          const c = await this.uiManager.showConfirm(
-            this.langManager.get("confirmClearTypeHistory", {
-              type: vt.toLowerCase(),
-            })
-          );
-          if (c) this.clearHistoryForCurrentType();
+          // Determina o tipo e nome com base no filtro atual para a mensagem de confirmação
+          let vehicleTypeForMessage = this.currentVehicleTypeForHistory;
+          let vehicleNameForMessage = null;
+          if (this.selectedReportVehicleId) {
+              const selectedVehicle = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []).find(v => v.id === this.selectedReportVehicleId);
+              if (selectedVehicle) {
+                  vehicleTypeForMessage = selectedVehicle.tipo;
+                  vehicleNameForMessage = selectedVehicle.nome;
+              }
+          }
+
+          let confirmMessageKey = "confirmClearTypeHistory";
+          let confirmParams = { type: this.langManager.get(vehicleTypeForMessage === "carro" ? "vehicleTypeCar" : "vehicleTypeMotorcycle").toLowerCase() };
+
+          if (vehicleNameForMessage) {
+            confirmMessageKey = "confirmClearVehicleHistory";
+            confirmParams = { name: Utils.sanitizeHTML(vehicleNameForMessage) };
+          }
+
+          const c = await this.uiManager.showConfirm(this.langManager.get(confirmMessageKey, confirmParams));
+          if (c) this.clearHistoryForFilter();
         });
       }
       if (this.dom.historyList) {
@@ -2299,12 +2329,33 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
       document.addEventListener("languageChanged", () => this.renderHistory());
-      document.addEventListener("vehicleTypeChanged", () => {
+      document.addEventListener("vehicleTypeChanged", (event) => {
+        this.isFullHistoryVisible = false;
+        this.selectedReportVehicleId = null;
+        this.currentVehicleTypeForHistory = event.detail.type;
+        this.renderHistory();
+      });
+      document.addEventListener("reportVehicleChanged", (event) => {
+        this.selectedReportVehicleId = event.detail.vehicleId || null;
+        // vehicleType é passado no evento reportVehicleChanged
+        this.currentVehicleTypeForHistory = event.detail.vehicleType || this.currentVehicleTypeForHistory;
         this.isFullHistoryVisible = false;
         this.renderHistory();
       });
       document.addEventListener("tripCalculated", () => this.renderHistory());
       document.addEventListener("allDataCleared", () => this.renderHistory());
+      document.addEventListener("vehicleDataChanged", (event) => {
+          // Se o veículo excluído/editado for o selecionado no relatório, resetar o filtro do relatório.
+          if (this.selectedReportVehicleId && event.detail.vehicleId === this.selectedReportVehicleId) {
+              const vehicles = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []);
+              if (!vehicles.find(v => v.id === this.selectedReportVehicleId)) {
+                  this.selectedReportVehicleId = null;
+                  // Forçar atualização do seletor de relatório para "Todos os Veículos"
+                  if (this.dom.reportVehicleSelect) this.dom.reportVehicleSelect.value = "";
+              }
+          }
+          this.renderHistory();
+      });
 
       if (this.dom.exportHistoryCsvBtn) {
         this.dom.exportHistoryCsvBtn.addEventListener("click", () => this.exportHistoryToCsv());
@@ -2313,16 +2364,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     exportHistoryToCsv() {
       const historyData = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY, []);
-      const filteredHistory = historyData.filter(
-        (item) => item.tipoVeiculo === this.vehicleManager.currentVehicleType
+      let filteredHistory = historyData.filter(
+        (item) => item.tipoVeiculo === this.currentVehicleTypeForHistory
       );
+
+      if (this.selectedReportVehicleId) {
+        filteredHistory = filteredHistory.filter(item => item.veiculoId === this.selectedReportVehicleId);
+      }
 
       if (filteredHistory.length === 0) {
         this.uiManager.showNotification("noHistoryToExport", "info");
         return;
       }
 
-      // Mapear para um formato mais "legível" e selecionar/ordenar colunas
       const dataToExport = filteredHistory.map(r => ({
         [this.langManager.get("csvHeaderDate")]: Utils.formatLocalDate(r.dataISO, this.langManager.currentLanguage),
         [this.langManager.get("csvHeaderVehicleName")]: r.veiculoNome,
@@ -2332,14 +2386,20 @@ document.addEventListener("DOMContentLoaded", () => {
         [this.langManager.get("csvHeaderFuelType")]: r.combustivelUtilizado || this.langManager.get("notApplicableAbbreviation"),
         [this.langManager.get("csvHeaderEfficiencyUsed")]: r.kmPorLitroUtilizado,
         [this.langManager.get("csvHeaderFuelConsumed")]: r.litrosConsumidos,
-        [this.langManager.get("csvHeaderPricePerLiter")]: r.precoPorLitro, // Já está formatado como número, mas CSV pode querer sem R$
+        [this.langManager.get("csvHeaderPricePerLiter")]: r.precoPorLitro,
         [this.langManager.get("csvHeaderTotalFuelCost")]: r.custoTotalCombustivel,
         [this.langManager.get("csvHeaderGrossGain")]: r.ganhoBrutoInformado !== null ? r.ganhoBrutoInformado : "",
         [this.langManager.get("csvHeaderNetProfit")]: r.lucroLiquidoViagem !== null ? r.lucroLiquidoViagem : "",
       }));
 
-      const vehicleTypeName = this.langManager.get(this.vehicleManager.currentVehicleType === "carro" ? "vehicleTypeCar" : "vehicleTypeMotorcycle");
-      const fileName = `historico_viagens_${vehicleTypeName.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
+      let fileNamePrefix = this.langManager.get(this.currentVehicleTypeForHistory === "carro" ? "vehicleTypeCar" : "vehicleTypeMotorcycle");
+      if (this.selectedReportVehicleId) {
+          const selectedVehicle = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []).find(v => v.id === this.selectedReportVehicleId);
+          if (selectedVehicle) {
+              fileNamePrefix = selectedVehicle.nome;
+          }
+      }
+      const fileName = `historico_viagens_${Utils.sanitizeHTML(fileNamePrefix).toLowerCase().replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
 
       try {
         Utils.jsonToCsv(dataToExport, fileName);
@@ -2356,48 +2416,78 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     renderHistory() {
       if (!this.dom.historyList || !this.dom.historySection) return;
-      const ah = this.storageManager.safeGetItem(
-        CONFIG.STORAGE_KEYS.HISTORY,
-        []
+      const allHistory = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY, []);
+
+      let recordsToDisplay = allHistory.filter(
+        (item) => item.tipoVeiculo === this.currentVehicleTypeForHistory
       );
-      const fh = ah.filter(
-        (i) => i.tipoVeiculo === this.vehicleManager.currentVehicleType
-      );
-      this.dom.historyList.innerHTML = "";
-      if (fh.length === 0) {
+
+      if (this.selectedReportVehicleId) {
+        recordsToDisplay = recordsToDisplay.filter(item => item.veiculoId === this.selectedReportVehicleId);
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      if (recordsToDisplay.length === 0) {
         this.dom.historySection.style.display = "none";
+        this.dom.historyList.innerHTML = "";
+        if(this.dom.seeMoreBtn) this.dom.seeMoreBtn.style.display = "none";
+        if(this.dom.minimizeBtn) this.dom.minimizeBtn.style.display = "none";
+        if(this.dom.clearHistoryBtn) this.dom.clearHistoryBtn.style.display = "none";
+        if(this.dom.exportHistoryCsvBtn) this.dom.exportHistoryCsvBtn.style.display = "none";
         return;
       }
+
       this.dom.historySection.style.display = "block";
-      const itr = this.isFullHistoryVisible
-        ? fh
-        : fh.slice(0, CONFIG.HISTORY_DISPLAY_COUNT);
-      const vt = this.langManager.get(
-        this.vehicleManager.currentVehicleType === "carro"
-          ? "vehicleTypeCar"
-          : "vehicleTypeMotorcycle"
+      if(this.dom.clearHistoryBtn) this.dom.clearHistoryBtn.style.display = "block";
+      if(this.dom.exportHistoryCsvBtn) this.dom.exportHistoryCsvBtn.style.display = "block";
+
+      const itemsToShowOnPage = this.isFullHistoryVisible
+        ? recordsToDisplay
+        : recordsToDisplay.slice(0, CONFIG.HISTORY_DISPLAY_COUNT);
+
+      const vehicleTypeContextForMessage = this.langManager.get(
+        this.currentVehicleTypeForHistory === "carro" ? "vehicleTypeCar" : "vehicleTypeMotorcycle"
       );
-      if (itr.length === 0 && fh.length > 0)
-        this.dom.historyList.innerHTML = `<li class="empty-message-list">${this.langManager.get(
-          "noRecordsToDisplay"
-        )}</li>`;
-      else if (itr.length === 0)
-        this.dom.historyList.innerHTML = `<li class="empty-message-list">${this.langManager.get(
-          "noHistoryForType",
-          { type: vt.toLowerCase() }
-        )}</li>`;
-      itr.forEach((r) =>
-        this.dom.historyList.appendChild(this._createHistoryItemElement(r))
-      );
-      const tf = fh.length;
+
+      if (itemsToShowOnPage.length === 0 && recordsToDisplay.length > 0) {
+        const emptyMsgLi = document.createElement("li");
+        emptyMsgLi.className = "empty-message-list";
+        emptyMsgLi.textContent = this.langManager.get("noRecordsToDisplay");
+        fragment.appendChild(emptyMsgLi);
+      } else if (itemsToShowOnPage.length === 0) {
+        const emptyMsgLi = document.createElement("li");
+        emptyMsgLi.className = "empty-message-list";
+        let emptyTextKey = "noHistoryForType";
+        let emptyTextParams = { type: vehicleTypeContextForMessage.toLowerCase() };
+
+        if (this.selectedReportVehicleId) {
+            const selectedVehicle = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []).find(v => v.id === this.selectedReportVehicleId);
+            if (selectedVehicle) {
+                emptyTextKey = "noHistoryForVehicle";
+                emptyTextParams = { name: Utils.sanitizeHTML(selectedVehicle.nome) };
+            }
+        }
+        emptyMsgLi.textContent = this.langManager.get(emptyTextKey, emptyTextParams);
+        fragment.appendChild(emptyMsgLi);
+      } else {
+        itemsToShowOnPage.forEach((r) =>
+          fragment.appendChild(this._createHistoryItemElement(r))
+        );
+      }
+
+      this.dom.historyList.innerHTML = "";
+      this.dom.historyList.appendChild(fragment);
+
+      const totalFilteredRecords = recordsToDisplay.length;
       if (this.dom.seeMoreBtn)
         this.dom.seeMoreBtn.style.display =
-          tf > CONFIG.HISTORY_DISPLAY_COUNT && !this.isFullHistoryVisible
+          totalFilteredRecords > CONFIG.HISTORY_DISPLAY_COUNT && !this.isFullHistoryVisible
             ? "block"
             : "none";
       if (this.dom.minimizeBtn)
         this.dom.minimizeBtn.style.display =
-          tf > CONFIG.HISTORY_DISPLAY_COUNT && this.isFullHistoryVisible
+          totalFilteredRecords > CONFIG.HISTORY_DISPLAY_COUNT && this.isFullHistoryVisible
             ? "block"
             : "none";
     }
@@ -2443,46 +2533,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
     renderHistory() {
       if (!this.dom.historyList || !this.dom.historySection) return;
-      const ah = this.storageManager.safeGetItem(
-        CONFIG.STORAGE_KEYS.HISTORY,
-        []
+      const allHistory = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY, []);
+
+      let recordsToDisplay = allHistory.filter(
+        (item) => item.tipoVeiculo === this.currentVehicleTypeForHistory
       );
-      const fh = ah.filter(
-        (i) => i.tipoVeiculo === this.vehicleManager.currentVehicleType
-      );
+
+      if (this.selectedReportVehicleId) {
+        recordsToDisplay = recordsToDisplay.filter(item => item.veiculoId === this.selectedReportVehicleId);
+      }
 
       const fragment = document.createDocumentFragment();
 
-      if (fh.length === 0) {
+      if (recordsToDisplay.length === 0) {
         this.dom.historySection.style.display = "none";
         this.dom.historyList.innerHTML = "";
+        if(this.dom.seeMoreBtn) this.dom.seeMoreBtn.style.display = "none";
+        if(this.dom.minimizeBtn) this.dom.minimizeBtn.style.display = "none";
+        if(this.dom.clearHistoryBtn) this.dom.clearHistoryBtn.style.display = "none";
+        if(this.dom.exportHistoryCsvBtn) this.dom.exportHistoryCsvBtn.style.display = "none";
         return;
       }
+
       this.dom.historySection.style.display = "block";
-      const itr = this.isFullHistoryVisible
-        ? fh
-        : fh.slice(0, CONFIG.HISTORY_DISPLAY_COUNT);
-      const vt = this.langManager.get(
-        this.vehicleManager.currentVehicleType === "carro"
-          ? "vehicleTypeCar"
-          : "vehicleTypeMotorcycle"
+      if(this.dom.clearHistoryBtn) this.dom.clearHistoryBtn.style.display = "block";
+      if(this.dom.exportHistoryCsvBtn) this.dom.exportHistoryCsvBtn.style.display = "block";
+
+      const itemsToShowOnPage = this.isFullHistoryVisible
+        ? recordsToDisplay
+        : recordsToDisplay.slice(0, CONFIG.HISTORY_DISPLAY_COUNT);
+
+      const vehicleTypeContextForMessage = this.langManager.get(
+        this.currentVehicleTypeForHistory === "carro" ? "vehicleTypeCar" : "vehicleTypeMotorcycle"
       );
 
-      if (itr.length === 0 && fh.length > 0) {
+      if (itemsToShowOnPage.length === 0 && recordsToDisplay.length > 0) {
         const emptyMsgLi = document.createElement("li");
         emptyMsgLi.className = "empty-message-list";
         emptyMsgLi.textContent = this.langManager.get("noRecordsToDisplay");
         fragment.appendChild(emptyMsgLi);
-      } else if (itr.length === 0) {
+      } else if (itemsToShowOnPage.length === 0) {
         const emptyMsgLi = document.createElement("li");
         emptyMsgLi.className = "empty-message-list";
-        emptyMsgLi.textContent = this.langManager.get(
-          "noHistoryForType",
-          { type: vt.toLowerCase() }
-        );
+        let emptyTextKey = "noHistoryForType";
+        let emptyTextParams = { type: vehicleTypeContextForMessage.toLowerCase() };
+
+        if (this.selectedReportVehicleId) {
+            const selectedVehicle = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []).find(v => v.id === this.selectedReportVehicleId);
+            if (selectedVehicle) {
+                emptyTextKey = "noHistoryForVehicle";
+                emptyTextParams = { name: Utils.sanitizeHTML(selectedVehicle.nome) };
+            }
+        }
+        emptyMsgLi.textContent = this.langManager.get(emptyTextKey, emptyTextParams);
         fragment.appendChild(emptyMsgLi);
       } else {
-        itr.forEach((r) =>
+        itemsToShowOnPage.forEach((r) =>
           fragment.appendChild(this._createHistoryItemElement(r))
         );
       }
@@ -2490,15 +2596,15 @@ document.addEventListener("DOMContentLoaded", () => {
       this.dom.historyList.innerHTML = "";
       this.dom.historyList.appendChild(fragment);
 
-      const tf = fh.length;
+      const totalFilteredRecords = recordsToDisplay.length;
       if (this.dom.seeMoreBtn)
         this.dom.seeMoreBtn.style.display =
-          tf > CONFIG.HISTORY_DISPLAY_COUNT && !this.isFullHistoryVisible
+          totalFilteredRecords > CONFIG.HISTORY_DISPLAY_COUNT && !this.isFullHistoryVisible
             ? "block"
             : "none";
       if (this.dom.minimizeBtn)
         this.dom.minimizeBtn.style.display =
-          tf > CONFIG.HISTORY_DISPLAY_COUNT && this.isFullHistoryVisible
+          totalFilteredRecords > CONFIG.HISTORY_DISPLAY_COUNT && this.isFullHistoryVisible
             ? "block"
             : "none";
     }
@@ -2571,26 +2677,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       this.uiManager.showDetailsModal("tripDetailsModalTitle", d);
     }
-    clearHistoryForCurrentType() {
-      const ct = this.vehicleManager.currentVehicleType;
-      let ah = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY, []);
-      const rh = ah.filter((i) => i.tipoVeiculo !== ct);
-      if (this.storageManager.safeSetItem(CONFIG.STORAGE_KEYS.HISTORY, rh)) {
-        const vt = this.langManager.get(
-          ct === "carro" ? "vehicleTypeCar" : "vehicleTypeMotorcycle"
-        );
-        this.uiManager.showNotification("historyClearedSuccess", "success", {
-          type: vt.toLowerCase(),
-        });
-        this.isFullHistoryVisible = false;
-        this.renderHistory();
-        document.dispatchEvent(
-          new CustomEvent("historyCleared", { detail: { type: ct } })
-        );
-      }
-    }
+
     resetState() {
       this.isFullHistoryVisible = false;
+      this.selectedReportVehicleId = null;
+      this.currentVehicleTypeForHistory = this.vehicleManager.currentVehicleType; // Reset ao tipo global
       this.renderHistory();
     }
   }
@@ -2604,6 +2695,8 @@ document.addEventListener("DOMContentLoaded", () => {
       this.dom = dom;
       this.chartInstance = null;
       this.chartJsLoaded = false; // Flag para controlar o carregamento do Chart.js
+      this.selectedReportVehicleId = null; // Novo: para rastrear veículo selecionado no relatório
+      this.currentVehicleTypeForStats = this.vehicleManager.currentVehicleType; // Para manter o tipo mesmo se o global mudar
       this.debouncedUpdate = Utils.debounce(
         () => this.updateStatistics(),
         CONFIG.DEBOUNCE_DELAY
@@ -2611,16 +2704,25 @@ document.addEventListener("DOMContentLoaded", () => {
       this._bindEvents();
     }
     _bindEvents() {
-      document.addEventListener("languageChanged", () =>
-        this.debouncedUpdate()
-      );
-      document.addEventListener("vehicleTypeChanged", () =>
-        this.debouncedUpdate()
-      );
+      document.addEventListener("languageChanged", () => this.debouncedUpdate());
+      document.addEventListener("vehicleTypeChanged", (event) => { // Quando o TIPO de veículo (carro/moto) muda
+        this.selectedReportVehicleId = null; // Reseta o veículo específico
+        this.currentVehicleTypeForStats = event.detail.type;
+        this.debouncedUpdate();
+      });
+      document.addEventListener("reportVehicleChanged", (event) => { // Quando o SELECT de veículo do relatório muda
+          this.selectedReportVehicleId = event.detail.vehicleId || null;
+          // Preserva o currentVehicleTypeForStats que foi setado pelo vehicleTypeChanged
+          // Se o evento reportVehicleChanged também passar o tipo de veículo, podemos usá-lo:
+          // this.currentVehicleTypeForStats = event.detail.vehicleType || this.currentVehicleTypeForStats;
+          this.debouncedUpdate();
+      });
       document.addEventListener("tripCalculated", () => this.debouncedUpdate());
       document.addEventListener("historyCleared", () => this.debouncedUpdate());
       document.addEventListener("allDataCleared", () => this.debouncedUpdate());
       document.addEventListener("themeChanged", () => this.debouncedUpdate());
+      document.addEventListener("vehicleDataChanged", () => this.debouncedUpdate()); // Se um veículo for editado/excluído
+
 
       if (this.dom.exportStatsCsvBtn) {
         this.dom.exportStatsCsvBtn.addEventListener("click", () => this.exportStatisticsToCsv());
@@ -2628,8 +2730,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     exportStatisticsToCsv() {
-      const vehicleTypeName = this.langManager.get(this.vehicleManager.currentVehicleType === "carro" ? "vehicleTypeCar" : "vehicleTypeMotorcycle");
-      const fileName = `estatisticas_${vehicleTypeName.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
+      const vehicleTypeToExport = this.currentVehicleTypeForStats;
+      let vehicleNameToExport = this.langManager.get(vehicleTypeToExport === "carro" ? "vehicleTypeCar" : "vehicleTypeMotorcycle");
+
+      if (this.selectedReportVehicleId) {
+          const selectedVehicle = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []).find(v => v.id === this.selectedReportVehicleId);
+          if (selectedVehicle) {
+              vehicleNameToExport = selectedVehicle.nome;
+          }
+      }
+
+      const fileName = `estatisticas_${Utils.sanitizeHTML(vehicleNameToExport).toLowerCase().replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
 
       const summaryData = [
         {
@@ -2689,14 +2800,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async updateStatistics() {
       if (!this.dom.statsSection) return;
-      const ah = this.storageManager.safeGetItem(
-        CONFIG.STORAGE_KEYS.HISTORY,
-        []
+      const allHistory = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.HISTORY, []);
+
+      let filteredHistory = allHistory.filter(
+        (item) => item.tipoVeiculo === this.currentVehicleTypeForStats
       );
-      const fh = ah.filter(
-        (i) => i.tipoVeiculo === this.vehicleManager.currentVehicleType
-      );
-      if (fh.length === 0) {
+
+      if (this.selectedReportVehicleId) {
+        filteredHistory = filteredHistory.filter(item => item.veiculoId === this.selectedReportVehicleId);
+      }
+
+      // Atualiza o título da seção de estatísticas
+      const statsTitleElement = this.dom.statsSection.querySelector("#stats-title");
+      if (statsTitleElement) {
+          let titleKey = "currentVehicleStatsTitle"; // Padrão para "Estatísticas do Tipo de Veículo Atual"
+          let titleParams = {};
+          if (this.selectedReportVehicleId) {
+              const selectedVehicle = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []).find(v => v.id === this.selectedReportVehicleId);
+              if (selectedVehicle) {
+                  titleKey = "specificVehicleStatsTitle"; // Nova chave: "Estatísticas de {vehicleName}"
+                  titleParams = { vehicleName: Utils.sanitizeHTML(selectedVehicle.nome) };
+              }
+          } else {
+             // Para "Todos os Veículos do Tipo", podemos manter a chave padrão ou criar uma mais explícita
+             // titleKey = "allVehiclesOfTypeStatsTitle";
+             // titleParams = { type: this.langManager.get(this.currentVehicleTypeForStats === 'carro' ? 'vehicleTypeCar' : 'vehicleTypeMotorcycle').toLowerCase() };
+          }
+          statsTitleElement.textContent = this.langManager.get(titleKey, titleParams);
+      }
+
+
+      if (filteredHistory.length === 0) {
         this.dom.statsSection.style.display = "none";
         if (this.chartInstance) {
           this.chartInstance.destroy();
@@ -2705,11 +2839,11 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       this.dom.statsSection.style.display = "block";
-      this._calculateAndDisplaySummary(fh);
+      this._calculateAndDisplaySummary(filteredHistory);
 
       try {
         await this._loadChartLibraryIfNeeded();
-        this._renderOrUpdateChart(fh);
+        this._renderOrUpdateChart(filteredHistory);
       } catch (error) {
         this.uiManager.showNotification("genericError", "error", { message: "Falha ao carregar biblioteca de gráficos." });
         if(this.dom.chartCanvas) this.dom.chartCanvas.style.display = 'none'; // Esconde o canvas se a lib falhar
@@ -2732,38 +2866,47 @@ document.addEventListener("DOMContentLoaded", () => {
       this.dom.mediaConsumoStat.textContent = `${mc.toFixed(1)} km/L`;
     }
     _prepareChartData(hd) {
-      const dc = {};
-      const co = new Date();
-      co.setDate(co.getDate() - CONFIG.CHART_MAX_DAYS);
-      hd.forEach((i) => {
-        const id = new Date(i.dataISO);
-        if (id >= co) {
-          const dk = id.toLocaleDateString(this.langManager.currentLanguage, {
+      const dailyCosts = {};
+      const cutOffDate = new Date();
+      cutOffDate.setDate(cutOffDate.getDate() - CONFIG.CHART_MAX_DAYS);
+
+      hd.forEach((item) => {
+        const itemDate = new Date(item.dataISO);
+        if (itemDate >= cutOffDate) {
+          const dateKey = itemDate.toLocaleDateString(this.langManager.currentLanguage, {
             day: "2-digit",
             month: "2-digit",
           });
-          dc[dk] = (dc[dk] || 0) + parseFloat(i.custoTotalCombustivel);
+          dailyCosts[dateKey] = (dailyCosts[dateKey] || 0) + parseFloat(item.custoTotalCombustivel);
         }
       });
-      const sd = Object.keys(dc).sort((a, b) => {
-        const [da, ma] = a.split("/");
-        const [db, mb] = b.split("/");
-        return (
-          new Date(new Date().getFullYear(), parseInt(ma) - 1, parseInt(da)) -
-          new Date(new Date().getFullYear(), parseInt(mb) - 1, parseInt(db))
-        );
+
+      const sortedDateKeys = Object.keys(dailyCosts).sort((a, b) => {
+        const [dayA, monthA] = a.split("/");
+        const [dayB, monthB] = b.split("/");
+        // Assume current year for sorting if not specified, or handle year if included in dateKey
+        return new Date(new Date().getFullYear(), parseInt(monthA) - 1, parseInt(dayA)) -
+               new Date(new Date().getFullYear(), parseInt(monthB) - 1, parseInt(dayB));
       });
-      return { labels: sd, data: sd.map((d) => dc[d].toFixed(2)) };
+
+      return {
+        labels: sortedDateKeys,
+        data: sortedDateKeys.map(dateKey => dailyCosts[dateKey].toFixed(2))
+      };
     }
     _renderOrUpdateChart(hd) {
       if (!this.dom.chartCanvas || typeof Chart === "undefined") return;
       const { labels, data } = this._prepareChartData(hd);
-      const vt = this.langManager.get(
-        this.vehicleManager.currentVehicleType === "carro"
-          ? "vehicleTypeCar"
-          : "vehicleTypeMotorcycle"
-      );
-      const cl = this.langManager.get("chartDailyExpenseLabel", { type: vt });
+
+      let chartLabelType = this.langManager.get(this.currentVehicleTypeForStats === "carro" ? "vehicleTypeCar" : "vehicleTypeMotorcycle");
+      if (this.selectedReportVehicleId) {
+          const selectedVehicle = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []).find(v => v.id === this.selectedReportVehicleId);
+          if (selectedVehicle) {
+              chartLabelType = Utils.sanitizeHTML(selectedVehicle.nome);
+          }
+      }
+
+      const chartTitle = this.langManager.get("chartDailyExpenseLabel", { type: chartLabelType });
       const style = getComputedStyle(document.documentElement);
       const textColor = style.getPropertyValue("--c-text-primary").trim();
       const gridColor = style.getPropertyValue("--c-border").trim();
@@ -2775,7 +2918,7 @@ document.addEventListener("DOMContentLoaded", () => {
           labels: labels,
           datasets: [
             {
-              label: cl,
+              label: chartTitle, // Usar o título dinâmico
               data: data,
               borderColor: accentColor,
               backgroundColor: accentBgColor,
@@ -3071,6 +3214,13 @@ class GoalManager {
       this.uiManager.langManager = this.languageManager;
       this.validator = new Validator(this.uiManager, this.languageManager);
       this.inputFormatter = new InputFormatter();
+      // Instancia Utils aqui para que possa ser passada para AppManager e outros que precisem dela
+      this.utils = new Utils();
+      // Adiciona referências DOM ao objeto utils se necessário, ou passa this.dom diretamente
+      this.utils.dom = this.dom;
+      this.utils.storageManager = this.storageManager; // Para populateVehicleSelectors
+      this.utils.languageManager = this.languageManager; // Para populateVehicleSelectors
+
       this.vehicleManager = new VehicleManager(
         this.storageManager,
         this.uiManager,
@@ -3078,6 +3228,9 @@ class GoalManager {
         this.languageManager,
         this.dom
       );
+      // Agora que vehicleManager está instanciado, podemos passá-lo para utils
+      this.utils.vehicleManager = this.vehicleManager;
+
       this.fuelCalculator = new FuelCalculator(
         this.storageManager,
         this.uiManager,
@@ -3115,8 +3268,21 @@ class GoalManager {
     _init() {
       this._displayAppInfo();
       this.themeManager.init();
-    this.languageManager.init();
+      this.languageManager.init(); // Isso já chama applyTranslationsToPage
       this.inputFormatter.initialize();
+
+      // Bind para atualizações de seletores de veículo
+      // Utils precisa ser capaz de chamar populateVehicleSelectors, então passamos a referência ou o contexto.
+      // E Utils precisa de acesso ao vehicleManager para saber o tipo de veículo atual.
+      document.addEventListener("vehicleListChanged", () => this.utils.populateVehicleSelectors());
+      document.addEventListener("vehicleTypeChanged", () => this.utils.populateVehicleSelectors());
+      document.addEventListener("languageChanged", () => this.utils.populateVehicleSelectors(true)); // Passa true para indicar que é uma mudança de idioma
+
+      // Chamada inicial para popular os seletores após tudo estar configurado
+      this.utils.populateVehicleSelectors();
+      // Bind das mudanças nos seletores de veículo (home e report)
+      this.utils._bindVehicleSelectChange();
+
 
     if (this.goalManager) {
         this.goalManager.init();
