@@ -977,6 +977,29 @@ html[data-theme="dark"] .input-group select {
     margin-left: 0.5rem; /* Espaço entre bandeira e texto do idioma */
 }
 
+/* Estilos para botões ativos dentro de .settings-switcher */
+.settings-switcher .btn.active,
+.settings-switcher .btn[aria-pressed="true"] {
+    background-color: var(--c-accent);
+    color: #ffffff; /* Texto branco para contraste com fundo accent */
+    border-color: var(--c-accent-dark); /* Borda um pouco mais escura para definição */
+    font-weight: bold; /* Destaca o texto */
+}
+
+/* Garante que os SVGs dentro de botões ativos também fiquem brancos, se herdarem a cor */
+.settings-switcher .btn.active svg,
+.settings-switcher .btn[aria-pressed="true"] svg {
+    stroke: #ffffff; /* Se os SVGs usarem 'stroke' para a cor principal */
+    fill: #ffffff; /* Se os SVGs usarem 'fill' para a cor principal */
+}
+
+/* Hover/Focus para botões já ativos em settings-switcher (pode ser sutil) */
+.settings-switcher .btn.active:hover,
+.settings-switcher .btn[aria-pressed="true"]:hover {
+    background-color: var(--c-accent-dark);
+}
+
+
 .selected-vehicle-info {
     text-align: center;
     font-size: 0.9rem;

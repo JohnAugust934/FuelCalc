@@ -143,6 +143,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Elementos de Navegação
     navButtons: document.querySelectorAll(".nav-button"), // <<<< ADICIONADO
     mainContentWrapper: document.getElementById("mainContentWrapper"), // Adicionado para navegação
+
+    // Seletores de Veículo (adicionados para correção)
+    homeVehicleSelect: document.getElementById("homeVehicleSelect"),
+    reportVehicleSelect: document.getElementById("reportVehicleSelect"),
+    selectedVehicleInfo: document.getElementById("selectedVehicleInfo"), // Para mostrar qual veículo está selecionado na home
   };
 
   // ===== INÍCIO DAS CLASSES DA APLICAÇÃO =====
@@ -249,6 +254,135 @@ document.addEventListener("DOMContentLoaded", () => {
         // Considerar notificar o usuário que o download direto não é suportado.
         navigator.msSaveBlob(blob, fileName);
       }
+    }
+
+    populateVehicleSelectors(languageJustChanged = false) {
+      if (!this.dom.homeVehicleSelect || !this.dom.reportVehicleSelect || !this.vehicleManager || !this.languageManager) {
+        console.warn("DOM elements for vehicle selectors, VehicleManager, or LanguageManager not available for populating.");
+        return;
+      }
+
+      const previouslySelectedHomeVehicleId = this.dom.homeVehicleSelect.value;
+      // const previouslySelectedReportVehicleId = this.dom.reportVehicleSelect.value; // A lógica de seleção do relatório é mais complexa
+
+      this.dom.homeVehicleSelect.innerHTML = "";
+      this.dom.reportVehicleSelect.innerHTML = "";
+
+      // Opção padrão para Home
+      const noVehicleOption = document.createElement("option");
+      noVehicleOption.value = "";
+      noVehicleOption.textContent = this.languageManager.get("noVehicleSelectedOption");
+      this.dom.homeVehicleSelect.appendChild(noVehicleOption);
+
+      // Opção padrão para Relatórios
+      const allVehiclesOption = document.createElement("option");
+      allVehiclesOption.value = "";
+      allVehiclesOption.textContent = this.languageManager.get("allVehiclesTypeOption");
+      this.dom.reportVehicleSelect.appendChild(allVehiclesOption);
+
+      const vehicles = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []);
+      const currentTypeVehicles = vehicles.filter(v => v.tipo === this.vehicleManager.currentVehicleType);
+
+      currentTypeVehicles.forEach(vehicle => {
+        const optionHome = document.createElement("option");
+        optionHome.value = vehicle.id;
+        optionHome.textContent = Utils.sanitizeHTML(vehicle.nome);
+        this.dom.homeVehicleSelect.appendChild(optionHome);
+
+        const optionReport = document.createElement("option");
+        optionReport.value = vehicle.id;
+        optionReport.textContent = Utils.sanitizeHTML(vehicle.nome);
+        this.dom.reportVehicleSelect.appendChild(optionReport);
+      });
+
+      // Tenta restaurar a seleção anterior no seletor da Home
+      if (currentTypeVehicles.some(v => v.id === previouslySelectedHomeVehicleId)) {
+        this.dom.homeVehicleSelect.value = previouslySelectedHomeVehicleId;
+      } else {
+        // Se o veículo anteriormente selecionado não existe mais neste tipo/lista,
+        // e não foi apenas uma mudança de idioma, garante que o estado do app reflita isso.
+        if (this.vehicleManager.currentVehicle &&
+            this.vehicleManager.currentVehicle.id === previouslySelectedHomeVehicleId &&
+            !languageJustChanged) {
+            this.vehicleManager.currentVehicle = null;
+            document.dispatchEvent(new CustomEvent("vehicleDeselected"));
+        }
+         this.dom.homeVehicleSelect.value = ""; // Volta para "Nenhum / Manual"
+      }
+
+      // Para o seletor de relatórios, a seleção é geralmente "Todos os Veículos" por padrão,
+      // ou mantida se o usuário já interagiu com ele. A repopulação não deve resetar agressivamente.
+      // A lógica de qual opção fica selecionada no reportVehicleSelect pode ser mais complexa
+      // e gerenciada pela própria seção de relatórios ao ser carregada/interagida.
+      // Por enquanto, apenas repopulamos. Se uma lógica de restauração for necessária,
+      // precisaria ser mais específica para o contexto do reportVehicleSelect.
+
+
+      // Se o currentVehicle do vehicleManager ainda for válido e do tipo correto,
+      // certifica-se de que o seletor da home o reflita.
+      if (this.vehicleManager.currentVehicle && this.vehicleManager.currentVehicle.tipo === this.vehicleManager.currentVehicleType) {
+          if (this.dom.homeVehicleSelect.value !== this.vehicleManager.currentVehicle.id) {
+              this.dom.homeVehicleSelect.value = this.vehicleManager.currentVehicle.id;
+          }
+      } else if (this.dom.homeVehicleSelect.value !== "") {
+          // Se o seletor da home tem algo selecionado, mas o vehicleManager não tem veículo atual (ou é de outro tipo)
+          // Força a deseleção no vehicleManager
+          // Nota: Isso pode causar um loop se o evento 'change' não for bem gerenciado.
+          // A lógica atual no _bindVehicleSelectChange parece ok.
+      }
+      this._updateSelectedVehicleInfoOnHome();
+    }
+
+    _bindVehicleSelectChange() {
+      if (this.dom.homeVehicleSelect && this.vehicleManager) {
+        this.dom.homeVehicleSelect.addEventListener("change", (event) => {
+          const selectedVehicleId = event.target.value;
+          const previouslySelectedManagerVehicle = this.vehicleManager.currentVehicle ? this.vehicleManager.currentVehicle.id : null;
+
+          if (selectedVehicleId) {
+            // Apenas chama selectVehicle se a seleção realmente mudou ou se não havia veículo antes
+            if (selectedVehicleId !== previouslySelectedManagerVehicle) {
+                 this.vehicleManager.selectVehicle(selectedVehicleId);
+            }
+          } else {
+            // Apenas deseleciona se havia um veículo selecionado no manager
+            if (previouslySelectedManagerVehicle) {
+                this.vehicleManager.currentVehicle = null;
+                document.dispatchEvent(new CustomEvent("vehicleDeselected"));
+            }
+          }
+          this._updateSelectedVehicleInfoOnHome();
+        });
+      }
+      // Listener para reportVehicleSelect pode ser adicionado aqui se necessário
+      // para atualizar algum estado global quando ele muda.
+    }
+
+    _updateSelectedVehicleInfoOnHome() {
+        if (this.dom.selectedVehicleInfo && this.vehicleManager && this.languageManager) {
+            const currentVehicleFromManager = this.vehicleManager.currentVehicle;
+            // Verifica se o veículo no manager corresponde ao que está no seletor e se é do tipo correto
+            if (currentVehicleFromManager &&
+                this.dom.homeVehicleSelect.value === currentVehicleFromManager.id &&
+                currentVehicleFromManager.tipo === this.vehicleManager.currentVehicleType) {
+
+                let infoText = Utils.sanitizeHTML(currentVehicleFromManager.nome);
+                if (currentVehicleFromManager.combustiveis && currentVehicleFromManager.combustiveis.length > 0) {
+                    const efficiencies = currentVehicleFromManager.combustiveis.map(f =>
+                        `${Utils.sanitizeHTML(f.nome)}: ${String(f.eficiencia).replace(".",",")} ${this.languageManager.get("kmPerLiterAbbreviation")}`
+                    ).join(', ');
+                    infoText += ` (${efficiencies})`;
+                } else if (currentVehicleFromManager.eficiencia) {
+                    infoText += ` (${String(currentVehicleFromManager.eficiencia).replace(".",",")} ${this.languageManager.get("kmPerLiterAbbreviation")})`;
+                }
+                this.dom.selectedVehicleInfo.innerHTML = this.languageManager.get("selectedVehicleInfoText", {info: infoText});
+                this.dom.selectedVehicleInfo.style.display = 'block';
+            } else {
+                this.dom.selectedVehicleInfo.style.display = 'none';
+                // Se o seletor da home estiver vazio, mas o manager ainda tiver um veículo (de outro tipo, por exemplo),
+                // o evento "vehicleDeselected" já deveria ter sido disparado para limpar o FuelCalculator.
+            }
+        }
     }
   }
 
