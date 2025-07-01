@@ -257,6 +257,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     populateVehicleSelectors(languageJustChanged = false) {
+      // console.log("[Utils] populateVehicleSelectors chamado. Mudança de idioma:", languageJustChanged); // Log Removido
       if (!this.dom.homeVehicleSelect || !this.dom.reportVehicleSelect || !this.vehicleManager || !this.languageManager) {
         console.warn("DOM elements for vehicle selectors, VehicleManager, or LanguageManager not available for populating.");
         return;
@@ -1632,6 +1633,7 @@ document.addEventListener("DOMContentLoaded", () => {
           document.dispatchEvent(new CustomEvent("vehicleDeselected"));
         }
         this.loadAndRenderVehicles();
+        document.dispatchEvent(new CustomEvent("vehicleListChanged")); // Garantir que o evento é disparado
         // A lógica de placeholder do kmPorLitroInput é agora tratada pelo FuelCalculator
       }
     }
@@ -3278,9 +3280,15 @@ class GoalManager {
       document.addEventListener("vehicleTypeChanged", () => this.utils.populateVehicleSelectors());
       document.addEventListener("languageChanged", () => this.utils.populateVehicleSelectors(true)); // Passa true para indicar que é uma mudança de idioma
 
-      // Chamada inicial para popular os seletores após tudo estar configurado
+      // Agora que todas as dependências de utils estão configuradas (incluindo vehicleManager),
+      // podemos registrar os listeners de eventos e fazer a chamada inicial para popular os seletores.
+      document.addEventListener("vehicleListChanged", () => this.utils.populateVehicleSelectors());
+      document.addEventListener("vehicleTypeChanged", () => this.utils.populateVehicleSelectors()); // Isso já deve chamar populate e atualizar
+      document.addEventListener("languageChanged", () => this.utils.populateVehicleSelectors(true));
+
+      // Chamada inicial para popular os seletores
       this.utils.populateVehicleSelectors();
-      // Bind das mudanças nos seletores de veículo (home e report)
+      // Bind das mudanças nos seletores de veículo (home e report) que disparam eventos internos.
       this.utils._bindVehicleSelectChange();
 
 
