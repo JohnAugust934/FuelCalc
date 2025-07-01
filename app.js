@@ -257,14 +257,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     populateVehicleSelectors(languageJustChanged = false) {
-      // console.log("[Utils] populateVehicleSelectors chamado. Mudança de idioma:", languageJustChanged); // Log Removido
+      console.log("[Utils] populateVehicleSelectors chamado. Mudança de idioma:", languageJustChanged);
       if (!this.dom.homeVehicleSelect || !this.dom.reportVehicleSelect || !this.vehicleManager || !this.languageManager) {
-        console.warn("DOM elements for vehicle selectors, VehicleManager, or LanguageManager not available for populating.");
+        console.warn("[Utils] Dependências ausentes para populateVehicleSelectors.");
         return;
       }
 
       const previouslySelectedHomeVehicleId = this.dom.homeVehicleSelect.value;
-      // const previouslySelectedReportVehicleId = this.dom.reportVehicleSelect.value; // A lógica de seleção do relatório é mais complexa
+      const previouslySelectedReportVehicleId = this.dom.reportVehicleSelect.value; // Salvar também para o seletor de relatório
 
       this.dom.homeVehicleSelect.innerHTML = "";
       this.dom.reportVehicleSelect.innerHTML = "";
@@ -282,7 +282,9 @@ document.addEventListener("DOMContentLoaded", () => {
       this.dom.reportVehicleSelect.appendChild(allVehiclesOption);
 
       const vehicles = this.storageManager.safeGetItem(CONFIG.STORAGE_KEYS.VEHICLES, []);
+      console.log("[Utils] Veículos carregados do storage:", JSON.parse(JSON.stringify(vehicles))); // Log
       const currentTypeVehicles = vehicles.filter(v => v.tipo === this.vehicleManager.currentVehicleType);
+      console.log("[Utils] Veículos filtrados para o tipo atual (" + this.vehicleManager.currentVehicleType + "):", JSON.parse(JSON.stringify(currentTypeVehicles))); // Log
 
       currentTypeVehicles.forEach(vehicle => {
         const optionHome = document.createElement("option");
@@ -315,8 +317,20 @@ document.addEventListener("DOMContentLoaded", () => {
       // ou mantida se o usuário já interagiu com ele. A repopulação não deve resetar agressivamente.
       // A lógica de qual opção fica selecionada no reportVehicleSelect pode ser mais complexa
       // e gerenciada pela própria seção de relatórios ao ser carregada/interagida.
-      // Por enquanto, apenas repopulamos. Se uma lógica de restauração for necessária,
-      // precisaria ser mais específica para o contexto do reportVehicleSelect.
+
+      // Tentativa de forçar reflow/repaint
+      void this.dom.homeVehicleSelect.offsetHeight;
+      void this.dom.reportVehicleSelect.offsetHeight;
+
+      // Restaurar seleção anterior para reportVehicleSelect também
+      if (currentTypeVehicles.some(v => v.id === previouslySelectedReportVehicleId)) {
+          this.dom.reportVehicleSelect.value = previouslySelectedReportVehicleId;
+      } else if (previouslySelectedReportVehicleId === "") { // Se "Todos" estava selecionado
+          this.dom.reportVehicleSelect.value = "";
+      } else {
+          // Se o veículo específico não existe mais, e não era "Todos", volta para "Todos"
+          this.dom.reportVehicleSelect.value = "";
+      }
 
 
       // Se o currentVehicle do vehicleManager ainda for válido e do tipo correto,
@@ -380,16 +394,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 this.dom.homeVehicleSelect.value === currentVehicleFromManager.id &&
                 currentVehicleFromManager.tipo === this.vehicleManager.currentVehicleType) {
 
-                let infoText = Utils.sanitizeHTML(currentVehicleFromManager.nome);
+                let vehicleInfoHTML = `<strong>${Utils.sanitizeHTML(currentVehicleFromManager.nome)}</strong>`;
+
                 if (currentVehicleFromManager.combustiveis && currentVehicleFromManager.combustiveis.length > 0) {
-                    const efficiencies = currentVehicleFromManager.combustiveis.map(f =>
-                        `${Utils.sanitizeHTML(f.nome)}: ${String(f.eficiencia).replace(".",",")} ${this.languageManager.get("kmPerLiterAbbreviation")}`
-                    ).join(', ');
-                    infoText += ` (${efficiencies})`;
-                } else if (currentVehicleFromManager.eficiencia) {
-                    infoText += ` (${String(currentVehicleFromManager.eficiencia).replace(".",",")} ${this.languageManager.get("kmPerLiterAbbreviation")})`;
+                    currentVehicleFromManager.combustiveis.forEach(fuel => {
+                        const fuelName = Utils.sanitizeHTML(fuel.nome);
+                        // Tenta traduzir o nome do combustível. Se não houver tradução específica, usa o nome como está.
+                        // Assume que chaves como "fuelTypeGasoline", "fuelTypeAlcohol" existem.
+                        let translatedFuelName = this.languageManager.get(`fuelType${fuelName.charAt(0).toUpperCase() + fuelName.slice(1)}`);
+                        if (translatedFuelName === `fuelType${fuelName.charAt(0).toUpperCase() + fuelName.slice(1)}`) { // Não encontrou tradução específica
+                            translatedFuelName = fuelName; // Usa o nome original
+                        }
+
+                        const efficiency = String(fuel.eficiencia).replace(".",",");
+                        const unit = this.languageManager.get("kmPerLiterAbbreviation");
+                        vehicleInfoHTML += `<br>${translatedFuelName}: ${efficiency} ${unit}`;
+                    });
+                } else if (currentVehicleFromManager.eficiencia) { // Fallback para estrutura antiga
+                    const efficiency = String(currentVehicleFromManager.eficiencia).replace(".",",");
+                    const unit = this.languageManager.get("kmPerLiterAbbreviation");
+                    // Não temos nome do combustível aqui, então exibimos genericamente
+                    vehicleInfoHTML += `<br>${this.languageManager.get("vehicleEfficiencyLabel")}: ${efficiency} ${unit}`;
                 }
-                this.dom.selectedVehicleInfo.innerHTML = this.languageManager.get("selectedVehicleInfoText", {info: infoText});
+
+                this.dom.selectedVehicleInfo.innerHTML = vehicleInfoHTML;
                 this.dom.selectedVehicleInfo.style.display = 'block';
             } else {
                 this.dom.selectedVehicleInfo.style.display = 'none';
@@ -1633,6 +1661,7 @@ document.addEventListener("DOMContentLoaded", () => {
           document.dispatchEvent(new CustomEvent("vehicleDeselected"));
         }
         this.loadAndRenderVehicles();
+        console.log("[VehicleManager.deleteVehicle] Disparando vehicleListChanged"); // Log
         document.dispatchEvent(new CustomEvent("vehicleListChanged")); // Garantir que o evento é disparado
         // A lógica de placeholder do kmPorLitroInput é agora tratada pelo FuelCalculator
       }
@@ -1825,6 +1854,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           document.dispatchEvent(new CustomEvent("vehicleDataChanged", {detail: {vehicleId: vehicleInQuestionId}}));
           // Dispara evento para que os seletores sejam repovoados
+          console.log("[VehicleManager.saveVehicle] Disparando vehicleListChanged"); // Log
           document.dispatchEvent(new CustomEvent("vehicleListChanged"));
           this.editingVehicleId = null;
         }
@@ -3282,7 +3312,10 @@ class GoalManager {
 
       // Agora que todas as dependências de utils estão configuradas (incluindo vehicleManager),
       // podemos registrar os listeners de eventos e fazer a chamada inicial para popular os seletores.
-      document.addEventListener("vehicleListChanged", () => this.utils.populateVehicleSelectors());
+      document.addEventListener("vehicleListChanged", () => {
+        console.log("[AppManager._init] Evento vehicleListChanged recebido."); // Log
+        this.utils.populateVehicleSelectors();
+      });
       document.addEventListener("vehicleTypeChanged", () => this.utils.populateVehicleSelectors()); // Isso já deve chamar populate e atualizar
       document.addEventListener("languageChanged", () => this.utils.populateVehicleSelectors(true));
 

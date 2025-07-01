@@ -277,7 +277,7 @@ const translations = {
     confirmClearVehicleHistory: "Tem certeza que deseja limpar TODO o histórico de viagens para o veículo {name}? Esta ação não pode ser desfeita.",
     noHistoryForVehicle: "Nenhum histórico para o veículo {name}.", // Nova chave
     vehicleHistoryClearedSuccess: "Histórico do veículo {name} limpo com sucesso!", // Nova chave
-    selectedVehicleInfoText: "Selecionado: {info}", // <<<< NOVA CHAVE ADICIONADA
+    // selectedVehicleInfoText: "Selecionado: {info}", // REMOVIDA
 
 
     // Títulos das telas e navegação
@@ -569,7 +569,7 @@ const translations = {
     confirmClearVehicleHistory: "Are you sure you want to clear ALL trip history for the vehicle {name}? This action cannot be undone.",
     noHistoryForVehicle: "No history for vehicle {name}.", // Nova chave EN
     vehicleHistoryClearedSuccess: "History for vehicle {name} cleared successfully!", // Nova chave EN
-    selectedVehicleInfoText: "Selected: {info}", // <<<< NOVA CHAVE ADICIONADA (EN)
+    // selectedVehicleInfoText: "Selected: {info}", // REMOVIDA (EN)
 
 
     // Screen Titles & Navigation
