@@ -139,6 +139,10 @@ document.addEventListener("DOMContentLoaded", () => {
     oilChangeReminderCard: document.getElementById("oilChangeReminderCard"),
     oilChangeReminderText: document.getElementById("oilChangeReminderText"),
     noActiveMaintenanceReminder: document.getElementById("noActiveMaintenanceReminder"),
+
+    // Elementos de Navegação
+    navButtons: document.querySelectorAll(".nav-button"), // <<<< ADICIONADO
+    mainContentWrapper: document.getElementById("mainContentWrapper"), // Adicionado para navegação
   };
 
   // ===== INÍCIO DAS CLASSES DA APLICAÇÃO =====
@@ -3281,34 +3285,58 @@ class GoalManager {
     }
 
     _bindNavigationEvents() {
-      if (this.dom.navButtons) {
+      if (this.dom.navButtons && typeof navigateToScreen === 'function') {
         this.dom.navButtons.forEach(button => {
           button.addEventListener("click", () => {
             const screenId = button.dataset.screen;
             if (screenId) {
-              this.uiManager.navigateTo(screenId);
-              // Atualiza o activeScreen no AppManager para consistência, se necessário em outros lugares
+              // Chama a função de navegação global, passando as referências DOM necessárias
+              navigateToScreen(screenId, this.dom);
               this.activeScreen = screenId; 
             }
           });
         });
+        // Garante que a tela inicial seja exibida corretamente no carregamento
+        // Isso pode ser feito aqui ou após a inicialização do AppManager
+        // Por segurança, vamos garantir que a tela inicial (screenHome) esteja ativa.
+        // O primeiro botão de navegação geralmente é o "Home".
+        const initialScreen = this.dom.navButtons[0]?.dataset.screen || "screenHome";
+        navigateToScreen(initialScreen, this.dom);
+
+      } else {
+        if (!this.dom.navButtons) {
+            console.error("DOM.navButtons não está definido. Navegação não funcionará.");
+        }
+        if (typeof navigateToScreen !== 'function') {
+            console.error("A função navigateToScreen não está definida. Navegação não funcionará.");
+        }
       }
     }
 
     // Novos métodos para o Helper de Eficiência
     _bindHelperEvents() {
-      if (this.dom.efficiencyHelperBtnVehicle) {
-        this.dom.efficiencyHelperBtnVehicle.addEventListener("click", () => {
-          this.uiManager.showEfficiencyHelperModal(
-            this.dom.vehicleEfficiencyInput
-          );
-        });
-      }
+      // Botão helper de eficiência no formulário de CÁLCULO DE VIAGEM
       if (this.dom.efficiencyHelperBtnTrip) {
         this.dom.efficiencyHelperBtnTrip.addEventListener("click", () => {
-          this.uiManager.showEfficiencyHelperModal(this.dom.kmPorLitroInput);
+          this.uiManager.showEfficiencyHelperModal(this.dom.kmPorLitroInput); // O alvo é o input de km/L da viagem
         });
       }
+
+      // Botão helper de eficiência para GASOLINA no formulário de VEÍCULO
+      if (this.dom.efficiencyHelperBtnVehicleGasoline) {
+        this.dom.efficiencyHelperBtnVehicleGasoline.addEventListener("click", () => {
+          this.uiManager.showEfficiencyHelperModal(this.dom.vehicleEfficiencyGasolineInput); // O alvo é o input de eficiência de gasolina do veículo
+        });
+      }
+
+      // Botão helper de eficiência para ÁLCOOL no formulário de VEÍCULO
+      if (this.dom.efficiencyHelperBtnVehicleAlcohol) {
+        this.dom.efficiencyHelperBtnVehicleAlcohol.addEventListener("click", () => {
+          this.uiManager.showEfficiencyHelperModal(this.dom.vehicleEfficiencyAlcoholInput); // O alvo é o input de eficiência de álcool do veículo
+        });
+      }
+
+      // Botões dentro do MODAL do Helper de Eficiência
       if (this.dom.calculateEfficiencyHelperBtn) {
         this.dom.calculateEfficiencyHelperBtn.addEventListener("click", () =>
           this._calculateEfficiencyHelper()
@@ -3388,6 +3416,66 @@ class GoalManager {
       }
     }
   }
+
+  // ===== FUNÇÃO DE NAVEGAÇÃO GLOBAL =====
+  // Idealmente, isso estaria dentro de uma classe como UIManager ou NavigationManager
+  function navigateToScreen(screenId, domRefs, activeNavButtonClass = "active") {
+    if (!domRefs || !domRefs.mainContentWrapper || !domRefs.navButtons) {
+        console.error("Referências do DOM (mainContentWrapper ou navButtons) ausentes para navegação.");
+        return;
+    }
+
+    const screens = domRefs.mainContentWrapper.querySelectorAll(".screen-active, .screen-hidden");
+    let targetScreenElement = null;
+    let foundActiveScreen = false;
+
+    screens.forEach(screen => {
+        if (screen.id === screenId) {
+            targetScreenElement = screen;
+            screen.classList.remove("screen-hidden");
+            screen.classList.add("screen-active");
+            foundActiveScreen = true;
+        } else {
+            screen.classList.remove("screen-active");
+            screen.classList.add("screen-hidden");
+        }
+    });
+
+    if (!foundActiveScreen) {
+        console.warn(`Tela de destino com ID "${screenId}" não encontrada. Verifique o ID ou a estrutura HTML.`);
+        // Opcional: voltar para a tela inicial se a tela de destino não for encontrada
+        // navigateToScreen("screenHome", domRefs, activeNavButtonClass);
+        return;
+    }
+
+    if (targetScreenElement) {
+        // Foca no primeiro elemento focável da nova tela para acessibilidade
+        const firstFocusable = targetScreenElement.querySelector(
+            'h1, h2, h3, button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (firstFocusable) {
+            firstFocusable.focus({ preventScroll: true }); // preventScroll pode ser útil
+        } else {
+            // Fallback para focar no próprio container da tela se nada for focável
+            targetScreenElement.setAttribute('tabindex', '-1');
+            targetScreenElement.focus({ preventScroll: true });
+        }
+    }
+
+    domRefs.navButtons.forEach(navBtn => {
+        const isActive = navBtn.dataset.screen === screenId;
+        navBtn.classList.toggle(activeNavButtonClass, isActive);
+        navBtn.setAttribute("aria-current", isActive ? "page" : "false");
+    });
+
+    // Garante que o wrapper principal seja scrollado para o topo ao mudar de tela
+    if (domRefs.mainContentWrapper) {
+        domRefs.mainContentWrapper.scrollTop = 0;
+    }
+     // Despacha um evento para que outros módulos saibam que a tela mudou
+    document.dispatchEvent(new CustomEvent("screenChanged", { detail: { screenId } }));
+  }
+
 
   // Inicia a aplicação.
   try {

@@ -986,3 +986,65 @@ html[data-theme="dark"] .input-group select {
     background-color: var(--c-bg-tertiary);
     border-radius: var(--radius-md);
 }
+
+/* Estilos para Lembretes de Manutenção */
+.maintenance-reminder-section {
+    /* Estilos gerais da seção, se necessário */
+}
+
+.maintenance-card {
+    padding: 1rem;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+    margin-top: 1rem;
+    border-left-width: 5px; /* Espessura da borda de status */
+    border-left-style: solid;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.maintenance-card h4 {
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.maintenance-card p {
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.maintenance-card .reminder-note {
+    font-size: 0.8rem;
+    color: var(--c-text-secondary);
+    margin-top: 0.5rem;
+}
+
+.maintenance-card.status-ok {
+    border-left-color: var(--c-success);
+    background-color: color-mix(in srgb, var(--c-success) 5%, var(--c-bg-primary));
+}
+
+.maintenance-card.status-warning {
+    /* Usando --c-info como cor de aviso, ou poderia ser uma nova variável --c-warning */
+    border-left-color: var(--c-info);
+    background-color: color-mix(in srgb, var(--c-info) 10%, var(--c-bg-primary));
+}
+html[data-theme="dark"] .maintenance-card.status-warning {
+    background-color: color-mix(in srgb, var(--c-info) 15%, var(--c-bg-primary));
+}
+
+
+.maintenance-card.status-danger {
+    border-left-color: var(--c-danger);
+    background-color: color-mix(in srgb, var(--c-danger) 10%, var(--c-bg-primary));
+}
+html[data-theme="dark"] .maintenance-card.status-danger {
+    background-color: color-mix(in srgb, var(--c-danger) 15%, var(--c-bg-primary));
+}
+
+#noActiveMaintenanceReminder {
+    text-align: center;
+    font-style: italic;
+    color: var(--c-text-secondary);
+    padding: 1rem 0;
+}
